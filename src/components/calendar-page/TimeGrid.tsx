@@ -1,0 +1,167 @@
+import { format, isSameDay, isToday, startOfDay, differenceInMinutes } from "date-fns";
+import { useEffect, useRef } from "react";
+import { CATEGORY_MAP, type MockEvent } from "./constants";
+import { cn } from "@/lib/utils";
+
+const HOUR_HEIGHT = 56;
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+interface Props {
+  days: Date[];
+  events: MockEvent[];
+  onEventClick?: (e: MockEvent) => void;
+  selected: Date;
+  onSelectDay?: (d: Date) => void;
+}
+
+export function TimeGrid({ days, events, onEventClick, selected, onSelectDay }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 6 * HOUR_HEIGHT;
+    }
+  }, []);
+
+  const now = new Date();
+  const nowOffset = (now.getHours() + now.getMinutes() / 60) * HOUR_HEIGHT;
+
+  return (
+    <div className="flex h-full flex-col animate-in fade-in duration-200">
+      {/* header */}
+      <div
+        className="grid border-b border-border bg-background/80 backdrop-blur"
+        style={{ gridTemplateColumns: `56px repeat(${days.length}, 1fr)` }}
+      >
+        <div />
+        {days.map((d) => {
+          const today = isToday(d);
+          const sel = isSameDay(d, selected);
+          return (
+            <button
+              key={d.toISOString()}
+              type="button"
+              onClick={() => onSelectDay?.(d)}
+              className={cn(
+                "flex flex-col items-center gap-0.5 border-l border-border py-2 text-xs transition-colors hover:bg-accent/50",
+                sel && "bg-accent/30",
+              )}
+            >
+              <span className="uppercase tracking-wider text-muted-foreground">
+                {format(d, "EEE")}
+              </span>
+              <span
+                className={cn(
+                  "flex size-8 items-center justify-center rounded-full text-sm font-semibold",
+                  today && "bg-primary text-primary-foreground",
+                )}
+              >
+                {format(d, "d")}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* body */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        <div
+          className="relative grid"
+          style={{
+            gridTemplateColumns: `56px repeat(${days.length}, 1fr)`,
+            height: HOUR_HEIGHT * 24,
+          }}
+        >
+          {/* gutter */}
+          <div className="relative border-r border-border">
+            {HOURS.map((h) => (
+              <div
+                key={h}
+                className="relative text-[10px] text-muted-foreground"
+                style={{ height: HOUR_HEIGHT }}
+              >
+                <span className="absolute -top-1.5 right-1.5">
+                  {h === 0 ? "" : format(new Date(0, 0, 0, h), "h a")}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* day columns */}
+          {days.map((day) => {
+            const dayStart = startOfDay(day);
+            const dayEvents = events.filter((e) =>
+              isSameDay(e.start, day) ||
+              (e.start < dayStart && e.end > dayStart),
+            );
+            return (
+              <div
+                key={day.toISOString()}
+                className="relative border-l border-border"
+              >
+                {HOURS.map((h) => (
+                  <div
+                    key={h}
+                    className="border-t border-border/40"
+                    style={{ height: HOUR_HEIGHT }}
+                  />
+                ))}
+                {/* now indicator */}
+                {isToday(day) && (
+                  <div
+                    className="pointer-events-none absolute left-0 right-0 z-10 flex items-center"
+                    style={{ top: nowOffset }}
+                  >
+                    <span className="size-2 -ml-1 rounded-full bg-destructive" />
+                    <span className="h-px flex-1 bg-destructive" />
+                  </div>
+                )}
+                {dayEvents.map((e) => {
+                  const startMin = Math.max(
+                    0,
+                    differenceInMinutes(e.start, dayStart),
+                  );
+                  const endMin = Math.min(
+                    24 * 60,
+                    differenceInMinutes(e.end, dayStart),
+                  );
+                  const top = (startMin / 60) * HOUR_HEIGHT;
+                  const height = Math.max(
+                    20,
+                    ((endMin - startMin) / 60) * HOUR_HEIGHT - 2,
+                  );
+                  const cat = CATEGORY_MAP[e.category];
+                  const Icon = cat.icon;
+                  return (
+                    <button
+                      key={e.id}
+                      type="button"
+                      onClick={() => onEventClick?.(e)}
+                      className="absolute left-1 right-1 flex flex-col gap-0.5 overflow-hidden rounded-md border-l-4 px-1.5 py-1 text-left text-[11px] text-white shadow-sm transition-all hover:brightness-110 hover:shadow-md"
+                      style={{
+                        top,
+                        height,
+                        backgroundColor: cat.color,
+                        borderLeftColor: "rgba(0,0,0,0.25)",
+                      }}
+                    >
+                      <span className="flex items-center gap-1 font-semibold leading-tight">
+                        <Icon className="size-3 shrink-0" />
+                        <span className="truncate">{e.title}</span>
+                      </span>
+                      {height > 32 && (
+                        <span className="text-[10px] opacity-90">
+                          {format(e.start, "h:mm a")} – {format(e.end, "h:mm a")}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
