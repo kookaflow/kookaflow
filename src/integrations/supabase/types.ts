@@ -44,14 +44,24 @@ export type Database = {
           category: string
           created_at: string
           ends_at: string
+          hourly_rate: number | null
+          icon_gradient: string | null
           icon_name: string | null
           id: string
+          is_payday: boolean
           location: string | null
           notes: string | null
           recurrence: Json
+          shift_role: string | null
           shift_type: string | null
+          split_shift_break_duration: number | null
+          split_shift_first_end: string | null
+          split_shift_first_start: string | null
+          split_shift_second_end: string | null
+          split_shift_second_start: string | null
           starts_at: string
           title: string
+          travel_duration_minutes: number | null
           updated_at: string
           user_id: string
         }
@@ -60,14 +70,24 @@ export type Database = {
           category: string
           created_at?: string
           ends_at: string
+          hourly_rate?: number | null
+          icon_gradient?: string | null
           icon_name?: string | null
           id?: string
+          is_payday?: boolean
           location?: string | null
           notes?: string | null
           recurrence?: Json
+          shift_role?: string | null
           shift_type?: string | null
+          split_shift_break_duration?: number | null
+          split_shift_first_end?: string | null
+          split_shift_first_start?: string | null
+          split_shift_second_end?: string | null
+          split_shift_second_start?: string | null
           starts_at: string
           title: string
+          travel_duration_minutes?: number | null
           updated_at?: string
           user_id: string
         }
@@ -76,14 +96,24 @@ export type Database = {
           category?: string
           created_at?: string
           ends_at?: string
+          hourly_rate?: number | null
+          icon_gradient?: string | null
           icon_name?: string | null
           id?: string
+          is_payday?: boolean
           location?: string | null
           notes?: string | null
           recurrence?: Json
+          shift_role?: string | null
           shift_type?: string | null
+          split_shift_break_duration?: number | null
+          split_shift_first_end?: string | null
+          split_shift_first_start?: string | null
+          split_shift_second_end?: string | null
+          split_shift_second_start?: string | null
           starts_at?: string
           title?: string
+          travel_duration_minutes?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -130,10 +160,41 @@ export type Database = {
         }
         Relationships: []
       }
+      public_holidays: {
+        Row: {
+          country: string
+          created_at: string
+          date: string
+          id: string
+          name: string
+          region: string | null
+        }
+        Insert: {
+          country: string
+          created_at?: string
+          date: string
+          id?: string
+          name: string
+          region?: string | null
+        }
+        Update: {
+          country?: string
+          created_at?: string
+          date?: string
+          id?: string
+          name?: string
+          region?: string | null
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
+          accent_colour: string | null
+          country: string
+          currency: string
           default_view: string
           email: string | null
+          hourly_rate: number | null
           phone: string | null
           reminders: Json
           sounds: Json
@@ -144,8 +205,12 @@ export type Database = {
           week_starts_on: number
         }
         Insert: {
+          accent_colour?: string | null
+          country?: string
+          currency?: string
           default_view?: string
           email?: string | null
+          hourly_rate?: number | null
           phone?: string | null
           reminders?: Json
           sounds?: Json
@@ -156,8 +221,12 @@ export type Database = {
           week_starts_on?: number
         }
         Update: {
+          accent_colour?: string | null
+          country?: string
+          currency?: string
           default_view?: string
           email?: string | null
+          hourly_rate?: number | null
           phone?: string | null
           reminders?: Json
           sounds?: Json
