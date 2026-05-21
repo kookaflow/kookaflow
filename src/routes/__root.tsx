@@ -14,6 +14,7 @@ import { PreferencesProvider } from "@/providers/PreferencesProvider";
 import { AppNav } from "@/components/layout/AppNav";
 import { SyncStatusProvider } from "@/providers/SyncStatusProvider";
 import { SyncBanner } from "@/components/settings/SyncBanner";
+import { SplashScreen } from "@/components/layout/SplashScreen";
 import { Toaster } from "@/components/ui/sonner";
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -126,6 +127,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <PreferencesProvider>
         <SyncStatusProvider>
+          <SplashScreen />
           <AppLayout />
           <Toaster />
           <AuthListener />
