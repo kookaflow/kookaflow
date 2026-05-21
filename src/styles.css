@@ -247,3 +247,8 @@
   .auth-float-a, .auth-float-b, .auth-float-c,
   .auth-card-in, .auth-field-in { animation: none; opacity: 1; }
 }
+
+@keyframes shiftsync-toast-progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
