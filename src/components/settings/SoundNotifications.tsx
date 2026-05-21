@@ -5,10 +5,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Volume2, Play, Check, Waves, CloudRain, Trees } from "lucide-react";
+import { updatePreferences } from "@/lib/preferences.functions";
 
 type SoundId = "soft-chime" | "bell" | "nature" | "digital-ping" | "none";
 type AmbientId = "off" | "rain" | "white-noise" | "forest";
-type LeadMinutes = 5 | 10 | 15 | 30;
+type LeadMinutes = 5 | 10 | 15 | 30 | 60 | 120;
+type ShiftAlertSoundId = "triple_chime" | "rising_alert" | "double_bell" | "gentle_pulse" | "none";
 
 type Prefs = {
   masterEnabled: boolean;
@@ -16,6 +18,7 @@ type Prefs = {
   eventAlertEnabled: boolean;
   eventAlertMinutes: LeadMinutes;
   shiftAlertEnabled: boolean;
+  shiftAlertSound: ShiftAlertSoundId;
   ambient: AmbientId;
 };
 
@@ -27,6 +30,7 @@ const DEFAULT_PREFS: Prefs = {
   eventAlertEnabled: true,
   eventAlertMinutes: 10,
   shiftAlertEnabled: true,
+  shiftAlertSound: "triple_chime",
   ambient: "off",
 };
 
@@ -38,7 +42,22 @@ const SOUNDS: { value: SoundId; label: string }[] = [
   { value: "none", label: "None" },
 ];
 
-const LEAD_OPTIONS: LeadMinutes[] = [5, 10, 15, 30];
+const LEAD_OPTIONS: { value: LeadMinutes; label: string }[] = [
+  { value: 5, label: "5 min" },
+  { value: 10, label: "10 min" },
+  { value: 15, label: "15 min" },
+  { value: 30, label: "30 min" },
+  { value: 60, label: "1 hour" },
+  { value: 120, label: "2 hours" },
+];
+
+const SHIFT_ALERT_SOUNDS: { value: ShiftAlertSoundId; label: string }[] = [
+  { value: "triple_chime", label: "Triple Chime (recommended)" },
+  { value: "rising_alert", label: "Rising Alert" },
+  { value: "double_bell", label: "Double Bell" },
+  { value: "gentle_pulse", label: "Gentle Pulse" },
+  { value: "none", label: "None" },
+];
 
 const AMBIENT_OPTIONS: { value: AmbientId; label: string; icon: React.ReactNode }[] = [
   { value: "off", label: "Off", icon: <Volume2 className="size-3.5" /> },
