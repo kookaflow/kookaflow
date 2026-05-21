@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarHeart, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import logo from "@/assets/shiftsync-logo.png";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({ meta: [{ title: "Welcome — ShiftSync" }] }),
@@ -76,9 +77,7 @@ function OnboardingPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground shadow">
-            <CalendarHeart className="size-6" />
-          </div>
+          <img src={logo} alt="ShiftSync" style={{ height: 80, width: "auto" }} className="object-contain" />
           <h1 className="text-2xl font-bold tracking-tight">Welcome to ShiftSync</h1>
         </div>
 
