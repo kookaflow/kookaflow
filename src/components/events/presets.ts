@@ -1,5 +1,5 @@
 import {
-  Sun, Sunset, Moon, Radio, GitBranch, Thermometer, Umbrella, Car, DollarSign,
+  Sun, Sunset, Moon, Radio, GitBranch, Zap, Thermometer, Umbrella, Car, DollarSign,
   type LucideIcon,
 } from "lucide-react";
 import type { CategoryId, ShiftType } from "@/types/event";
