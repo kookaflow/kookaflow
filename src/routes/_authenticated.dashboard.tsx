@@ -22,7 +22,7 @@ import { WeeklyStackedBarChart } from "@/components/dashboard/WeeklyStackedBarCh
 import { MonthlyDonutChart } from "@/components/dashboard/MonthlyDonutChart";
 import { CategoryCard } from "@/components/dashboard/CategoryCard";
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — ShiftSync" },

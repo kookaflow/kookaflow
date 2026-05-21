@@ -14,8 +14,9 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -42,9 +43,8 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CalendarRoute = CalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -52,68 +52,75 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/calendar': typeof CalendarRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/calendar': typeof CalendarRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/calendar': typeof CalendarRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/calendar'
     | '/dashboard'
     | '/login'
     | '/reset-password'
     | '/settings'
     | '/signup'
+    | '/calendar'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/calendar'
     | '/dashboard'
     | '/login'
     | '/reset-password'
     | '/settings'
     | '/signup'
+    | '/calendar'
   id:
     | '__root__'
     | '/'
-    | '/calendar'
+    | '/_authenticated'
     | '/dashboard'
     | '/login'
     | '/reset-password'
     | '/settings'
     | '/signup'
+    | '/_authenticated/calendar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CalendarRoute: typeof CalendarRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -158,11 +165,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/calendar': {
-      id: '/calendar'
-      path: '/calendar'
-      fullPath: '/calendar'
-      preLoaderRoute: typeof CalendarRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -172,12 +179,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/calendar': {
+      id: '/_authenticated/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CalendarRoute: CalendarRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
@@ -187,3 +213,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
