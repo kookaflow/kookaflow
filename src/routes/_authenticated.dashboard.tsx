@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarHeart, Moon, Sun, LayoutDashboard, CalendarDays, Settings } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Settings } from "lucide-react";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useEventsStore } from "@/lib/events-store";
 import {
@@ -21,6 +20,8 @@ import { WellnessNudgePanel } from "@/components/dashboard/WellnessNudgePanel";
 import { WeeklyStackedBarChart } from "@/components/dashboard/WeeklyStackedBarChart";
 import { MonthlyDonutChart } from "@/components/dashboard/MonthlyDonutChart";
 import { CategoryCard } from "@/components/dashboard/CategoryCard";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -36,16 +37,6 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
   const events = useEventsStore();
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const prev = root.classList.contains("dark");
-    root.classList.toggle("dark", theme === "dark");
-    return () => {
-      root.classList.toggle("dark", prev);
-    };
-  }, [theme]);
 
   const now = new Date();
   const week = useMemo(() => currentWeekRange(now), [events]);
@@ -66,54 +57,36 @@ function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="sticky top-0 z-30 flex flex-wrap items-center gap-3 border-b border-border bg-background/80 px-4 py-3 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground shadow-sm">
-            <CalendarHeart className="size-5" />
-          </div>
-          <span className="text-lg font-bold tracking-tight">ShiftSync</span>
-        </div>
-
-        <nav className="mx-auto flex items-center gap-1 rounded-full border border-border bg-card p-1">
+      <PageHeader
+        title={greeting()}
+        subtitle={format(now, "EEEE, MMMM d")}
+        right={<ThemeToggle />}
+      >
+        <nav className="flex items-center gap-1 rounded-full border border-white/20 bg-white/10 p-1 backdrop-blur">
           <Link
             to="/calendar"
             className={cn(
-              "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground",
+              "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white/80 transition-all hover:text-white",
             )}
           >
-            <CalendarDays className="size-4" />
-            Calendar
+            <CalendarDays className="size-3.5" />
+            <span className="hidden sm:inline">Calendar</span>
           </Link>
-          <span className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow">
-            <LayoutDashboard className="size-4" />
-            Dashboard
+          <span className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white shadow">
+            <LayoutDashboard className="size-3.5" />
+            <span className="hidden sm:inline">Dashboard</span>
           </span>
           <Link
             to="/settings"
             className={cn(
-              "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground",
+              "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white/80 transition-all hover:text-white",
             )}
           >
-            <Settings className="size-4" />
-            Settings
+            <Settings className="size-3.5" />
+            <span className="hidden sm:inline">Settings</span>
           </Link>
         </nav>
-
-        <div className="ml-auto flex items-center gap-2">
-          <span className="hidden text-xs text-muted-foreground sm:inline">
-            Week of {format(week.start, "MMM d")}
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-          </Button>
-        </div>
-      </header>
+      </PageHeader>
 
       <main className="mx-auto flex max-w-7xl flex-col gap-4 p-4 sm:p-6">
         <div className="grid gap-4 lg:grid-cols-3">
