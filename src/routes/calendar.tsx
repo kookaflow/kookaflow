@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   addDays,
   addMonths,
@@ -16,6 +16,8 @@ import {
   Moon,
   Sun,
   Plus,
+  LayoutDashboard,
+  CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -24,9 +26,9 @@ import { cn } from "@/lib/utils";
 import { MonthView } from "@/components/calendar-page/MonthView";
 import { TimeGrid } from "@/components/calendar-page/TimeGrid";
 import { TodayPanel } from "@/components/calendar-page/TodayPanel";
-import { buildMockEvents } from "@/components/calendar-page/mock";
 import { EventDialog } from "@/components/calendar-page/EventDialog";
 import type { MockEvent } from "@/components/calendar-page/constants";
+import { useEventsStore, setEvents as setStoreEvents } from "@/lib/events-store";
 
 type ViewMode = "month" | "week" | "day";
 
@@ -38,9 +40,7 @@ function CalendarPage() {
   const [view, setView] = useState<ViewMode>("month");
   const [date, setDate] = useState<Date>(new Date());
   const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const [events, setEvents] = useState<MockEvent[]>(() =>
-    buildMockEvents(new Date()),
-  );
+  const events = useEventsStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MockEvent | null>(null);
   const [dialogDefault, setDialogDefault] = useState<Date>(new Date());
@@ -70,7 +70,7 @@ function CalendarPage() {
     setDialogOpen(true);
   };
   const handleSave = (e: MockEvent) => {
-    setEvents((prev) => {
+    setStoreEvents((prev) => {
       const idx = prev.findIndex((p) => p.id === e.id);
       if (idx === -1) return [...prev, e];
       const next = prev.slice();
@@ -79,7 +79,7 @@ function CalendarPage() {
     });
   };
   const handleDelete = (id: string) => {
-    setEvents((prev) => prev.filter((p) => p.id !== id));
+    setStoreEvents((prev) => prev.filter((p) => p.id !== id));
   };
   const goNext = () => {
     if (view === "month") setDate((d) => addMonths(d, 1));
@@ -113,6 +113,20 @@ function CalendarPage() {
           </div>
           <span className="text-lg font-bold tracking-tight">ShiftSync</span>
         </div>
+
+        <nav className="flex items-center gap-1 rounded-full border border-border bg-card p-1">
+          <span className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground shadow">
+            <CalendarDays className="size-3.5" />
+            <span className="hidden sm:inline">Calendar</span>
+          </span>
+          <Link
+            to="/dashboard"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <LayoutDashboard className="size-3.5" />
+            <span className="hidden sm:inline">Dashboard</span>
+          </Link>
+        </nav>
 
         <div className="mx-auto flex items-center gap-1 rounded-full border border-border bg-card p-1">
           {(["month", "week", "day"] as ViewMode[]).map((v) => (
