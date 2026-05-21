@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { Mail, Lock } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { AuthField, AuthSubmit } from "@/components/auth/AuthField";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
@@ -46,27 +45,75 @@ function LoginPage() {
   };
 
   return (
-    <AuthShell title="Welcome back" subtitle="Sign in to your ShiftSync account">
+    <AuthShell
+      tagline={<>Welcome back <span aria-hidden>👋</span></>}
+      subtitle="Sign in to your ShiftSync account"
+    >
       <form onSubmit={submit} className="space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+        <div className="auth-field-in" style={{ animationDelay: "0ms" }}>
+          <AuthField
+            id="email"
+            label="Email"
+            icon={Mail}
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            placeholder="you@example.com"
+          />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+        <div className="auth-field-in" style={{ animationDelay: "80ms" }}>
+          <AuthField
+            id="password"
+            label="Password"
+            icon={Lock}
+            type="password"
+            togglePassword
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            placeholder="••••••••"
+          />
         </div>
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Signing in…" : "Sign in"}
-        </Button>
-        <div className="flex items-center justify-between text-xs">
-          <button type="button" onClick={sendReset} disabled={resetting} className="text-muted-foreground hover:text-foreground">
-            Forgot password?
+
+        <div className="auth-field-in flex justify-end" style={{ animationDelay: "160ms" }}>
+          <button
+            type="button"
+            onClick={sendReset}
+            disabled={resetting}
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            Forgot your password?
           </button>
-          <Link to="/signup" className="text-primary hover:underline">
-            Create account
-          </Link>
         </div>
+
+        <div className="auth-field-in pt-1" style={{ animationDelay: "240ms" }}>
+          <AuthSubmit disabled={loading}>
+            {loading ? "Signing in…" : "Sign In"}
+          </AuthSubmit>
+        </div>
+
+        <div className="auth-field-in relative py-2" style={{ animationDelay: "320ms" }}>
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-border" />
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-card px-3 text-xs uppercase tracking-wider text-muted-foreground">or</span>
+          </div>
+        </div>
+
+        <p className="auth-field-in text-center text-xs text-muted-foreground" style={{ animationDelay: "400ms" }}>
+          🔒 Secure • Private • No ads
+        </p>
+
+        <p className="auth-field-in text-center text-sm text-muted-foreground" style={{ animationDelay: "480ms" }}>
+          New to ShiftSync?{" "}
+          <Link to="/signup" className="font-medium text-primary hover:underline">
+            Create an account
+          </Link>
+        </p>
       </form>
     </AuthShell>
   );
