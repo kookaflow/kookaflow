@@ -85,6 +85,18 @@ export const PRESETS: PresetDef[] = [
     defaultTitle: "Split shift",
   },
   {
+    id: "side_hustle",
+    label: "Side Hustle",
+    Icon: Zap,
+    color: "#F59E0B",
+    category: "work",
+    shiftType: "side_hustle",
+    startTime: "18:00",
+    endTime: "21:00",
+    iconName: "Zap",
+    defaultTitle: "Side hustle",
+  },
+  {
     id: "sick",
     label: "Sick Leave",
     Icon: Thermometer,
