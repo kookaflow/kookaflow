@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,9 +42,18 @@ function setTimeOnDate(base: Date, hhmm: string, addDays = 0): Date {
   return d;
 }
 
+function defaultStartFor(base: Date | undefined): Date {
+  const now = new Date();
+  const d = new Date(base ?? now);
+  d.setHours(now.getHours() + 1, 0, 0, 0);
+  return d;
+}
+
 export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel }: Props) {
-  const start0 = initial?.start ?? (defaultStart ?? new Date()).toISOString();
-  const end0 = initial?.end ?? new Date(new Date(start0).getTime() + 60 * 60 * 1000).toISOString();
+  const start0 = initial?.start ?? defaultStartFor(defaultStart).toISOString();
+  const end0 =
+    initial?.end ??
+    new Date(new Date(start0).getTime() + 8 * 60 * 60 * 1000).toISOString();
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [category, setCategory] = useState<CategoryId>(initial?.category ?? "personal");
@@ -63,11 +72,15 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
     initial?.recurrenceDays ?? [],
   );
 
-  useEffect(() => {
-    if (new Date(end) < new Date(start)) setEnd(start);
-  }, [start, end]);
-
   const cat = getCategory(category);
+  const invalidRange = new Date(end) < new Date(start);
+
+  const startDate = start.slice(0, 10);
+  const startTime = start.slice(11, 16);
+  const endDate = end.slice(0, 10);
+  const endTime = end.slice(11, 16);
+  const dtInputCls =
+    "h-12 w-full rounded-[12px] bg-[#F1F5F9] px-3 text-base text-foreground outline-none focus:ring-2 focus:ring-ring";
 
   const applyPreset = (p: PresetDef) => {
     if (!title.trim()) setTitle(p.defaultTitle);
@@ -92,6 +105,7 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
 
   const submit = () => {
     if (!title.trim()) return;
+    if (invalidRange) return;
     const draft: EventDraft = {
       title: title.trim(),
       category,
@@ -148,15 +162,43 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
         <Switch id="allday" checked={allDay} onCheckedChange={setAllDay} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label>Starts</Label>
-          <Input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
+      <div className="space-y-1.5">
+        <Label>Starts</Label>
+        <div className="flex gap-2">
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStart(`${e.target.value}T${startTime}`)}
+            className={cn(dtInputCls, "basis-3/5")}
+          />
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => setStart(`${startDate}T${e.target.value}`)}
+            className={cn(dtInputCls, "basis-2/5")}
+          />
         </div>
-        <div className="space-y-1.5">
-          <Label>Ends</Label>
-          <Input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Ends</Label>
+        <div className="flex gap-2">
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEnd(`${e.target.value}T${endTime}`)}
+            className={cn(dtInputCls, "basis-3/5")}
+          />
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEnd(`${endDate}T${e.target.value}`)}
+            className={cn(dtInputCls, "basis-2/5")}
+          />
         </div>
+        {invalidRange && (
+          <p className="text-xs text-destructive">End time must be after start time</p>
+        )}
       </div>
 
       <IconPicker
@@ -202,7 +244,9 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
         </div>
         <div className="flex gap-2">
           <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
-          <Button type="button" onClick={submit}>{initial ? "Save" : "Create"}</Button>
+          <Button type="button" onClick={submit} disabled={invalidRange}>
+            {initial ? "Save" : "Create"}
+          </Button>
         </div>
       </div>
     </div>
