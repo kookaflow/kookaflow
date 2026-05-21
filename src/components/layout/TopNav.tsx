@@ -1,8 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { CalendarHeart, LayoutDashboard, PanelRightOpen, Settings } from "lucide-react";
-
-
-interface Props {
+import { ViewToggle } from "./ViewToggle";
+import { DatePicker } from "./DatePicker";
+import { ThemeToggle } from "./ThemeToggle";
+import { NewEventButton } from "./NewEventButton";
+import { useCalendar } from "@/providers/CalendarProvider";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
   onNewEvent: () => void;
 }
 
