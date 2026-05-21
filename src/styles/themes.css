@@ -65,73 +65,83 @@
 
 /* ============================== MIDNIGHT ============================== */
 [data-theme="midnight"] {
-  /* ShiftSync brand — light mode */
-  --background: #F5F6FF;                      /* very pale lavender */
-  --foreground: #1E2A6E;                      /* deep navy headings */
-  --page-header-from: #0F172A;
-  --page-header-to: #1E3A5F;
+  /* ShiftSync brand — light mode (exact logo palette) */
+  --background: #F5F6FF;
+  --foreground: #162264;
+  --page-header-from: #162264;
+  --page-header-to: #5D46DC;
   --card: #FFFFFF;
-  --card-foreground: #374151;
+  --card-foreground: #162264;
   --popover: #FFFFFF;
-  --popover-foreground: #374151;
-  --primary: #3D3DA0;                         /* indigo */
+  --popover-foreground: #162264;
+  --primary: #232B7E;
   --primary-foreground: #FFFFFF;
-  --secondary: #E0E4FF;
-  --secondary-foreground: #1E2A6E;
-  --muted: #E0E4FF;
-  --muted-foreground: #6B7280;
-  --accent: #6B35CC;                          /* purple */
+  --secondary: #E8EAF8;
+  --secondary-foreground: #162264;
+  --muted: #E8EAF8;
+  --muted-foreground: #4B5285;
+  --accent: #5D46DC;
   --accent-foreground: #FFFFFF;
   --destructive: oklch(0.6 0.24 27);
   --destructive-foreground: #FFFFFF;
-  --border: #E0E4FF;
-  --input: #E0E4FF;
-  --ring: #5B8DEF;                            /* light blue focus */
+  --border: #D6DAEE;
+  --input: #D6DAEE;
+  --ring: #5D46DC;
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #1E2A6E;
-  --sidebar-primary: #3D3DA0;
+  --sidebar-foreground: #162264;
+  --sidebar-primary: #232B7E;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #E0E4FF;
-  --sidebar-accent-foreground: #1E2A6E;
-  --sidebar-border: #E0E4FF;
-  --sidebar-ring: #5B8DEF;
-  --brand-gradient-from: #1E2A6E;
-  --brand-gradient-mid: #3D3DA0;
-  --brand-gradient-to: #6B35CC;
-  --brand-highlight: #5B8DEF;
+  --sidebar-accent: #E8EAF8;
+  --sidebar-accent-foreground: #162264;
+  --sidebar-border: #D6DAEE;
+  --sidebar-ring: #5D46DC;
+  --brand-navy: #162264;
+  --brand-indigo: #232B7E;
+  --brand-purple: #5D46DC;
+  --brand-highlight: #B6BAE3;
+  --brand-background-dark: #101A4F;
+  --brand-gradient: linear-gradient(135deg, #162264 0%, #232B7E 50%, #5D46DC 100%);
+  --brand-gradient-from: #162264;
+  --brand-gradient-mid: #232B7E;
+  --brand-gradient-to: #5D46DC;
 }
 [data-theme="midnight"].dark {
-  --background: #0F1535;                      /* darker navy */
+  --background: #101A4F;
   --foreground: #FFFFFF;
-  --page-header-from: #0F172A;
-  --page-header-to: #1E3A5F;
-  --card: #1A2456;                            /* slightly lighter */
+  --page-header-from: #162264;
+  --page-header-to: #5D46DC;
+  --card: #162264;
   --card-foreground: #FFFFFF;
-  --popover: #1A2456;
+  --popover: #162264;
   --popover-foreground: #FFFFFF;
-  --primary: #5B8DEF;                         /* light-blue accent in dark */
-  --primary-foreground: #0F1535;
-  --secondary: #1E2A6E;
+  --primary: #5D46DC;
+  --primary-foreground: #FFFFFF;
+  --secondary: #232B7E;
   --secondary-foreground: #FFFFFF;
-  --muted: #1E2A6E;
-  --muted-foreground: #A5B4FC;
-  --accent: #6B35CC;
+  --muted: #232B7E;
+  --muted-foreground: #B6BAE3;
+  --accent: #5D46DC;
   --accent-foreground: #FFFFFF;
-  --border: rgba(255, 255, 255, 0.12);
-  --input: rgba(255, 255, 255, 0.16);
-  --ring: #5B8DEF;
-  --sidebar: #1E2A6E;
+  --border: rgba(182, 186, 227, 0.18);
+  --input: rgba(182, 186, 227, 0.22);
+  --ring: #B6BAE3;
+  --sidebar: #162264;
   --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #5B8DEF;
+  --sidebar-primary: #5D46DC;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #1A2456;
+  --sidebar-accent: #232B7E;
   --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: rgba(255, 255, 255, 0.12);
-  --sidebar-ring: #5B8DEF;
-  --brand-gradient-from: #1E2A6E;
-  --brand-gradient-mid: #3D3DA0;
-  --brand-gradient-to: #6B35CC;
-  --brand-highlight: #5B8DEF;
+  --sidebar-border: rgba(182, 186, 227, 0.18);
+  --sidebar-ring: #B6BAE3;
+  --brand-navy: #162264;
+  --brand-indigo: #232B7E;
+  --brand-purple: #5D46DC;
+  --brand-highlight: #B6BAE3;
+  --brand-background-dark: #101A4F;
+  --brand-gradient: linear-gradient(135deg, #162264 0%, #232B7E 50%, #5D46DC 100%);
+  --brand-gradient-from: #162264;
+  --brand-gradient-mid: #232B7E;
+  --brand-gradient-to: #5D46DC;
 }
 
 /* ============================== LAVENDER ============================== */
