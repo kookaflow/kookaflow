@@ -86,7 +86,7 @@ export function MonthView({
                     style={{ backgroundColor: shiftStyle.color }}
                     title={`${shiftStyle.label} shift`}
                   >
-                    <shiftStyle.icon className="size-3" />
+                    <shiftStyle.icon className="size-3.5" />
                     <span className="hidden sm:inline">{shiftStyle.label}</span>
                   </span>
                 )}

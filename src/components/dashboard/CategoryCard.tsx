@@ -22,7 +22,7 @@ export function CategoryCard({ data }: { data: CategoryCardData }) {
             className="flex size-9 items-center justify-center rounded-lg text-white"
             style={{ backgroundColor: def.color }}
           >
-            <Icon className="size-4" />
+            <Icon className="size-5" />
           </span>
           <span className="text-sm font-semibold">{def.label}</span>
         </div>

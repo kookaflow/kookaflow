@@ -24,7 +24,7 @@ export function QuickAddPresets({ onPick }: Props) {
                 color: p.color,
               }}
             >
-              <Icon className="size-3.5" strokeWidth={2.5} />
+              <Icon className="size-4" strokeWidth={2.5} />
               <span>{p.label}</span>
             </button>
           );

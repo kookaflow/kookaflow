@@ -61,7 +61,7 @@ export function AppNav() {
                 active ? "text-primary" : "text-muted-foreground",
               )}
             >
-              <Icon className={cn("size-5", active && "text-primary")} />
+              <Icon className={cn("size-[22px]", active && "text-primary")} />
               <span>{item.label}</span>
             </Link>
           );

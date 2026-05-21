@@ -36,7 +36,7 @@ function SettingsPage() {
               "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground",
             )}
           >
-            <CalendarDays className="size-4" />
+            <CalendarDays className="size-[18px]" />
             Calendar
           </Link>
           <Link
@@ -45,11 +45,11 @@ function SettingsPage() {
               "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground",
             )}
           >
-            <LayoutDashboard className="size-4" />
+            <LayoutDashboard className="size-[18px]" />
             Dashboard
           </Link>
           <span className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow">
-            <Settings className="size-4" />
+            <Settings className="size-[18px]" />
             Settings
           </span>
         </nav>
