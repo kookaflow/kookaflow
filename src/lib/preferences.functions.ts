@@ -29,6 +29,7 @@ const PreferencesUpdateSchema = z.object({
   sound_enabled: z.boolean().optional(),
   notification_sound: z.string().max(40).optional(),
   reminder_minutes_before: z.number().int().min(0).max(1440).optional(),
+  shift_alert_sound: z.enum(["triple_chime","rising_alert","double_bell","gentle_pulse","none"]).optional(),
   email: z.string().email().nullable().optional(),
   phone: z.string().max(40).nullable().optional(),
 });
