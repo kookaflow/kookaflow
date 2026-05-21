@@ -1,122 +1,116 @@
-# 4-Theme System Plan
+# ShiftSync — Targeted Improvements Plan
 
-## Goals
+Scope: 7 changes to event modal, calendar rendering, and dashboard. No touching `/dashboard` earnings logic, Supabase config, or routing.
 
-- Four named themes (Midnight, Lavender, Forest, Slate), each with light + dark variants → 8 token sets.
-- Instant switching across the whole app, no reload.
-- Persisted in `localStorage` immediately and synced to Supabase `user_preferences` once authenticated.
-- Default on first launch: **Slate**, mode = `light` (matches OS if `prefers-color-scheme: dark`).
-- Theme picker on `/settings` rendered as visual cards with mini color previews.
+---
 
-## Architecture overview
+## Change 1 — Split Shift type
 
-```text
-PreferencesProvider (extended)
-  ├─ state: { themeName: 'slate'|'midnight'|'lavender'|'forest', mode: 'light'|'dark', ... }
-  ├─ source of truth: localStorage → hydrated from Supabase on auth
-  ├─ applies: <html data-theme="slate" class="dark">
-  └─ exposes: useTheme() { themeName, mode, setTheme, setMode, toggleMode }
+Add `"split"` to `ShiftType` union. In the Event modal's `ShiftFieldsGroup` (Work category), when `shiftType === "split"` render three controls:
+- First Shift: start / end time
+- Break: Select (30m, 45m, 1h, 1.5h, 2h)
+- Second Shift: start / end time
 
-src/styles/themes.css         ← new, imported from styles.css
-src/lib/themes.ts             ← theme registry (names, labels, preview swatches)
-src/components/settings/ThemeSettings.tsx   ← visual card selector
-```
+Extend `ShiftMeta` with optional `split?: { firstStart, firstEnd, breakMinutes, secondStart, secondEnd }`. Stored inside the existing event `shift` blob — no schema migration.
 
-## CSS variable structure
+## Change 2 — Travel category
 
-Single source of truth in `src/styles/themes.css`, layered on top of the existing token contract in `src/styles.css` (no changes to `@theme inline` — the same `--background`, `--primary`, etc. tokens are reassigned per theme).
+Add `"travel"` to `CategoryId` in `src/types/event.ts` and `src/components/calendar-page/constants.ts`.
+- Color `#64748B`, Lucide `Car` icon
+- Added to `CATEGORIES` → flows into selector, badges, calendar coloring
+- Dashboard: new `CategoryCard` "Travel Time" (weekly hours); `metrics.ts` includes `travel`
+- Balance Score includes `travel` with a neutral weight (similar to `personal`)
 
-Selectors use `[data-theme="…"]` on `<html>`, combined with the existing `.dark` class for mode:
+## Change 3 — Quick Add preset row
 
-```css
-[data-theme="slate"]                 { /* light tokens */ }
-[data-theme="slate"].dark            { /* dark tokens  */ }
-[data-theme="midnight"]              { … }
-[data-theme="midnight"].dark         { … }
-[data-theme="lavender"]              { … }
-[data-theme="lavender"].dark         { … }
-[data-theme="forest"]                { … }
-[data-theme="forest"].dark           { … }
-```
+New `src/components/events/QuickAddPresets.tsx` at top of `EventForm`. Horizontal scroll, iOS 17 chip style: `rounded-full`, `bg-[color]/15`, `text-[color]`, icon + label.
 
-Each block redefines the existing semantic tokens (`--background`, `--foreground`, `--card`, `--primary`, `--accent`, `--muted`, `--border`, `--ring`, destructive, plus the `--cat-*` category palette) using `oklch()`. The brand-spec hex values are converted to oklch for the three "signature" slots:
+Presets in `src/components/events/presets.ts`:
+1. Morning (Sun, amber, 06–14, Work)
+2. Afternoon (Sunset, orange, 14–22, Work)
+3. Night (Moon, indigo, 22–06, Work)
+4. On-Call (Radio, teal, all-day, Work)
+5. Split Shift (GitBranch, purple, opens split fields, Work)
+6. Sick Leave (Thermometer, red, all-day, Work)
+7. Annual Leave (Umbrella, sky, all-day, Work)
+8. Travel (Car, slate, Travel)
+9. Payday (DollarSign, gold, all-day, Work + payday=true)
 
-| Theme    | bg (light/dark)        | accent → `--primary` | highlight → `--accent` / `--ring` |
-|----------|------------------------|----------------------|------------------------------------|
-| Midnight | #F8FAFC / #0F172A      | teal #14B8A6         | amber #F59E0B                      |
-| Lavender | #F5F3FF / #1E1B2E      | violet #7C3AED       | coral #F43F5E                      |
-| Forest   | #F0FDF4 / #1C1C2E      | emerald #10B981      | yellow #FCD34D                     |
-| Slate    | #F8FAFC / #0F172A      | blue #3B82F6         | orange #F97316                     |
+Tapping calls `applyPreset(p)` that sets title, category, times, allDay, shiftType, icon, isPayday in one go.
 
-Category dots (`--cat-work` … `--cat-personal`) get per-theme tuning so they stay legible on each background, but the token *names* never change → no component churn.
+## Change 4 — Modern icon picker
 
-## Theme registry (`src/lib/themes.ts`)
+New `src/components/events/IconPicker.tsx` replacing the current icon section.
+- 5-column grid of rounded-2xl `aspect-square` tiles
+- White Lucide icon on a gradient (`bg-gradient-to-br from-X to-Y`)
+- 6 gradients (Sunrise, Ocean, Forest, Lavender, Slate, Coral) cycled by tapping the already-selected tile
+- Selected: `ring-2 ring-white ring-offset-2 ring-offset-background`
+- Icon set (30): Sun, Moon, Sunset, Car, Briefcase, Heart, Dumbbell, Users, Home, Coffee, Music, Book, Plane, Utensils, Bike, Leaf, Star, Bell, Zap, Thermometer, Umbrella, Radio, GitBranch, DollarSign, Baby, Dog, Gamepad, ShoppingBag, Stethoscope, Bus
 
-```ts
-export type ThemeName = 'slate' | 'midnight' | 'lavender' | 'forest';
-export type ThemeMode = 'light' | 'dark';
+Model: add `iconName?: string` and `iconGradient?: GradientId` to `CalendarEvent`. Replace existing free-text `icon` field.
 
-export const THEMES: Array<{
-  name: ThemeName;
-  label: string;
-  description: string;
-  preview: { bgLight: string; bgDark: string; accent: string; highlight: string };
-}> = [ … ];
-```
+## Change 5 — Icons visible on calendar
 
-Used by the settings card grid for preview swatches; nothing else hard-codes hex.
+Always render the event icon:
+- Month view (`MonthDayCell` / `MonthView`): 16×16 icon beside the dot + title
+- Week view (`WeekDayColumn` / `EventBlock`): icon on left inside the block
+- Day view (`DayView`): icon prominently next to title
 
-## Provider changes
+Helper `src/lib/event-icon.ts`: returns `{ Icon, gradient }` from event — falls back to category icon. Travel auto-gets `Car`.
 
-Extend `src/providers/PreferencesProvider.tsx`:
+## Change 6 — Payday toggle + banner
 
-- `UserPreferences` (in `src/types/preferences.ts`) gains `themeName: ThemeName`; existing `theme: 'dark'|'light'` is renamed to `mode`.
-- On mount: hydrate from `localStorage` (`shiftsync.prefs.v1`). If absent → `{ themeName: 'slate', mode: prefers-color-scheme }`.
-- Effect: set `document.documentElement.dataset.theme = themeName` and toggle `.dark` for mode. Runs on every change → instant, no reload.
-- New methods: `setThemeName(name)`, `setMode(mode)`, keep `toggleTheme()` as alias of `toggleMode`.
-- `ThemeToggle` in the top bar keeps working (it flips `mode`).
+- `isPayday: boolean` on `CalendarEvent` (Work-only UI)
+- Switch in `EventForm` under Work fields
+- `TodayPanel` / `DateHero`: banner "💰 Payday today!" when any today event has `isPayday`
+- Quick Add preset (#9)
 
-## Supabase sync
+## Change 7 — Sync warning banner
 
-- `user_preferences.theme` (text) already exists. Repurpose it to store `themeName`; add a sibling field for mode by reusing the existing column convention:
-  - Option A (preferred, zero-migration): store JSON-encoded `{ name, mode }` in the existing `theme` column.
-  - Option B: add `theme_mode text` column. Slightly cleaner, costs one migration.
-  - Plan picks **Option B** for clarity.
-- Migration: `ALTER TABLE user_preferences ADD COLUMN theme_mode text NOT NULL DEFAULT 'dark' CHECK (theme_mode IN ('light','dark'));` and widen the `theme` column's allowed set to the four names (drop any existing CHECK, add new one).
-- Update `src/lib/preferences.functions.ts` `PreferencesUpdateSchema`: `theme: z.enum(['slate','midnight','lavender','forest']).optional()` and `theme_mode: z.enum(['light','dark']).optional()`.
-- Sync rules in the provider:
-  - On auth state = signed-in: fetch preferences, merge into local state (server wins for `themeName` / `mode` if both present).
-  - On change while signed-in: debounce 400 ms → `updatePreferences({ theme, theme_mode })`.
-  - On sign-out: keep last theme in `localStorage` (good UX).
-  - Migration shim: existing local prefs with `theme: 'dark'|'light'` → mapped to `{ themeName: 'slate', mode: <that value> }` on first load.
+No Google Calendar sync exists yet. Add `src/providers/SyncStatusProvider.tsx` (in-memory `isSyncing`) and `src/components/settings/SyncBanner.tsx`. While syncing, AppLayout renders:
 
-## Settings UI (`/settings`)
+> "Syncing your calendar — this may take a few minutes depending on how many events you have ☕"
 
-New section `<ThemeSettings />` placed above `RemindersSettings` (themes are the most discoverable preference). Layout for the current 571px viewport: 2-column card grid → 4 cards.
+Auto-dismiss on complete. Trigger stubbed for the future Google Calendar settings button.
 
-Each card:
+---
 
-```
-┌────────────────────────────┐
-│  ▢▢▢▢   ← 4 swatches       │
-│  Slate                     │
-│  Calm, broad-appeal blue   │
-└────────────────────────────┘
-```
+## Files to create
 
-- Swatches show background, surface, accent, highlight (rendered with inline `style` from `THEMES.preview`, not Tailwind classes — only place hex is allowed in components).
-- Selected card: ring in `--ring`, checkmark badge.
-- Below the grid: a `Light / Dark / System` segmented control bound to `mode`.
-- Switching either control applies instantly via the provider.
-- Persists to localStorage immediately; queues the Supabase write.
+- `src/components/events/QuickAddPresets.tsx`
+- `src/components/events/presets.ts`
+- `src/components/events/IconPicker.tsx`
+- `src/components/events/SplitShiftFields.tsx`
+- `src/lib/event-icon.ts`
+- `src/lib/gradients.ts`
+- `src/components/settings/SyncBanner.tsx`
+- `src/providers/SyncStatusProvider.tsx`
 
-## Files touched
+## Files to modify
 
-- **New:** `src/styles/themes.css`, `src/lib/themes.ts`, `src/components/settings/ThemeSettings.tsx`.
-- **Edit:** `src/styles.css` (import themes.css; remove the hard-coded `:root` / `.dark` blocks that now live per-theme), `src/types/preferences.ts`, `src/providers/PreferencesProvider.tsx`, `src/components/layout/ThemeToggle.tsx` (point at `mode`), `src/routes/settings.tsx` (mount `<ThemeSettings />`), `src/lib/preferences.functions.ts` (schema).
-- **Migration:** add `theme_mode` column + update CHECK on `theme`.
-- **Untouched:** every component already on semantic tokens — no visual regressions expected outside the four palettes.
+- `src/types/event.ts` — `travel` category, `split` shift type, `ShiftMeta.split`, `iconName`, `iconGradient`, `isPayday`
+- `src/components/calendar-page/constants.ts` — Travel category + Split shift style
+- `src/lib/categories.ts` — Travel entry + tailwind classes
+- `src/components/events/EventForm.tsx` — Quick Add row, IconPicker, Payday toggle, Split shift wiring
+- `src/components/events/ShiftFieldsGroup.tsx` — Split option in shift-type select
+- `src/components/calendar/EventBlock.tsx`, `EventChip.tsx`, `MonthDayCell.tsx`, `WeekDayColumn.tsx`, `DayView.tsx`, `MonthView.tsx` — render icon inline
+- `src/components/dashboard/lib/metrics.ts` + dashboard page — Travel card + Balance Score
+- `src/components/today/TodayPanel.tsx` (or `DateHero.tsx`) — Payday banner
+- `src/routes/__root.tsx` — mount `SyncStatusProvider` + render `SyncBanner` in `AppLayout`
 
-## Open question
+## Implementation order
 
-- Do you want a `System` (auto light/dark) option in addition to explicit Light/Dark? If yes, provider listens to `matchMedia('(prefers-color-scheme: dark)')` while `mode === 'system'`. Default assumption in this plan: **yes, include System**.
+1. Types + category registry (foundation for Changes 1, 2)
+2. Gradients + IconPicker (Change 4) — needed by presets
+3. Quick Add presets + Split shift fields in EventForm (Changes 3, 1 UI)
+4. Payday toggle + daily banner (Change 6)
+5. Calendar icon rendering across all 3 views (Change 5)
+6. Dashboard Travel card + Balance Score (Change 2 dashboard side)
+7. Sync banner + provider stub (Change 7)
+
+## Breaking changes / risks
+
+- `CalendarEvent.icon` (free-text) → replaced by `iconName` + `iconGradient`. Existing localStorage events lose icon string (mock data only). Add a one-line migration in `EventsProvider` to drop the old field.
+- Adding `travel` to `CategoryId` widens exhaustive switches — check `lib/selectors.ts`, `metrics.ts`, `nudges.ts`.
+- Dashboard already iterates `CATEGORIES` so Travel flows in automatically; verify Balance Score weighting isn't double-counting work-adjacent time.
+- No Supabase / routing / `/dashboard` earnings logic touched.
