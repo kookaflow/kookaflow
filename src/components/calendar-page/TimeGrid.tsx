@@ -160,7 +160,7 @@ export function TimeGrid({
                       }}
                     >
                       <span className="flex items-center gap-1 font-semibold leading-tight">
-                        <Icon className="size-3 shrink-0" />
+                        <Icon className={cn("shrink-0", days.length === 1 ? "size-[18px]" : "size-4")} />
                         <span className="truncate">{e.title}</span>
                       </span>
                       {height > 32 && (
