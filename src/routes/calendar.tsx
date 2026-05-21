@@ -27,6 +27,7 @@ import { MonthView } from "@/components/calendar-page/MonthView";
 import { TimeGrid } from "@/components/calendar-page/TimeGrid";
 import { TodayPanel } from "@/components/calendar-page/TodayPanel";
 import { EventDialog } from "@/components/calendar-page/EventDialog";
+import { WeekSummaryDialog } from "@/components/calendar-page/WeekSummaryDialog";
 import type { MockEvent } from "@/components/calendar-page/constants";
 import { useEventsStore, setEvents as setStoreEvents } from "@/lib/events-store";
 
@@ -44,6 +45,7 @@ function CalendarPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MockEvent | null>(null);
   const [dialogDefault, setDialogDefault] = useState<Date>(new Date());
+  const [weekSummaryOpen, setWeekSummaryOpen] = useState(false);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -211,9 +213,22 @@ function CalendarPage() {
       {/* Sub header */}
       <div className="flex items-center justify-between border-b border-border px-5 py-2.5">
         <h1 className="text-base font-semibold">{heading}</h1>
-        <span className="text-xs text-muted-foreground">
-          {events.length} events this period
-        </span>
+        <div className="flex items-center gap-3">
+          {view === "week" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setWeekSummaryOpen(true)}
+              className="gap-1.5"
+            >
+              <CalendarDays className="size-3.5" />
+              Week summary
+            </Button>
+          )}
+          <span className="text-xs text-muted-foreground">
+            {events.length} events this period
+          </span>
+        </div>
       </div>
 
       {/* Body */}
@@ -260,6 +275,13 @@ function CalendarPage() {
         defaultDate={dialogDefault}
         onSave={handleSave}
         onDelete={handleDelete}
+      />
+
+      <WeekSummaryDialog
+        open={weekSummaryOpen}
+        onOpenChange={setWeekSummaryOpen}
+        weekAnchor={date}
+        events={events}
       />
     </div>
   );
