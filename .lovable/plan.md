@@ -1,77 +1,47 @@
-# Plan: Fix theme leak on /dashboard + add branded light-mode treatment
+# Plan: Unify app color system around ShiftSync brand palette
 
-## Issue 1 — Why /dashboard (and /calendar) ignore the chosen theme
+## Goal
+Single source of truth for ShiftSync brand colors, applied consistently to the Midnight theme (light + dark), all gradient surfaces, and logo treatment. No drift, no approximations.
 
-**Source of truth (correct path):** `PreferencesProvider` (`src/providers/PreferencesProvider.tsx`) is the single owner of theme state. It loads prefs from `localStorage` (`shiftsync.prefs.v1`), pulls/pushes to Supabase `user_preferences`, and on every change sets `document.documentElement.dataset.theme` + toggles the `.dark` class. Tokens live in `src/styles/themes.css` (per `[data-theme="…"]` + `.dark`). `ThemeToggle` and `ThemeSettings` both go through this provider — that path works correctly.
+## Brand palette (exact, from logo)
+- `BRAND_NAVY` `#162264`
+- `BRAND_INDIGO` `#232B7E`
+- `BRAND_PURPLE` `#5D46DC`
+- `BRAND_HIGHLIGHT` `#B6BAE3`
+- `BRAND_BACKGROUND_DARK` `#101A4F`
+- `BRAND_GRADIENT` `linear-gradient(135deg, #162264 0%, #232B7E 50%, #5D46DC 100%)`
 
-**The bug:** `src/routes/_authenticated.dashboard.tsx` (lines 39–48) and `src/routes/_authenticated.calendar.tsx` (≈lines 44–60) each declare their own local `useState<"dark"|"light">("dark")` and run a `useEffect` that *forcibly toggles* `document.documentElement.classList` to `dark` on mount. They also render their own Sun/Moon button that only mutates this local state. Effects:
-1. Overrides whatever mode `PreferencesProvider` just applied (mount race → always lands on dark).
-2. Ignores `themeName` entirely — only flips `.dark`, never `data-theme`.
-3. Cleanup restores the previous class state, so navigating away can leave the DOM stale.
+## Files to change (in order)
 
-**Per-page audit:**
-| Route | Uses provider? | Rogue local theme state? | Behaviour |
-|---|---|---|---|
-| /calendar | no | yes (forces dark) | broken |
-| /dashboard | no | yes (forces dark) | broken |
-| /settings | yes (via ThemeSettings) | no | correct |
-| /onboarding | yes (indirect) | no | correct |
+1. **Create** `src/lib/colours.ts` — named TS constants for all brand values + gradient string. Single import surface for any component that needs raw hex.
 
-**Fix:** Delete the local `theme`/`setTheme` state and the `useEffect` mutating `documentElement` in both route files. Replace the inline Sun/Moon button with the shared `<ThemeToggle />` (`src/components/layout/ThemeToggle.tsx`), which already calls `usePreferences().toggleMode`. Nothing else needed for Issue 1.
+2. **Update** `src/styles/themes.css` — Midnight theme tokens only:
+   - Light mode: `--background: #F5F6FF`, `--foreground: #162264`, `--card: #FFFFFF`, `--primary: #232B7E`, `--accent: #5D46DC`, `--ring: #5D46DC`, secondary/muted tinted from `#B6BAE3`. Page header `--page-header-from: #162264`, `--page-header-to: #5D46DC`. Add brand tokens `--brand-navy`, `--brand-indigo`, `--brand-purple`, `--brand-highlight`, `--brand-background-dark`, `--brand-gradient`.
+   - Dark mode: `--background: #101A4F`, `--card: #162264`, `--primary: #5D46DC`, secondary/muted `#232B7E`, `--muted-foreground: #B6BAE3`, borders `rgba(182,186,227,0.18)`. Same page-header gradient + brand tokens.
 
-## Issue 2 — Branded light-mode treatment
+3. **Update** `src/styles.css` — Midnight `[data-theme="midnight"]` auth overrides:
+   - `--auth-gradient-from: #162264`, `--auth-gradient-to: #5D46DC`, `--auth-accent: #B6BAE3`.
 
-Goal: in light mode, every main page shows the chosen theme's brand gradient at the top, a soft off-white content surface, and coloured accents on cards. Dark mode unchanged.
+4. **Update** `src/components/layout/SplashScreen.tsx` — gradient from `BRAND_GRADIENT` (or `var(--brand-gradient)`).
 
-### New design tokens (in `src/styles/themes.css`, light mode of each theme)
+5. **Update** `src/components/layout/PageHeader.tsx` — verify it consumes `var(--page-header-from/to)`; no further change.
 
-- `--page-header-from`, `--page-header-to` — gradient stops:
-  - slate:    `#1E3A5F` → `#312E81`
-  - midnight: `#0F172A` → `#1E3A5F`
-  - lavender: `#7C3AED` → `#C026D3`
-  - forest:   `#064E3B` → `#065F46`
-- `--page-header-foreground: #FFFFFF`
-- `--content-surface: #F8FAFC` (used as page bg below the header)
-- `--card: #FFFFFF`
-- `--card-shadow: 0 2px 12px rgba(0,0,0,0.06)`
-- `--divider: #F1F5F9`
+6. **Update** `src/routes/_authenticated.onboarding.tsx` — header gradient reads from `var(--brand-gradient)`.
 
-Map into Tailwind via the existing `@theme inline` block in `src/styles.css` (e.g. `bg-page-header-from`, `text-page-header-foreground`, `shadow-card`, `border-divider`). Dark mode keeps current values.
+7. **Audit auth surfaces** — `src/components/auth/AuthShell.tsx` / `AuthField.tsx` — switch any inline hex to brand tokens.
 
-### New shared component: `PageHeader`
+8. **Update** `src/components/calendar-page/TodayPanel.tsx` — replace stray brand hex with tokens.
 
-`src/components/layout/PageHeader.tsx`:
-1. ~120px band with `linear-gradient(135deg, var(--page-header-from), var(--page-header-to))` and white text.
-2. `children` slot for per-page title/controls.
-3. SVG wave at bottom, fill = `var(--content-surface)`, so it visually flows into the body.
-4. In dark mode the wave fill resolves to the dark background token — no clash.
+9. **Logo container treatment** — wherever logo renders on a light background (AuthShell header, onboarding slide, sidebar in light mode), wrap `<img>` in a rounded-square div with `background: var(--brand-gradient)` + padding. On dark backgrounds render the logo directly so its dark areas blend.
 
-### Per-page application
+## Not changing
+- Life category tokens (`--cat-*`)
+- Slate / Lavender / Forest themes
+- Auth, routing, Supabase, business logic
+- Font sizes, spacing, layout
 
-- `/calendar`: replace current sticky header with `<PageHeader>` containing month/year title, `<ViewToggle />`, Today button, `<NewEventButton />`, `<ThemeToggle />`.
-- `/dashboard`: `<PageHeader>` with greeting (`Good morning/afternoon/evening, {firstName}` from `supabase.auth.getUser().user_metadata.full_name` or email prefix), today's date subtitle, compact Balance Score ring on the right.
-- `/settings`: `<PageHeader>` with "Settings" title + user name/avatar.
-- `/onboarding`: leave as-is (already on-brand).
-
-### Card / category treatment (light mode only)
-
-- `src/components/dashboard/CategoryCard.tsx`: 4px left border in `var(--cat-{category})`; icon chip bg = `color-mix(in oklab, var(--cat-…) 10%, white)`, icon at full colour.
-- `src/components/calendar/EventBlock.tsx`: bg `color-mix(… 15%, white)`, 4px left border + text in full category colour.
-- `src/components/events/EventForm.tsx` category chip: same 15%/full pattern.
-- `src/components/shared/CategoryBadge.tsx` (shift-type badges): full category bg, white text.
-- Section headings: switch from `text-foreground` to theme accent token where the brief specifies.
-- Default card container: `bg-card shadow-card` + `divide-divider`.
-
-### Implementation order (safe)
-
-1. Fix Issue 1 — strip rogue theme state from dashboard + calendar, swap in `<ThemeToggle />`. Verify all four themes apply on all four pages.
-2. Add tokens to `themes.css` + Tailwind mappings in `styles.css`. No visual change yet.
-3. Build `PageHeader` and adopt on `/settings` first (lowest risk).
-4. Roll `PageHeader` to `/dashboard` then `/calendar`, preserving every existing control.
-5. Apply card/category light-mode treatment to `CategoryCard`, `EventBlock`, `CategoryBadge`, `EventForm` chips. Check dark mode after each step.
-6. QA all four themes × light/dark on `/calendar`, `/dashboard`, `/settings`, `/onboarding`.
-
-### Out of scope (per brief)
-- Auth, Supabase data logic, routing, navigation structure.
-- Dark mode visuals.
-- Life category hue definitions.
+## QA
+- Toggle Midnight light ↔ dark — both cohesive
+- Splash, login, signup, onboarding, dashboard + calendar headers share the exact same gradient
+- Logo on dark bg: only white symbol + glow visible; on light bg: sits in gradient container
+- No leftover `#1E2A6E`, `#3D3DA0`, `#6B35CC`, `#5B8DEF` in `src/`
