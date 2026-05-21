@@ -1,5 +1,5 @@
 import {
-  Sun, Sunset, Moon, Radio, GitBranch, Thermometer, Umbrella, Car, DollarSign,
+  Sun, Sunset, Moon, Radio, GitBranch, Zap, Thermometer, Umbrella, Car, DollarSign,
   type LucideIcon,
 } from "lucide-react";
 import type { CategoryId, ShiftType } from "@/types/event";
@@ -83,6 +83,18 @@ export const PRESETS: PresetDef[] = [
     endTime: "20:00",
     iconName: "GitBranch",
     defaultTitle: "Split shift",
+  },
+  {
+    id: "side_hustle",
+    label: "Side Hustle",
+    Icon: Zap,
+    color: "#F59E0B",
+    category: "work",
+    shiftType: "side_hustle",
+    startTime: "18:00",
+    endTime: "21:00",
+    iconName: "Zap",
+    defaultTitle: "Side hustle",
   },
   {
     id: "sick",

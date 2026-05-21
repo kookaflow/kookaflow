@@ -46,6 +46,7 @@ export type ShiftType =
   | "night"
   | "oncall"
   | "split"
+  | "side_hustle"
   | "sick_leave"
   | "annual_leave"
   | "custom";
@@ -88,6 +89,7 @@ export const SHIFT_STYLES: Record<ShiftType, ShiftStyle> = {
   night: { label: "Night", color: "#6366F1", icon: Moon },
   oncall: { label: "On-Call", color: "#8B5CF6", icon: PhoneCall },
   split: { label: "Split", color: "#A855F7", icon: GitBranch },
+  side_hustle: { label: "Side Hustle", color: "#F59E0B", icon: Zap },
   sick_leave: { label: "Sick Leave", color: "#EF4444", icon: Thermometer },
   annual_leave: { label: "Annual Leave", color: "#0EA5E9", icon: Umbrella },
   custom: { label: "Other", color: "#64748B", icon: MoreHorizontal },
