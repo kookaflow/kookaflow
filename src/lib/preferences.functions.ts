@@ -95,7 +95,7 @@ export const updatePreferences = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: row, error } = await supabase
       .from("user_preferences")
-      .update(data)
+      .update(data as never)
       .eq("user_id", userId)
       .select("user_id,theme,default_view,week_starts_on,reminders,sounds,email,phone")
       .single();
