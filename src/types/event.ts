@@ -8,7 +8,14 @@ export type CategoryId =
   | "personal"
   | "travel";
 
-export type ShiftType = "morning" | "afternoon" | "night" | "rotating" | "oncall" | "split";
+export type ShiftType =
+  | "morning"
+  | "afternoon"
+  | "night"
+  | "oncall"
+  | "split"
+  | "sick_leave"
+  | "annual_leave";
 
 export interface SplitShiftMeta {
   firstStart: string; // "HH:mm"
