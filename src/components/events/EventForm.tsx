@@ -11,8 +11,16 @@ import { ShiftFieldsGroup } from "./ShiftFieldsGroup";
 import { QuickAddPresets } from "./QuickAddPresets";
 import { IconPicker } from "./IconPicker";
 import type { PresetDef } from "./presets";
-import type { CalendarEvent, EventDraft, CategoryId, ShiftMeta, GradientId } from "@/types/event";
+import type {
+  CalendarEvent,
+  EventDraft,
+  CategoryId,
+  ShiftMeta,
+  GradientId,
+  RecurrencePattern,
+} from "@/types/event";
 import { Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Props {
   initial?: CalendarEvent;
@@ -48,6 +56,12 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [shift, setShift] = useState<ShiftMeta>(initial?.shift ?? blankShift());
   const [isPayday, setIsPayday] = useState(initial?.isPayday ?? false);
+  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern | null>(
+    (initial?.recurrencePattern as RecurrencePattern | null) ?? null,
+  );
+  const [recurrenceDays, setRecurrenceDays] = useState<string[]>(
+    initial?.recurrenceDays ?? [],
+  );
 
   useEffect(() => {
     if (new Date(end) < new Date(start)) setEnd(start);
@@ -89,6 +103,9 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
       notes: notes || undefined,
       shift: category === "work" ? shift : undefined,
       isPayday: category === "work" ? isPayday : false,
+      recurrencePattern,
+      recurrenceDays: recurrencePattern === "custom" ? recurrenceDays : null,
+      recurrenceEndDate: null,
     };
     onSubmit(draft);
   };
@@ -167,6 +184,13 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
         <Label>Notes</Label>
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Optional notes" />
       </div>
+
+      <RecurrenceBlock
+        pattern={recurrencePattern}
+        days={recurrenceDays}
+        onPatternChange={setRecurrencePattern}
+        onDaysChange={setRecurrenceDays}
+      />
 
       <div className="flex items-center justify-between gap-2 pt-2">
         <div>
