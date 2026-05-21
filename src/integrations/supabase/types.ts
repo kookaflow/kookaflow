@@ -19,6 +19,7 @@ export type Database = {
           color: string
           icon: string
           id: string
+          is_system: boolean
           label: string
           sort_order: number
         }
@@ -26,6 +27,7 @@ export type Database = {
           color: string
           icon: string
           id: string
+          is_system?: boolean
           label: string
           sort_order?: number
         }
@@ -33,6 +35,7 @@ export type Database = {
           color?: string
           icon?: string
           id?: string
+          is_system?: boolean
           label?: string
           sort_order?: number
         }
@@ -40,18 +43,24 @@ export type Database = {
       }
       events: {
         Row: {
-          all_day: boolean
+          calculated_earnings: number | null
           category: string
           created_at: string
-          ends_at: string
+          end_time: string
+          google_event_id: string | null
           hourly_rate: number | null
           icon_gradient: string | null
           icon_name: string | null
           id: string
+          is_all_day: boolean
           is_payday: boolean
+          is_recurring: boolean
           location: string | null
           notes: string | null
-          recurrence: Json
+          recurrence_days: string[] | null
+          recurrence_end_date: string | null
+          recurrence_group_id: string | null
+          recurrence_pattern: string | null
           shift_role: string | null
           shift_type: string | null
           split_shift_break_duration: number | null
@@ -59,25 +68,31 @@ export type Database = {
           split_shift_first_start: string | null
           split_shift_second_end: string | null
           split_shift_second_start: string | null
-          starts_at: string
+          start_time: string
           title: string
           travel_duration_minutes: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          all_day?: boolean
+          calculated_earnings?: number | null
           category: string
           created_at?: string
-          ends_at: string
+          end_time: string
+          google_event_id?: string | null
           hourly_rate?: number | null
           icon_gradient?: string | null
           icon_name?: string | null
           id?: string
+          is_all_day?: boolean
           is_payday?: boolean
+          is_recurring?: boolean
           location?: string | null
           notes?: string | null
-          recurrence?: Json
+          recurrence_days?: string[] | null
+          recurrence_end_date?: string | null
+          recurrence_group_id?: string | null
+          recurrence_pattern?: string | null
           shift_role?: string | null
           shift_type?: string | null
           split_shift_break_duration?: number | null
@@ -85,25 +100,31 @@ export type Database = {
           split_shift_first_start?: string | null
           split_shift_second_end?: string | null
           split_shift_second_start?: string | null
-          starts_at: string
+          start_time: string
           title: string
           travel_duration_minutes?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          all_day?: boolean
+          calculated_earnings?: number | null
           category?: string
           created_at?: string
-          ends_at?: string
+          end_time?: string
+          google_event_id?: string | null
           hourly_rate?: number | null
           icon_gradient?: string | null
           icon_name?: string | null
           id?: string
+          is_all_day?: boolean
           is_payday?: boolean
+          is_recurring?: boolean
           location?: string | null
           notes?: string | null
-          recurrence?: Json
+          recurrence_days?: string[] | null
+          recurrence_end_date?: string | null
+          recurrence_group_id?: string | null
+          recurrence_pattern?: string | null
           shift_role?: string | null
           shift_type?: string | null
           split_shift_break_duration?: number | null
@@ -111,7 +132,7 @@ export type Database = {
           split_shift_first_start?: string | null
           split_shift_second_end?: string | null
           split_shift_second_start?: string | null
-          starts_at?: string
+          start_time?: string
           title?: string
           travel_duration_minutes?: number | null
           updated_at?: string
@@ -127,33 +148,57 @@ export type Database = {
           },
         ]
       }
+      nudge_dismissals: {
+        Row: {
+          dismissed_at: string
+          id: string
+          nudge_type: string
+          reshow_after: string | null
+          user_id: string
+        }
+        Insert: {
+          dismissed_at?: string
+          id?: string
+          nudge_type: string
+          reshow_after?: string | null
+          user_id: string
+        }
+        Update: {
+          dismissed_at?: string
+          id?: string
+          nudge_type?: string
+          reshow_after?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
-          display_name: string | null
+          full_name: string | null
           id: string
+          job_role: string | null
           onboarded_at: string | null
-          role: string | null
           shift_pattern: string | null
           timezone: string
           updated_at: string
         }
         Insert: {
           created_at?: string
-          display_name?: string | null
+          full_name?: string | null
           id: string
+          job_role?: string | null
           onboarded_at?: string | null
-          role?: string | null
           shift_pattern?: string | null
           timezone?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
-          display_name?: string | null
+          full_name?: string | null
           id?: string
+          job_role?: string | null
           onboarded_at?: string | null
-          role?: string | null
           shift_pattern?: string | null
           timezone?: string
           updated_at?: string
@@ -162,28 +207,34 @@ export type Database = {
       }
       public_holidays: {
         Row: {
-          country: string
+          country_code: string
           created_at: string
           date: string
+          fetched_at: string
           id: string
           name: string
           region: string | null
+          year: number
         }
         Insert: {
-          country: string
+          country_code: string
           created_at?: string
           date: string
+          fetched_at?: string
           id?: string
           name: string
           region?: string | null
+          year: number
         }
         Update: {
-          country?: string
+          country_code?: string
           created_at?: string
           date?: string
+          fetched_at?: string
           id?: string
           name?: string
           region?: string | null
+          year?: number
         }
         Relationships: []
       }
@@ -192,49 +243,79 @@ export type Database = {
           accent_colour: string | null
           country: string
           currency: string
+          daily_reminder_channel: string | null
+          daily_reminder_enabled: boolean
+          daily_reminder_time: string | null
           default_view: string
           email: string | null
           hourly_rate: number | null
+          notification_sound: string
           phone: string | null
+          reminder_minutes_before: number
           reminders: Json
+          sound_enabled: boolean
           sounds: Json
           theme: string
           theme_mode: string
           updated_at: string
           user_id: string
           week_starts_on: number
+          weekly_reminder_channel: string | null
+          weekly_reminder_day: string | null
+          weekly_reminder_enabled: boolean
+          weekly_reminder_time: string | null
         }
         Insert: {
           accent_colour?: string | null
           country?: string
           currency?: string
+          daily_reminder_channel?: string | null
+          daily_reminder_enabled?: boolean
+          daily_reminder_time?: string | null
           default_view?: string
           email?: string | null
           hourly_rate?: number | null
+          notification_sound?: string
           phone?: string | null
+          reminder_minutes_before?: number
           reminders?: Json
+          sound_enabled?: boolean
           sounds?: Json
           theme?: string
           theme_mode?: string
           updated_at?: string
           user_id: string
           week_starts_on?: number
+          weekly_reminder_channel?: string | null
+          weekly_reminder_day?: string | null
+          weekly_reminder_enabled?: boolean
+          weekly_reminder_time?: string | null
         }
         Update: {
           accent_colour?: string | null
           country?: string
           currency?: string
+          daily_reminder_channel?: string | null
+          daily_reminder_enabled?: boolean
+          daily_reminder_time?: string | null
           default_view?: string
           email?: string | null
           hourly_rate?: number | null
+          notification_sound?: string
           phone?: string | null
+          reminder_minutes_before?: number
           reminders?: Json
+          sound_enabled?: boolean
           sounds?: Json
           theme?: string
           theme_mode?: string
           updated_at?: string
           user_id?: string
           week_starts_on?: number
+          weekly_reminder_channel?: string | null
+          weekly_reminder_day?: string | null
+          weekly_reminder_enabled?: boolean
+          weekly_reminder_time?: string | null
         }
         Relationships: []
       }
