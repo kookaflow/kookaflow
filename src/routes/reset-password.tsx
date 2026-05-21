@@ -29,7 +29,7 @@ function ResetPasswordPage() {
   };
 
   return (
-    <AuthShell title="Set a new password">
+    <AuthShell tagline="Set a new password" subtitle="Choose a strong password to secure your account">
       <form onSubmit={submit} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="new">New password</Label>
