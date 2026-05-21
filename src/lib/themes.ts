@@ -41,7 +41,7 @@ export const THEMES: ThemeMeta[] = [
   },
 ];
 
-export const DEFAULT_THEME: ThemeName = "slate";
+export const DEFAULT_THEME: ThemeName = "midnight";
 export const DEFAULT_MODE: ThemeMode = "system";
 
 export function isThemeName(v: unknown): v is ThemeName {
