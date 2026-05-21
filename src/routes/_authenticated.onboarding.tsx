@@ -74,18 +74,26 @@ function OnboardingPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <div className="w-full max-w-md space-y-6">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <img src={logo} alt="ShiftSync" style={{ height: 80, width: "auto" }} className="object-contain" />
-          <h1 className="text-2xl font-bold tracking-tight">Welcome to ShiftSync</h1>
-        </div>
-
-        <div className="flex items-center justify-center gap-2">
+    <div className="flex min-h-screen flex-col bg-background">
+      <div
+        className="flex flex-col items-center gap-3 px-6 py-10 text-center text-white"
+        style={{ background: "linear-gradient(160deg, #1E2A6E 0%, #6B35CC 100%)" }}
+      >
+        <img src={logo} alt="ShiftSync" style={{ height: 80, width: "auto" }} className="object-contain" />
+        <h1 className="text-2xl font-bold tracking-tight">Welcome to ShiftSync</h1>
+        <div className="mt-2 flex items-center justify-center gap-2">
           {[0, 1, 2, 3, 4].map((i) => (
-            <span key={i} className={cn("h-1.5 w-8 rounded-full", i <= step ? "bg-primary" : "bg-muted")} />
+            <span
+              key={i}
+              className="h-2 w-2 rounded-full"
+              style={{ background: i === step ? "#5B8DEF" : "rgba(255,255,255,0.4)" }}
+            />
           ))}
         </div>
+      </div>
+
+      <div className="flex flex-1 items-start justify-center px-4 py-8">
+        <div className="w-full max-w-md space-y-6">
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           {step === 0 && (
@@ -218,6 +226,7 @@ function OnboardingPage() {
               </Button>
             )}
           </div>
+        </div>
         </div>
       </div>
     </div>
