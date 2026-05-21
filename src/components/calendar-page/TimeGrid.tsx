@@ -12,9 +12,17 @@ interface Props {
   onEventClick?: (e: MockEvent) => void;
   selected: Date;
   onSelectDay?: (d: Date) => void;
+  onCreate?: (d: Date) => void;
 }
 
-export function TimeGrid({ days, events, onEventClick, selected, onSelectDay }: Props) {
+export function TimeGrid({
+  days,
+  events,
+  onEventClick,
+  selected,
+  onSelectDay,
+  onCreate,
+}: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -102,6 +110,12 @@ export function TimeGrid({ days, events, onEventClick, selected, onSelectDay }: 
                 {HOURS.map((h) => (
                   <div
                     key={h}
+                    onClick={() => {
+                      if (!onCreate) return;
+                      const d = new Date(day);
+                      d.setHours(h, 0, 0, 0);
+                      onCreate(d);
+                    }}
                     className="border-t border-border/40"
                     style={{ height: HOUR_HEIGHT }}
                   />
