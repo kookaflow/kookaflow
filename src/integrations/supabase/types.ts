@@ -14,7 +14,158 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          color: string
+          icon: string
+          id: string
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          color: string
+          icon: string
+          id: string
+          label: string
+          sort_order?: number
+        }
+        Update: {
+          color?: string
+          icon?: string
+          id?: string
+          label?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          all_day: boolean
+          category: string
+          created_at: string
+          ends_at: string
+          icon_name: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          recurrence: Json
+          shift_type: string | null
+          starts_at: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          all_day?: boolean
+          category: string
+          created_at?: string
+          ends_at: string
+          icon_name?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          recurrence?: Json
+          shift_type?: string | null
+          starts_at: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          all_day?: boolean
+          category?: string
+          created_at?: string
+          ends_at?: string
+          icon_name?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          recurrence?: Json
+          shift_type?: string | null
+          starts_at?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          onboarded_at: string | null
+          role: string | null
+          shift_pattern: string | null
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          onboarded_at?: string | null
+          role?: string | null
+          shift_pattern?: string | null
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          onboarded_at?: string | null
+          role?: string | null
+          shift_pattern?: string | null
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          default_view: string
+          email: string | null
+          phone: string | null
+          reminders: Json
+          sounds: Json
+          theme: string
+          updated_at: string
+          user_id: string
+          week_starts_on: number
+        }
+        Insert: {
+          default_view?: string
+          email?: string | null
+          phone?: string | null
+          reminders?: Json
+          sounds?: Json
+          theme?: string
+          updated_at?: string
+          user_id: string
+          week_starts_on?: number
+        }
+        Update: {
+          default_view?: string
+          email?: string | null
+          phone?: string | null
+          reminders?: Json
+          sounds?: Json
+          theme?: string
+          updated_at?: string
+          user_id?: string
+          week_starts_on?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
