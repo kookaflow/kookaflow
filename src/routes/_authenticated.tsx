@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { EventsProvider } from "@/providers/EventsProvider";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -47,5 +48,9 @@ function AuthenticatedLayout() {
       </div>
     );
   }
-  return <Outlet />;
+  return (
+    <EventsProvider>
+      <Outlet />
+    </EventsProvider>
+  );
 }

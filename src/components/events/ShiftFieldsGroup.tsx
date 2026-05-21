@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import {
-  Sun, Sunset, Moon, Radio, GitBranch, Thermometer, Umbrella,
+  Sun, Sunset, Moon, Radio, GitBranch, Thermometer, Umbrella, MoreHorizontal,
   type LucideIcon,
 } from "lucide-react";
 import type { ShiftMeta, ShiftType } from "@/types/event";
@@ -21,10 +21,12 @@ const TYPES: { value: ShiftType; label: string; Icon: LucideIcon; color: string 
   { value: "split", label: "Split Shift", Icon: GitBranch, color: "#A855F7" },
   { value: "sick_leave", label: "Sick Leave", Icon: Thermometer, color: "#EF4444" },
   { value: "annual_leave", label: "Annual Leave", Icon: Umbrella, color: "#0EA5E9" },
+  { value: "custom", label: "Other", Icon: MoreHorizontal, color: "#64748B" },
 ];
 
 export function ShiftFieldsGroup({ value, onChange }: Props) {
   const isSplit = value.shiftType === "split";
+  const isCustom = value.shiftType === "custom";
   return (
     <div className="space-y-3 rounded-lg border border-cat-work/40 bg-cat-work/5 p-3">
       <p className="text-xs font-semibold uppercase tracking-wider text-cat-work">Shift details</p>
@@ -78,6 +80,17 @@ export function ShiftFieldsGroup({ value, onChange }: Props) {
           )}
         </div>
       </div>
+
+      {isCustom && (
+        <div className="space-y-1.5">
+          <Label>Custom shift name</Label>
+          <Input
+            value={value.customLabel ?? ""}
+            onChange={(e) => onChange({ ...value, customLabel: e.target.value })}
+            placeholder="e.g. Twilight, Weekend cover"
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">

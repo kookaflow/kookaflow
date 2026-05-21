@@ -11,8 +11,16 @@ import { ShiftFieldsGroup } from "./ShiftFieldsGroup";
 import { QuickAddPresets } from "./QuickAddPresets";
 import { IconPicker } from "./IconPicker";
 import type { PresetDef } from "./presets";
-import type { CalendarEvent, EventDraft, CategoryId, ShiftMeta, GradientId } from "@/types/event";
+import type {
+  CalendarEvent,
+  EventDraft,
+  CategoryId,
+  ShiftMeta,
+  GradientId,
+  RecurrencePattern,
+} from "@/types/event";
 import { Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Props {
   initial?: CalendarEvent;
@@ -48,6 +56,12 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [shift, setShift] = useState<ShiftMeta>(initial?.shift ?? blankShift());
   const [isPayday, setIsPayday] = useState(initial?.isPayday ?? false);
+  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern | null>(
+    (initial?.recurrencePattern as RecurrencePattern | null) ?? null,
+  );
+  const [recurrenceDays, setRecurrenceDays] = useState<string[]>(
+    initial?.recurrenceDays ?? [],
+  );
 
   useEffect(() => {
     if (new Date(end) < new Date(start)) setEnd(start);
@@ -89,6 +103,9 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
       notes: notes || undefined,
       shift: category === "work" ? shift : undefined,
       isPayday: category === "work" ? isPayday : false,
+      recurrencePattern,
+      recurrenceDays: recurrencePattern === "custom" ? recurrenceDays : null,
+      recurrenceEndDate: null,
     };
     onSubmit(draft);
   };
@@ -168,6 +185,13 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Optional notes" />
       </div>
 
+      <RecurrenceBlock
+        pattern={recurrencePattern}
+        days={recurrenceDays}
+        onPatternChange={setRecurrencePattern}
+        onDaysChange={setRecurrenceDays}
+      />
+
       <div className="flex items-center justify-between gap-2 pt-2">
         <div>
           {onDelete && (
@@ -181,6 +205,90 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
           <Button type="button" onClick={submit}>{initial ? "Save" : "Create"}</Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+function RecurrenceBlock({
+  pattern,
+  days,
+  onPatternChange,
+  onDaysChange,
+}: {
+  pattern: RecurrencePattern | null;
+  days: string[];
+  onPatternChange: (p: RecurrencePattern | null) => void;
+  onDaysChange: (d: string[]) => void;
+}) {
+  const isOn = pattern !== null;
+  const toggleDay = (key: string) => {
+    if (days.includes(key)) {
+      onDaysChange(days.filter((d) => d !== key));
+    } else {
+      onDaysChange([...days, key]);
+    }
+  };
+  return (
+    <div className="space-y-3 rounded-md border border-border p-2.5">
+      <div className="flex items-center justify-between">
+        <Label className="cursor-pointer text-sm font-normal">Recurring</Label>
+        <Switch
+          checked={isOn}
+          onCheckedChange={(v) => onPatternChange(v ? "weekly" : null)}
+        />
+      </div>
+      {isOn && (
+        <>
+          <div className="flex flex-wrap gap-1.5">
+            {(["daily", "weekly", "fortnightly", "custom"] as RecurrencePattern[]).map(
+              (k) => {
+                const active = pattern === k;
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => onPatternChange(k)}
+                    className={cn(
+                      "rounded-full border px-3 py-1 text-xs font-medium capitalize transition-all",
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card hover:border-foreground/30",
+                    )}
+                  >
+                    {k}
+                  </button>
+                );
+              },
+            )}
+          </div>
+          {pattern === "custom" && (
+            <div className="flex gap-1">
+              {WEEKDAY_LABELS.map((label, i) => {
+                const key = WEEKDAY_KEYS[i];
+                const active = days.includes(key);
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => toggleDay(key)}
+                    className={cn(
+                      "flex size-9 items-center justify-center rounded-full border text-xs font-semibold transition-all",
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card hover:border-foreground/30",
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
