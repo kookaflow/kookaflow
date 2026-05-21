@@ -352,10 +352,18 @@ export function SoundNotifications() {
     if (prefs.masterEnabled) playSound(id);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
     } catch {/* noop */}
+    try {
+      await updatePreferences({
+        data: {
+          reminder_minutes_before: prefs.eventAlertMinutes,
+          shift_alert_sound: prefs.shiftAlertSound,
+        },
+      });
+    } catch {/* noop — keep local save even if remote fails */}
     setSaved(true);
     setTimeout(() => setSaved(false), 1800);
   };
