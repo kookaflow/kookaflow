@@ -8,7 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CATEGORIES, getCategory } from "@/lib/categories";
 import { toInputDateTime, fromInputDateTime } from "@/lib/date";
 import { ShiftFieldsGroup } from "./ShiftFieldsGroup";
-import type { CalendarEvent, EventDraft, CategoryId, ShiftMeta } from "@/types/event";
+import { QuickAddPresets } from "./QuickAddPresets";
+import { IconPicker } from "./IconPicker";
+import type { PresetDef } from "./presets";
+import type { CalendarEvent, EventDraft, CategoryId, ShiftMeta, GradientId } from "@/types/event";
 import { Trash2 } from "lucide-react";
 
 interface Props {
@@ -23,6 +26,14 @@ function blankShift(): ShiftMeta {
   return { shiftType: "morning", role: "", location: "" };
 }
 
+function setTimeOnDate(base: Date, hhmm: string, addDays = 0): Date {
+  const [h, m] = hhmm.split(":").map(Number);
+  const d = new Date(base);
+  d.setDate(d.getDate() + addDays);
+  d.setHours(h, m, 0, 0);
+  return d;
+}
+
 export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel }: Props) {
   const start0 = initial?.start ?? (defaultStart ?? new Date()).toISOString();
   const end0 = initial?.end ?? new Date(new Date(start0).getTime() + 60 * 60 * 1000).toISOString();
@@ -32,17 +43,38 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
   const [start, setStart] = useState(toInputDateTime(start0));
   const [end, setEnd] = useState(toInputDateTime(end0));
   const [allDay, setAllDay] = useState(initial?.allDay ?? false);
-  const [colorTag, setColorTag] = useState(initial?.colorTag ?? "");
-  const [icon, setIcon] = useState(initial?.icon ?? "");
+  const [iconName, setIconName] = useState<string | undefined>(initial?.iconName);
+  const [iconGradient, setIconGradient] = useState<GradientId | undefined>(initial?.iconGradient);
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [shift, setShift] = useState<ShiftMeta>(initial?.shift ?? blankShift());
+  const [isPayday, setIsPayday] = useState(initial?.isPayday ?? false);
 
   useEffect(() => {
-    // ensure end >= start
     if (new Date(end) < new Date(start)) setEnd(start);
   }, [start, end]);
 
   const cat = getCategory(category);
+
+  const applyPreset = (p: PresetDef) => {
+    if (!title.trim()) setTitle(p.defaultTitle);
+    setCategory(p.category);
+    setAllDay(!!p.allDay);
+    if (p.iconName) {
+      setIconName(p.iconName);
+      if (!iconGradient) setIconGradient("ocean");
+    }
+    setIsPayday(!!p.isPayday);
+    if (p.category === "work") {
+      setShift((s) => ({ ...s, shiftType: p.shiftType ?? s.shiftType }));
+    }
+    if (!p.allDay && p.startTime && p.endTime) {
+      const base = new Date(start);
+      const ns = setTimeOnDate(base, p.startTime);
+      const ne = setTimeOnDate(base, p.endTime, p.overnight ? 1 : 0);
+      setStart(toInputDateTime(ns.toISOString()));
+      setEnd(toInputDateTime(ne.toISOString()));
+    }
+  };
 
   const submit = () => {
     if (!title.trim()) return;
@@ -52,16 +84,19 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
       start: fromInputDateTime(start),
       end: fromInputDateTime(end),
       allDay,
-      colorTag: colorTag || undefined,
-      icon: icon || undefined,
+      iconName: iconName || undefined,
+      iconGradient: iconName ? (iconGradient ?? "ocean") : undefined,
       notes: notes || undefined,
       shift: category === "work" ? shift : undefined,
+      isPayday: category === "work" ? isPayday : false,
     };
     onSubmit(draft);
   };
 
   return (
     <div className="space-y-4">
+      <QuickAddPresets onPick={applyPreset} />
+
       <div className="space-y-1.5">
         <Label>Title</Label>
         <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What's happening?" autoFocus />
@@ -107,18 +142,26 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label>Icon label</Label>
-          <Input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="Optional" />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Color tag</Label>
-          <Input value={colorTag} onChange={(e) => setColorTag(e.target.value)} placeholder="Optional" />
-        </div>
-      </div>
+      <IconPicker
+        value={iconName}
+        gradient={iconGradient}
+        onChange={(name, g) => {
+          setIconName(name);
+          setIconGradient(g);
+        }}
+      />
 
-      {category === "work" && <ShiftFieldsGroup value={shift} onChange={setShift} />}
+      {category === "work" && (
+        <>
+          <ShiftFieldsGroup value={shift} onChange={setShift} />
+          <div className="flex items-center justify-between rounded-md border border-border p-2.5">
+            <Label htmlFor="payday" className="flex cursor-pointer items-center gap-2 text-sm font-normal">
+              <span>💰</span> Payday
+            </Label>
+            <Switch id="payday" checked={isPayday} onCheckedChange={setIsPayday} />
+          </div>
+        </>
+      )}
 
       <div className="space-y-1.5">
         <Label>Notes</Label>

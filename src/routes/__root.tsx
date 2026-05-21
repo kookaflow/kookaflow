@@ -12,6 +12,8 @@ import {
 import appCss from "../styles.css?url";
 import { PreferencesProvider } from "@/providers/PreferencesProvider";
 import { AppNav } from "@/components/layout/AppNav";
+import { SyncStatusProvider } from "@/providers/SyncStatusProvider";
+import { SyncBanner } from "@/components/settings/SyncBanner";
 
 function NotFoundComponent() {
   return (
@@ -117,7 +119,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <PreferencesProvider>
-        <AppLayout />
+        <SyncStatusProvider>
+          <AppLayout />
+        </SyncStatusProvider>
       </PreferencesProvider>
     </QueryClientProvider>
   );
@@ -133,6 +137,7 @@ function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SyncBanner />
       <AppNav />
       <div className="md:pl-56">
         <div className="pb-16 md:pb-0">

@@ -22,6 +22,8 @@ import {
   Zap,
   Clock,
   PhoneCall,
+  Car,
+  GitBranch,
   type LucideIcon,
 } from "lucide-react";
 
@@ -32,9 +34,10 @@ export type CategoryId =
   | "exercise"
   | "social"
   | "family"
-  | "personal";
+  | "personal"
+  | "travel";
 
-export type ShiftType = "morning" | "afternoon" | "night" | "oncall";
+export type ShiftType = "morning" | "afternoon" | "night" | "oncall" | "split";
 
 export interface CategoryDef {
   id: CategoryId;
@@ -51,6 +54,7 @@ export const CATEGORIES: CategoryDef[] = [
   { id: "social", label: "Social", color: "#10B981", icon: Users },
   { id: "family", label: "Family", color: "#EF4444", icon: Home },
   { id: "personal", label: "Personal", color: "#6B7280", icon: Sparkles },
+  { id: "travel", label: "Travel", color: "#64748B", icon: Car },
 ];
 
 export const CATEGORY_MAP: Record<CategoryId, CategoryDef> = CATEGORIES.reduce(
@@ -72,6 +76,7 @@ export const SHIFT_STYLES: Record<ShiftType, ShiftStyle> = {
   afternoon: { label: "Afternoon", color: "#3B82F6", icon: Sun },
   night: { label: "Night", color: "#6366F1", icon: Moon },
   oncall: { label: "On-Call", color: "#8B5CF6", icon: PhoneCall },
+  split: { label: "Split", color: "#A855F7", icon: GitBranch },
 };
 
 export interface MockEvent {

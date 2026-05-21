@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { getCategory } from "@/lib/categories";
+import { getEventIcon } from "@/lib/event-icon";
 import type { CalendarEvent } from "@/types/event";
 import { format, differenceInMinutes, startOfDay } from "date-fns";
 
@@ -12,6 +13,7 @@ interface Props {
 
 export function EventBlock({ event, day, hourHeight, onClick }: Props) {
   const c = getCategory(event.category);
+  const { Icon } = getEventIcon(event);
   const dayStart = startOfDay(day);
   const es = new Date(event.start);
   const ee = new Date(event.end);
@@ -19,7 +21,6 @@ export function EventBlock({ event, day, hourHeight, onClick }: Props) {
   const endMin = Math.min(24 * 60, differenceInMinutes(ee, dayStart));
   const top = (startMin / 60) * hourHeight;
   const height = Math.max(20, ((endMin - startMin) / 60) * hourHeight);
-  const Icon = c.icon;
 
   return (
     <button
