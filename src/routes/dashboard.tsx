@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarHeart, Moon, Sun, LayoutDashboard, CalendarDays } from "lucide-react";
+import { CalendarHeart, Moon, Sun, LayoutDashboard, CalendarDays, Settings } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
