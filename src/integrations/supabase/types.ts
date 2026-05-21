@@ -19,25 +19,31 @@ export type Database = {
           color: string
           icon: string
           id: string
+          is_active: boolean
           is_system: boolean
           label: string
           sort_order: number
+          user_id: string | null
         }
         Insert: {
           color: string
           icon: string
           id: string
+          is_active?: boolean
           is_system?: boolean
           label: string
           sort_order?: number
+          user_id?: string | null
         }
         Update: {
           color?: string
           icon?: string
           id?: string
+          is_active?: boolean
           is_system?: boolean
           label?: string
           sort_order?: number
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -49,7 +55,7 @@ export type Database = {
           end_time: string
           google_event_id: string | null
           hourly_rate: number | null
-          icon_gradient: string | null
+          icon_color: string | null
           icon_name: string | null
           id: string
           is_all_day: boolean
@@ -81,7 +87,7 @@ export type Database = {
           end_time: string
           google_event_id?: string | null
           hourly_rate?: number | null
-          icon_gradient?: string | null
+          icon_color?: string | null
           icon_name?: string | null
           id?: string
           is_all_day?: boolean
@@ -113,7 +119,7 @@ export type Database = {
           end_time?: string
           google_event_id?: string | null
           hourly_rate?: number | null
-          icon_gradient?: string | null
+          icon_color?: string | null
           icon_name?: string | null
           id?: string
           is_all_day?: boolean
@@ -235,6 +241,27 @@ export type Database = {
           name?: string
           region?: string | null
           year?: number
+        }
+        Relationships: []
+      }
+      user_category_visibility: {
+        Row: {
+          category_id: string
+          created_at: string
+          hidden: boolean
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          hidden?: boolean
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          hidden?: boolean
+          user_id?: string
         }
         Relationships: []
       }
