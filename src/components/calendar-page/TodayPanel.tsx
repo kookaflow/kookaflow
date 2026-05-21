@@ -1,14 +1,57 @@
 import { useMemo } from "react";
-import { format, isSameDay, differenceInMinutes, startOfDay, endOfDay } from "date-fns";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { CATEGORIES, CATEGORY_MAP, SHIFT_STYLES, type MockEvent } from "./constants";
+import {
+  format,
+  isSameDay,
+  differenceInMinutes,
+  startOfDay,
+  endOfDay,
+} from "date-fns";
+import {
+  CATEGORIES,
+  CATEGORY_MAP,
+  SHIFT_STYLES,
+  type MockEvent,
+  type ShiftType,
+} from "./constants";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Lightbulb } from "lucide-react";
 
 interface Props {
   date: Date;
   events: MockEvent[];
   onEventClick?: (e: MockEvent) => void;
+}
+
+function greetingFor(d: Date) {
+  const h = d.getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+function nudgeFor(opts: {
+  shift: ShiftType | null;
+  totalHours: number;
+  workHours: number;
+  restHours: number;
+  isEmpty: boolean;
+}): string {
+  const { shift, totalHours, workHours, restHours, isEmpty } = opts;
+  if (shift === "night")
+    return "Night shifts can disrupt your circadian rhythm — try to keep a consistent sleep window on your days off 🌙";
+  if (shift === "morning")
+    return "Early start ahead — a calm wind-down tonight protects tomorrow's energy ☀️";
+  if (shift === "afternoon")
+    return "Afternoon shift — fit in some light movement or sunlight before you clock in 🚶";
+  if (shift === "oncall")
+    return "On-call today — small recovery moments matter. Hydrate and breathe between calls 📞";
+  if (isEmpty)
+    return "A clear day. Rest is productive — protect it ❤️";
+  if (workHours >= 9)
+    return "A long work day. Block 10 minutes for yourself — it adds up 🌿";
+  if (restHours < 7 && totalHours > 0)
+    return "Aim for 7–9 hours of sleep tonight — Walker's research shows it sharpens mood and focus 😴";
+  return "Small balanced choices compound. You've got this 🌟";
 }
 
 export function TodayPanel({ date, events, onEventClick }: Props) {
@@ -24,7 +67,7 @@ export function TodayPanel({ date, events, onEventClick }: Props) {
     const start = startOfDay(date);
     const end = endOfDay(date);
     const totals: Record<string, number> = {};
-    for (const e of events) {
+    for (const e of dayEvents) {
       const s = e.start > start ? e.start : start;
       const en = e.end < end ? e.end : end;
       const mins = differenceInMinutes(en, s);
@@ -32,83 +75,114 @@ export function TodayPanel({ date, events, onEventClick }: Props) {
       totals[e.category] = (totals[e.category] || 0) + mins / 60;
     }
     return CATEGORIES.map((c) => ({
+      id: c.id,
       name: c.label,
       value: +(totals[c.id] || 0).toFixed(1),
       color: c.color,
     })).filter((d) => d.value > 0);
-  }, [events, date]);
+  }, [dayEvents, date]);
 
   const totalHours = chartData.reduce((a, b) => a + b.value, 0);
+  const workHours = chartData.find((d) => d.id === "work")?.value ?? 0;
+  const restHours = chartData.find((d) => d.id === "rest")?.value ?? 0;
+
+  const shiftEvent = dayEvents.find((e) => e.shiftType);
+  const shiftStyle = shiftEvent?.shiftType
+    ? SHIFT_STYLES[shiftEvent.shiftType]
+    : null;
+  const shiftMins = shiftEvent
+    ? differenceInMinutes(shiftEvent.end, shiftEvent.start)
+    : 0;
+
+  const nudge = nudgeFor({
+    shift: shiftEvent?.shiftType ?? null,
+    totalHours,
+    workHours,
+    restHours,
+    isEmpty: dayEvents.length === 0,
+  });
 
   return (
     <aside className="hidden h-full w-80 shrink-0 border-l border-border bg-card/30 lg:block">
       <ScrollArea className="h-full">
         <div className="flex flex-col gap-5 p-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Today at a glance
+            <p className="text-xs font-medium text-muted-foreground">
+              {greetingFor(new Date())}, there!
             </p>
-            <h2 className="mt-1 text-xl font-bold">{format(date, "EEEE")}</h2>
+            <h2 className="mt-1 text-2xl font-bold leading-tight">
+              {format(date, "EEEE")}
+            </h2>
             <p className="text-sm text-muted-foreground">
               {format(date, "MMMM d, yyyy")}
             </p>
           </div>
 
+          {shiftStyle && shiftEvent && (
+            <div
+              className="flex items-center gap-3 rounded-2xl p-4 text-white shadow-sm"
+              style={{
+                background: `linear-gradient(135deg, ${shiftStyle.color}, ${shiftStyle.color}cc)`,
+              }}
+            >
+              <span className="flex size-10 items-center justify-center rounded-xl bg-white/20">
+                <shiftStyle.icon className="size-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs uppercase tracking-wider opacity-80">
+                  {shiftStyle.label} shift
+                </p>
+                <p className="truncate text-sm font-semibold">
+                  {format(shiftEvent.start, "h:mm a")} –{" "}
+                  {format(shiftEvent.end, "h:mm a")}
+                </p>
+              </div>
+              <span className="text-sm font-bold tabular-nums">
+                {(shiftMins / 60).toFixed(1)}h
+              </span>
+            </div>
+          )}
+
           <div className="rounded-2xl border border-border bg-card p-4">
             <div className="mb-2 flex items-baseline justify-between">
-              <h3 className="text-sm font-semibold">Hours by category</h3>
+              <h3 className="text-sm font-semibold">Today's hours</h3>
               <span className="text-xs text-muted-foreground">
                 {totalHours.toFixed(1)}h
               </span>
             </div>
             {chartData.length > 0 ? (
-              <div className="h-44">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={chartData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={42}
-                      outerRadius={70}
-                      paddingAngle={2}
-                      stroke="none"
-                    >
-                      {chartData.map((d) => (
-                        <Cell key={d.name} fill={d.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        background: "var(--popover)",
-                        border: "1px solid var(--border)",
-                        borderRadius: 8,
-                        fontSize: 12,
+              <>
+                <div className="flex h-3 overflow-hidden rounded-full bg-muted">
+                  {chartData.map((d) => (
+                    <div
+                      key={d.id}
+                      title={`${d.name}: ${d.value}h`}
+                      className="h-full transition-all"
+                      style={{
+                        width: `${(d.value / totalHours) * 100}%`,
+                        backgroundColor: d.color,
                       }}
-                      formatter={(v: number) => [`${v}h`, ""]}
                     />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+                  ))}
+                </div>
+                <ul className="mt-3 grid grid-cols-2 gap-1.5 text-[11px]">
+                  {chartData.map((d) => (
+                    <li key={d.id} className="flex items-center gap-1.5">
+                      <span
+                        className="size-2 rounded-full"
+                        style={{ backgroundColor: d.color }}
+                      />
+                      <span className="text-muted-foreground">{d.name}</span>
+                      <span className="ml-auto font-medium">{d.value}h</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
             ) : (
               <p className="py-6 text-center text-xs text-muted-foreground">
                 Nothing scheduled yet.
               </p>
             )}
-            <ul className="mt-3 grid grid-cols-2 gap-1.5 text-[11px]">
-              {chartData.map((d) => (
-                <li key={d.name} className="flex items-center gap-1.5">
-                  <span
-                    className="size-2 rounded-full"
-                    style={{ backgroundColor: d.color }}
-                  />
-                  <span className="text-muted-foreground">{d.name}</span>
-                  <span className="ml-auto font-medium">{d.value}h</span>
-                </li>
-              ))}
-            </ul>
           </div>
 
           <div>
@@ -125,7 +199,7 @@ export function TodayPanel({ date, events, onEventClick }: Props) {
                 {dayEvents.map((e) => {
                   const cat = CATEGORY_MAP[e.category];
                   const Icon = cat.icon;
-                  const shiftStyle = e.shiftType ? SHIFT_STYLES[e.shiftType] : null;
+                  const evShift = e.shiftType ? SHIFT_STYLES[e.shiftType] : null;
                   return (
                     <li key={e.id}>
                       <button
@@ -140,19 +214,25 @@ export function TodayPanel({ date, events, onEventClick }: Props) {
                           <Icon className="size-4" />
                         </span>
                         <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="size-1.5 shrink-0 rounded-full"
+                              style={{ backgroundColor: cat.color }}
+                            />
                           <p className="truncate text-sm font-medium">
                             {e.title}
                           </p>
+                          </div>
                           <p className="text-xs text-muted-foreground">
                             {format(e.start, "h:mm a")} – {format(e.end, "h:mm a")}
                           </p>
-                          {shiftStyle && (
+                          {evShift && (
                             <span
                               className="mt-1 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium text-white"
-                              style={{ backgroundColor: shiftStyle.color }}
+                              style={{ backgroundColor: evShift.color }}
                             >
-                              <shiftStyle.icon className="size-2.5" />
-                              {shiftStyle.label}
+                              <evShift.icon className="size-2.5" />
+                              {evShift.label}
                             </span>
                           )}
                         </div>
@@ -162,6 +242,11 @@ export function TodayPanel({ date, events, onEventClick }: Props) {
                 })}
               </ul>
             )}
+          </div>
+
+          <div className="flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+            <Lightbulb className="mt-0.5 size-4 shrink-0 text-primary" />
+            <p className="text-xs leading-relaxed text-foreground/80">{nudge}</p>
           </div>
         </div>
       </ScrollArea>
