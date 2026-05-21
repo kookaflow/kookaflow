@@ -80,7 +80,7 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
   const endDate = end.slice(0, 10);
   const endTime = end.slice(11, 16);
   const dtInputCls =
-    "h-12 w-full rounded-[12px] bg-[#F1F5F9] px-3 text-base text-foreground outline-none focus:ring-2 focus:ring-ring";
+    "h-12 w-full rounded-[12px] bg-[#F1F5F9] px-3 text-base text-foreground outline-none focus:ring-2 focus:ring-ring dark:bg-[#1A2456] dark:text-[#F0F4FF] dark:border dark:border-[#3D3DA0] [&::-webkit-calendar-picker-indicator]:dark:invert";
 
   const applyPreset = (p: PresetDef) => {
     if (!title.trim()) setTitle(p.defaultTitle);
