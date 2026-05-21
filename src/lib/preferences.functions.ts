@@ -3,19 +3,32 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const ProfileUpdateSchema = z.object({
-  display_name: z.string().min(1).max(120).optional(),
-  role: z.string().min(1).max(60).optional(),
+  full_name: z.string().min(1).max(120).optional(),
+  job_role: z.string().min(1).max(60).optional(),
   shift_pattern: z.string().min(1).max(60).optional(),
   timezone: z.string().max(80).optional(),
 });
 
+const ChannelSchema = z.enum(["email", "sms", "both"]).nullable().optional();
 const PreferencesUpdateSchema = z.object({
   theme: z.enum(["slate", "midnight", "lavender", "forest"]).optional(),
   theme_mode: z.enum(["light", "dark"]).optional(),
+  accent_colour: z.string().max(20).nullable().optional(),
   default_view: z.enum(["month", "week", "day"]).optional(),
   week_starts_on: z.union([z.literal(0), z.literal(1)]).optional(),
-  reminders: z.record(z.string(), z.unknown()).optional(),
-  sounds: z.record(z.string(), z.unknown()).optional(),
+  hourly_rate: z.number().nonnegative().nullable().optional(),
+  currency: z.enum(["AUD", "USD", "GBP", "EUR", "NZD"]).optional(),
+  country: z.string().min(2).max(2).optional(),
+  daily_reminder_enabled: z.boolean().optional(),
+  daily_reminder_time: z.string().nullable().optional(),
+  daily_reminder_channel: ChannelSchema,
+  weekly_reminder_enabled: z.boolean().optional(),
+  weekly_reminder_day: z.enum(["mon","tue","wed","thu","fri","sat","sun"]).nullable().optional(),
+  weekly_reminder_time: z.string().nullable().optional(),
+  weekly_reminder_channel: ChannelSchema,
+  sound_enabled: z.boolean().optional(),
+  notification_sound: z.string().max(40).optional(),
+  reminder_minutes_before: z.number().int().min(0).max(1440).optional(),
   email: z.string().email().nullable().optional(),
   phone: z.string().max(40).nullable().optional(),
 });
@@ -26,7 +39,7 @@ export const getProfile = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("profiles")
-      .select("id,display_name,role,shift_pattern,timezone,onboarded_at")
+      .select("id,full_name,job_role,shift_pattern,timezone,onboarded_at")
       .eq("id", userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -42,7 +55,7 @@ export const updateProfile = createServerFn({ method: "POST" })
       .from("profiles")
       .update(data)
       .eq("id", userId)
-      .select("id,display_name,role,shift_pattern,timezone,onboarded_at")
+      .select("id,full_name,job_role,shift_pattern,timezone,onboarded_at")
       .single();
     if (error) throw new Error(error.message);
     return row;
@@ -53,8 +66,8 @@ export const completeOnboarding = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        display_name: z.string().min(1).max(120),
-        role: z.string().min(1).max(60),
+        full_name: z.string().min(1).max(120),
+        job_role: z.string().min(1).max(60),
         shift_pattern: z.string().min(1).max(60),
       })
       .parse(input),
@@ -64,13 +77,13 @@ export const completeOnboarding = createServerFn({ method: "POST" })
     const { data: row, error } = await supabase
       .from("profiles")
       .update({
-        display_name: data.display_name,
-        role: data.role,
+        full_name: data.full_name,
+        job_role: data.job_role,
         shift_pattern: data.shift_pattern,
         onboarded_at: new Date().toISOString(),
       })
       .eq("id", userId)
-      .select("id,display_name,role,shift_pattern,onboarded_at")
+      .select("id,full_name,job_role,shift_pattern,onboarded_at")
       .single();
     if (error) throw new Error(error.message);
     return row;
@@ -82,7 +95,7 @@ export const getPreferences = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("user_preferences")
-      .select("user_id,theme,theme_mode,default_view,week_starts_on,reminders,sounds,email,phone")
+      .select("*")
       .eq("user_id", userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -98,7 +111,7 @@ export const updatePreferences = createServerFn({ method: "POST" })
       .from("user_preferences")
       .update(data as never)
       .eq("user_id", userId)
-      .select("user_id,theme,theme_mode,default_view,week_starts_on,reminders,sounds,email,phone")
+      .select("*")
       .single();
     if (error) throw new Error(error.message);
     return row;
