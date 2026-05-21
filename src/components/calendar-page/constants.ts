@@ -8,6 +8,20 @@ import {
   Sparkles,
   Sunrise,
   Sun,
+  Coffee,
+  Music,
+  Book,
+  Plane,
+  Utensils,
+  Bike,
+  Leaf,
+  Star,
+  Bell,
+  Camera,
+  Smile,
+  Zap,
+  Clock,
+  PhoneCall,
   type LucideIcon,
 } from "lucide-react";
 
@@ -20,7 +34,7 @@ export type CategoryId =
   | "family"
   | "personal";
 
-export type ShiftType = "morning" | "afternoon" | "night" | "rotating";
+export type ShiftType = "morning" | "afternoon" | "night" | "oncall";
 
 export interface CategoryDef {
   id: CategoryId;
@@ -57,7 +71,7 @@ export const SHIFT_STYLES: Record<ShiftType, ShiftStyle> = {
   morning: { label: "Morning", color: "#F59E0B", icon: Sunrise },
   afternoon: { label: "Afternoon", color: "#3B82F6", icon: Sun },
   night: { label: "Night", color: "#6366F1", icon: Moon },
-  rotating: { label: "Rotating", color: "#8B5CF6", icon: Sparkles },
+  oncall: { label: "On-Call", color: "#8B5CF6", icon: PhoneCall },
 };
 
 export interface MockEvent {
@@ -69,4 +83,46 @@ export interface MockEvent {
   shiftType?: ShiftType;
   location?: string;
   notes?: string;
+  iconName?: IconName;
+  recurrence?: Recurrence;
 }
+
+export type Recurrence =
+  | { kind: "none" }
+  | { kind: "daily" }
+  | { kind: "weekly" }
+  | { kind: "fortnightly" }
+  | { kind: "custom"; days: number[] }; // 0=Sun..6=Sat
+
+export const ICON_OPTIONS = [
+  { name: "Briefcase", icon: Briefcase },
+  { name: "Heart", icon: Heart },
+  { name: "Dumbbell", icon: Dumbbell },
+  { name: "Users", icon: Users },
+  { name: "Home", icon: Home },
+  { name: "Coffee", icon: Coffee },
+  { name: "Moon", icon: Moon },
+  { name: "Sun", icon: Sun },
+  { name: "Music", icon: Music },
+  { name: "Book", icon: Book },
+  { name: "Plane", icon: Plane },
+  { name: "Utensils", icon: Utensils },
+  { name: "Bike", icon: Bike },
+  { name: "Leaf", icon: Leaf },
+  { name: "Star", icon: Star },
+  { name: "Bell", icon: Bell },
+  { name: "Camera", icon: Camera },
+  { name: "Smile", icon: Smile },
+  { name: "Zap", icon: Zap },
+  { name: "Clock", icon: Clock },
+] as const;
+
+export type IconName = (typeof ICON_OPTIONS)[number]["name"];
+
+export const ICON_MAP: Record<IconName, LucideIcon> = ICON_OPTIONS.reduce(
+  (acc, o) => {
+    acc[o.name] = o.icon;
+    return acc;
+  },
+  {} as Record<IconName, LucideIcon>,
+);
