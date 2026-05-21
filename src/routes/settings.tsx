@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarHeart, CalendarDays, LayoutDashboard, Settings } from "lucide-react";
 import { RemindersSettings } from "@/components/settings/RemindersSettings";
+import { SoundNotifications } from "@/components/settings/SoundNotifications";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/settings")({
@@ -66,6 +67,7 @@ function SettingsPage() {
         </div>
 
         <RemindersSettings />
+        <SoundNotifications />
       </main>
     </div>
   );
