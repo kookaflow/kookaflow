@@ -26,10 +26,11 @@ import { cn } from "@/lib/utils";
 import { MonthView } from "@/components/calendar-page/MonthView";
 import { TimeGrid } from "@/components/calendar-page/TimeGrid";
 import { TodayPanel } from "@/components/calendar-page/TodayPanel";
-import { EventDialog } from "@/components/calendar-page/EventDialog";
+import { EventDialog } from "@/components/events/EventDialog";
 import { WeekSummaryDialog } from "@/components/calendar-page/WeekSummaryDialog";
-import type { MockEvent } from "@/components/calendar-page/constants";
-import { useEventsStore, setEvents as setStoreEvents } from "@/lib/events-store";
+import type { MockEvent, ShiftType as MockShiftType, IconName } from "@/components/calendar-page/constants";
+import { useEvents } from "@/providers/EventsProvider";
+import type { CalendarEvent } from "@/types/event";
 
 type ViewMode = "month" | "week" | "day";
 
@@ -41,11 +42,13 @@ function CalendarPage() {
   const [view, setView] = useState<ViewMode>("month");
   const [date, setDate] = useState<Date>(new Date());
   const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const events = useEventsStore();
+  const { events: rawEvents } = useEvents();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<MockEvent | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogDefault, setDialogDefault] = useState<Date>(new Date());
   const [weekSummaryOpen, setWeekSummaryOpen] = useState(false);
+
+  const events = useMemo(() => rawEvents.map(toMockEvent), [rawEvents]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -63,25 +66,13 @@ function CalendarPage() {
   };
 
   const openCreate = (d?: Date) => {
-    setEditing(null);
+    setEditingId(null);
     setDialogDefault(d ?? new Date());
     setDialogOpen(true);
   };
   const openEdit = (e: MockEvent) => {
-    setEditing(e);
+    setEditingId(e.id);
     setDialogOpen(true);
-  };
-  const handleSave = (e: MockEvent) => {
-    setStoreEvents((prev) => {
-      const idx = prev.findIndex((p) => p.id === e.id);
-      if (idx === -1) return [...prev, e];
-      const next = prev.slice();
-      next[idx] = e;
-      return next;
-    });
-  };
-  const handleDelete = (id: string) => {
-    setStoreEvents((prev) => prev.filter((p) => p.id !== id));
   };
   const goNext = () => {
     if (view === "month") setDate((d) => addMonths(d, 1));
@@ -271,10 +262,8 @@ function CalendarPage() {
       <EventDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        editing={editing}
-        defaultDate={dialogDefault}
-        onSave={handleSave}
-        onDelete={handleDelete}
+        eventId={editingId}
+        defaultStart={dialogDefault}
       />
 
       <WeekSummaryDialog
@@ -285,4 +274,30 @@ function CalendarPage() {
       />
     </div>
   );
+}
+
+function toMockEvent(e: CalendarEvent): MockEvent {
+  return {
+    id: e.id,
+    title: e.title,
+    category: e.category,
+    start: new Date(e.start),
+    end: new Date(e.end),
+    shiftType: e.shift?.shiftType as MockShiftType | undefined,
+    location: e.shift?.location,
+    notes: e.notes,
+    iconName: e.iconName as IconName | undefined,
+    recurrence: e.recurrencePattern
+      ? e.recurrencePattern === "custom"
+        ? { kind: "custom", days: (e.recurrenceDays ?? []).map(weekdayKeyToIndex).filter((n): n is number => n != null) }
+        : { kind: e.recurrencePattern }
+      : { kind: "none" },
+  };
+}
+
+const WEEKDAY_INDEX: Record<string, number> = {
+  sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6,
+};
+function weekdayKeyToIndex(k: string): number | null {
+  return WEEKDAY_INDEX[k] ?? null;
 }
