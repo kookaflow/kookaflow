@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { Mail, Lock, ShieldCheck, User } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { AuthField, AuthSubmit } from "@/components/auth/AuthField";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/signup")({
@@ -47,30 +46,95 @@ function SignupPage() {
   };
 
   return (
-    <AuthShell title="Create your account" subtitle="Start balancing shifts and life">
+    <AuthShell
+      tagline={<>Your balanced life starts here <span aria-hidden>✨</span></>}
+      subtitle="Join thousands of shift workers managing life better"
+    >
       <form onSubmit={submit} className="space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="name">Full name</Label>
-          <Input id="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        <div className="auth-field-in" style={{ animationDelay: "0ms" }}>
+          <AuthField
+            id="name"
+            label="Full name"
+            icon={User}
+            required
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="Alex Morgan"
+          />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+        <div className="auth-field-in" style={{ animationDelay: "80ms" }}>
+          <AuthField
+            id="email"
+            label="Email"
+            icon={Mail}
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            placeholder="you@example.com"
+          />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
+        <div className="auth-field-in" style={{ animationDelay: "160ms" }}>
+          <AuthField
+            id="password"
+            label="Password"
+            icon={Lock}
+            type="password"
+            togglePassword
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            placeholder="At least 6 characters"
+          />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="confirm">Confirm password</Label>
-          <Input id="confirm" type="password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" />
+        <div className="auth-field-in" style={{ animationDelay: "240ms" }}>
+          <AuthField
+            id="confirm"
+            label="Confirm password"
+            icon={ShieldCheck}
+            type="password"
+            togglePassword
+            required
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            autoComplete="new-password"
+            placeholder="Re-enter password"
+          />
         </div>
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Creating…" : "Create account"}
-        </Button>
-        <p className="text-center text-xs text-muted-foreground">
+
+        <p
+          className="auth-field-in text-center text-xs font-medium text-emerald-600 dark:text-emerald-400"
+          style={{ animationDelay: "320ms" }}
+        >
+          ✓ Free to start &nbsp; ✓ No credit card required &nbsp; ✓ Cancel anytime
+        </p>
+
+        <div className="auth-field-in pt-1" style={{ animationDelay: "400ms" }}>
+          <AuthSubmit disabled={loading}>
+            {loading ? "Creating…" : "Create Account"}
+          </AuthSubmit>
+        </div>
+
+        <p
+          className="auth-field-in text-center text-[11px] leading-relaxed text-muted-foreground"
+          style={{ animationDelay: "480ms" }}
+        >
+          By creating an account you agree to our{" "}
+          <a href="/terms" className="text-primary hover:underline">Terms of Service</a>{" "}
+          and{" "}
+          <a href="/privacy" className="text-primary hover:underline">Privacy Policy</a>.
+        </p>
+
+        <p
+          className="auth-field-in text-center text-sm text-muted-foreground"
+          style={{ animationDelay: "560ms" }}
+        >
           Already have an account?{" "}
-          <Link to="/login" className="text-primary hover:underline">Sign in</Link>
+          <Link to="/login" className="font-medium text-primary hover:underline">
+            Sign in
+          </Link>
         </p>
       </form>
     </AuthShell>
