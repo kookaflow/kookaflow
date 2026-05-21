@@ -14,7 +14,7 @@ export function CategoryBadge({ category, className }: { category: CategoryId; c
         className,
       )}
     >
-      <Icon className="size-3" />
+      <Icon className="size-[18px]" />
       {c.label}
     </span>
   );

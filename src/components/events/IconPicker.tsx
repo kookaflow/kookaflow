@@ -95,14 +95,14 @@ export function IconPicker({ value, gradient, onChange }: Props) {
               aria-label={name}
               aria-pressed={selected}
               className={cn(
-                "relative flex aspect-square items-center justify-center rounded-2xl text-white transition-transform active:scale-95",
+                "relative flex size-11 items-center justify-center rounded-2xl text-white transition-transform active:scale-95",
                 g.className,
                 !selected && "opacity-60 hover:opacity-100",
                 selected &&
                   "ring-2 ring-white ring-offset-2 ring-offset-background shadow-md scale-[1.02]",
               )}
             >
-              <Icon className="size-4" strokeWidth={2.25} />
+              <Icon className="size-5" strokeWidth={2.25} />
             </button>
           );
         })}
