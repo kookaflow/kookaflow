@@ -102,7 +102,7 @@ export function IconPicker({ value, gradient, onChange }: Props) {
                   "ring-2 ring-white ring-offset-2 ring-offset-background shadow-md scale-[1.02]",
               )}
             >
-              <Icon className="size-5" strokeWidth={2.25} />
+              <Icon className="size-4" strokeWidth={2.25} />
             </button>
           );
         })}
