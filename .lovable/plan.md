@@ -1,164 +1,122 @@
-# ShiftSync — Supabase Integration Plan
+# 4-Theme System Plan
 
-Front-end is stable. This plan introduces Lovable Cloud (Supabase) for persistence and auth, replacing the in-memory mock event store and `localStorage`-backed settings.
+## Goals
 
-## 1. Database Schema
+- Four named themes (Midnight, Lavender, Forest, Slate), each with light + dark variants → 8 token sets.
+- Instant switching across the whole app, no reload.
+- Persisted in `localStorage` immediately and synced to Supabase `user_preferences` once authenticated.
+- Default on first launch: **Slate**, mode = `light` (matches OS if `prefers-color-scheme: dark`).
+- Theme picker on `/settings` rendered as visual cards with mini color previews.
 
-All tables live in `public` schema, owned by `auth.users` via `user_id uuid references auth.users(id) on delete cascade`.
-
-### `profiles`
-One row per user, auto-created on signup via trigger.
-
-| column | type | notes |
-|---|---|---|
-| `id` | `uuid` PK | references `auth.users(id)` on delete cascade |
-| `display_name` | `text` | from onboarding |
-| `role` | `text` | nurse, paramedic, factory, retail, hospitality, security, transit, other |
-| `shift_pattern` | `text` | `fixed_day`, `fixed_night`, `rotating_2_2`, `rotating_4_on_4_off`, `weekly_rotation`, `on_call`, `irregular` |
-| `timezone` | `text` | default `'UTC'` |
-| `onboarded_at` | `timestamptz` | null until onboarding completes |
-| `created_at` / `updated_at` | `timestamptz` | default `now()` |
-
-### `categories` (reference table, public read)
-Seeded with the 7 categories (`work`, `rest`, `wellness`, `exercise`, `social`, `family`, `personal`).
-
-| column | type | notes |
-|---|---|---|
-| `id` | `text` PK | matches `CategoryId` |
-| `label` | `text` |  |
-| `color` | `text` | hex |
-| `icon` | `text` | lucide name |
-| `sort_order` | `int` |  |
-
-### `events`
-Single table for both shifts and personal activities (`category = 'work'` + `shift_type` flags it as a shift).
-
-| column | type | notes |
-|---|---|---|
-| `id` | `uuid` PK | default `gen_random_uuid()` |
-| `user_id` | `uuid` NOT NULL | FK `auth.users(id)` on delete cascade |
-| `title` | `text` NOT NULL |  |
-| `category` | `text` NOT NULL | FK `categories(id)` |
-| `starts_at` | `timestamptz` NOT NULL |  |
-| `ends_at` | `timestamptz` NOT NULL | check `ends_at > starts_at` |
-| `all_day` | `boolean` | default `false` |
-| `shift_type` | `text` | nullable; `morning` / `afternoon` / `night` / `oncall` |
-| `location` | `text` | nullable |
-| `notes` | `text` | nullable |
-| `icon_name` | `text` | nullable; lucide name |
-| `recurrence` | `jsonb` | matches `Recurrence` discriminated union |
-| `created_at` / `updated_at` | `timestamptz` |  |
-
-Indexes: `(user_id, starts_at)`, `(user_id, category)`.
-
-### `user_preferences`
-One row per user (PK = `user_id`). Holds everything currently in `localStorage`.
-
-| column | type | notes |
-|---|---|---|
-| `user_id` | `uuid` PK | FK `auth.users(id)` on delete cascade |
-| `theme` | `text` | `dark` / `light` |
-| `default_view` | `text` | `month` / `week` / `day` |
-| `week_starts_on` | `int2` | 0 or 1 |
-| `reminders` | `jsonb` | `{ daily: {...}, weekly: {...} }` mirrors `RemindersSettings` state |
-| `sounds` | `jsonb` | mirrors `shiftsync.sound-prefs.v1` shape from `SoundNotifications` |
-| `email` | `text` | reminder email |
-| `phone` | `text` | reminder phone |
-| `updated_at` | `timestamptz` |  |
-
-Keeping reminder/sound config as `jsonb` avoids schema churn while front-end keeps evolving. We can normalize later if we add server-side reminder dispatch.
-
-## 2. Row Level Security
-
-RLS enabled on every table. Policies use `auth.uid()` directly — no recursive lookups, no security-definer functions needed at this stage.
-
-- **`profiles`** — `SELECT/UPDATE` where `id = auth.uid()`; `INSERT` where `id = auth.uid()` (trigger handles insert, this is a backstop).
-- **`events`** — full `SELECT/INSERT/UPDATE/DELETE` where `user_id = auth.uid()`.
-- **`user_preferences`** — full CRUD where `user_id = auth.uid()`.
-- **`categories`** — `SELECT` to `authenticated` (or `anon` if we want it publicly readable). No writes from clients.
-
-### Auto-provision profile + preferences on signup
+## Architecture overview
 
 ```text
-trigger on auth.users AFTER INSERT
-  → insert into public.profiles (id) values (new.id)
-  → insert into public.user_preferences (user_id) values (new.id)
+PreferencesProvider (extended)
+  ├─ state: { themeName: 'slate'|'midnight'|'lavender'|'forest', mode: 'light'|'dark', ... }
+  ├─ source of truth: localStorage → hydrated from Supabase on auth
+  ├─ applies: <html data-theme="slate" class="dark">
+  └─ exposes: useTheme() { themeName, mode, setTheme, setMode, toggleMode }
+
+src/styles/themes.css         ← new, imported from styles.css
+src/lib/themes.ts             ← theme registry (names, labels, preview swatches)
+src/components/settings/ThemeSettings.tsx   ← visual card selector
 ```
 
-Both inserts use `SECURITY DEFINER` function with locked `search_path`.
+## CSS variable structure
 
-## 3. Auth Flow
+Single source of truth in `src/styles/themes.css`, layered on top of the existing token contract in `src/styles.css` (no changes to `@theme inline` — the same `--background`, `--primary`, etc. tokens are reassigned per theme).
 
-### Sign up / log in
-- Email + password via Supabase Auth (browser client).
-- Sign-up form sets `emailRedirectTo: window.location.origin` so the magic confirmation link returns to the app.
-- For dev, recommend disabling "Confirm email" in Auth settings so the flow is one-step. Note this in the UI.
+Selectors use `[data-theme="…"]` on `<html>`, combined with the existing `.dark` class for mode:
 
-### Routes
-- `/login` — public. Tabs for Sign in / Sign up. Redirects to `/calendar` (or `/onboarding` if `profiles.onboarded_at IS NULL`) on success.
-- `/onboarding` — gated (must be signed in, must not be onboarded yet). Three steps in one form:
-  1. **Name** — text input.
-  2. **Role** — pill buttons (nurse, paramedic, factory worker, retail, hospitality, security, transit, other).
-  3. **Typical shift pattern** — pill buttons matching `shift_pattern` enum.
-  Submitting writes to `profiles` and sets `onboarded_at = now()`.
-- `_authenticated` layout route — `beforeLoad` checks session via `supabase.auth.getUser()`; redirects to `/login` if missing, to `/onboarding` if `onboarded_at IS NULL`.
-- `/calendar`, `/dashboard`, `/settings` move under `_authenticated`.
-- `/` (landing) stays public; if user is signed in, link goes straight to `/calendar`.
-
-### Session wiring
-- `onAuthStateChange` listener wired once in `__root.tsx`. On change → `router.invalidate()` + `queryClient.invalidateQueries()`.
-- Sign-out button in TopNav.
-
-## 4. Replacing the Mock Data Store
-
-Today's data flow:
-
-```text
-src/components/calendar-page/mock.ts (buildMockEvents)
-  → src/lib/events-store.ts (in-memory + useSyncExternalStore)
-    → CalendarPage, MonthView, TimeGrid, TodayPanel, WeekSummaryDialog
-    → DashboardPage and its child charts/cards
+```css
+[data-theme="slate"]                 { /* light tokens */ }
+[data-theme="slate"].dark            { /* dark tokens  */ }
+[data-theme="midnight"]              { … }
+[data-theme="midnight"].dark         { … }
+[data-theme="lavender"]              { … }
+[data-theme="lavender"].dark         { … }
+[data-theme="forest"]                { … }
+[data-theme="forest"].dark           { … }
 ```
 
-Settings today:
-- `src/components/settings/RemindersSettings.tsx` — local React state only.
-- `src/components/settings/SoundNotifications.tsx` — `localStorage` key `shiftsync.sound-prefs.v1`.
+Each block redefines the existing semantic tokens (`--background`, `--foreground`, `--card`, `--primary`, `--accent`, `--muted`, `--border`, `--ring`, destructive, plus the `--cat-*` category palette) using `oklch()`. The brand-spec hex values are converted to oklch for the three "signature" slots:
 
-### New flow
+| Theme    | bg (light/dark)        | accent → `--primary` | highlight → `--accent` / `--ring` |
+|----------|------------------------|----------------------|------------------------------------|
+| Midnight | #F8FAFC / #0F172A      | teal #14B8A6         | amber #F59E0B                      |
+| Lavender | #F5F3FF / #1E1B2E      | violet #7C3AED       | coral #F43F5E                      |
+| Forest   | #F0FDF4 / #1C1C2E      | emerald #10B981      | yellow #FCD34D                     |
+| Slate    | #F8FAFC / #0F172A      | blue #3B82F6         | orange #F97316                     |
 
-1. **TanStack Query + server functions** (no direct browser Supabase queries in components).
-   - `src/lib/events.functions.ts` — `listEvents({ rangeStart, rangeEnd })`, `createEvent`, `updateEvent`, `deleteEvent`. All protected by `requireSupabaseAuth`. Queries `events` via the auth-scoped client (RLS applies).
-   - `src/lib/preferences.functions.ts` — `getPreferences`, `updatePreferences`, `getProfile`, `updateProfile`, `completeOnboarding`.
-   - `src/lib/categories.functions.ts` — `listCategories` (cacheable, low-churn).
+Category dots (`--cat-work` … `--cat-personal`) get per-theme tuning so they stay legible on each background, but the token *names* never change → no component churn.
 
-2. **Replace `useEventsStore`** with a `useEvents(rangeStart, rangeEnd)` hook backed by `useSuspenseQuery` / `useQuery`. Same `MockEvent`-shaped output (renamed to `CalendarEvent`) so view components don't change.
+## Theme registry (`src/lib/themes.ts`)
 
-3. **Mutations** invalidate `['events', userId, ...]` query key. Optimistic updates for create/update/delete to preserve current snappy UX.
+```ts
+export type ThemeName = 'slate' | 'midnight' | 'lavender' | 'forest';
+export type ThemeMode = 'light' | 'dark';
 
-4. **Settings persistence**: `RemindersSettings` and `SoundNotifications` swap `useState`/`localStorage` for `useQuery` on `getPreferences` and `useMutation` on `updatePreferences`. Keep the existing UI 1:1.
+export const THEMES: Array<{
+  name: ThemeName;
+  label: string;
+  description: string;
+  preview: { bgLight: string; bgDark: string; accent: string; highlight: string };
+}> = [ … ];
+```
 
-5. **Delete after migration**: `src/components/calendar-page/mock.ts`, `src/lib/events-store.ts`. `src/lib/categories.ts` (UI metadata) stays — it pairs the DB `categories.id` with Tailwind classes / Lucide icon components that can't live in the DB.
+Used by the settings card grid for preview swatches; nothing else hard-codes hex.
 
-## 5. Validation: Breaking Changes & Risks
+## Provider changes
 
-- **Mock-event field rename.** `events-store` exposes `MockEvent` with `start`/`end` as `Date` objects. The DB returns ISO strings as `starts_at`/`ends_at`. Map at the server-fn boundary back into the existing `MockEvent` shape (Date objects, `start`/`end`) so calendar components stay untouched. Treat this as a non-breaking adapter; rename to `CalendarEvent` only as a follow-up.
-- **Shift-type label drift.** Front-end uses `oncall`; the existing `types/event.ts` (currently unused for shifts) uses `rotating`. We'll standardize on the front-end set: `morning | afternoon | night | oncall`. Enforced via a CHECK constraint instead of a Postgres enum to allow easy expansion.
-- **Recurrence is client-only today.** It's stored as `jsonb`; expansion to instances still happens in the calendar view. No server-side expansion in this phase.
-- **`localStorage` sound prefs migration.** On first authenticated load, if `user_preferences.sounds` is null and `localStorage` has the v1 key, copy it up once, then clear the local key. Same idea for the reminders form (currently in-memory only — nothing to migrate).
-- **Route gating breaks deep links during the cut-over.** Moving `/calendar`, `/dashboard`, `/settings` under `_authenticated` means unauthenticated visits redirect to `/login`. Make sure `/` (landing) and any future marketing routes stay outside the layout.
-- **Email confirmation.** With "Confirm email" on, sign-up redirects through email; surfacing a clear "Check your inbox" state in the auth UI prevents a perceived breakage. Default Lovable Cloud setting is on.
-- **No edge functions in this phase.** Email/SMS reminder dispatch (Resend/Twilio) is out of scope here; we're persisting the preferences only. Wiring the dispatch is the next milestone.
-- **Categories table is reference-only.** UI keeps reading from `src/lib/categories.ts` for icon/colour classes; the DB row is just a referential anchor. No risk of drift as long as IDs match — guarded by a seed migration.
+Extend `src/providers/PreferencesProvider.tsx`:
 
-## 6. Suggested Build Order
+- `UserPreferences` (in `src/types/preferences.ts`) gains `themeName: ThemeName`; existing `theme: 'dark'|'light'` is renamed to `mode`.
+- On mount: hydrate from `localStorage` (`shiftsync.prefs.v1`). If absent → `{ themeName: 'slate', mode: prefers-color-scheme }`.
+- Effect: set `document.documentElement.dataset.theme = themeName` and toggle `.dark` for mode. Runs on every change → instant, no reload.
+- New methods: `setThemeName(name)`, `setMode(mode)`, keep `toggleTheme()` as alias of `toggleMode`.
+- `ThemeToggle` in the top bar keeps working (it flips `mode`).
 
-1. Enable Lovable Cloud.
-2. Create schema + RLS + signup trigger + seed `categories`.
-3. Add server functions (`events`, `preferences`, `categories`).
-4. Build `/login` + `/onboarding` + `_authenticated` layout.
-5. Swap `useEventsStore` → `useEvents` hook backed by Query. Verify calendar + dashboard render identically.
-6. Swap settings panels to read/write `user_preferences`. Migrate sound prefs from `localStorage`.
-7. Delete `mock.ts` + `events-store.ts`.
-8. Smoke test: sign up → onboard → create event → see it on calendar + dashboard → set reminders → sign out → sign in → data persists.
+## Supabase sync
 
-Ready to proceed once you approve.
+- `user_preferences.theme` (text) already exists. Repurpose it to store `themeName`; add a sibling field for mode by reusing the existing column convention:
+  - Option A (preferred, zero-migration): store JSON-encoded `{ name, mode }` in the existing `theme` column.
+  - Option B: add `theme_mode text` column. Slightly cleaner, costs one migration.
+  - Plan picks **Option B** for clarity.
+- Migration: `ALTER TABLE user_preferences ADD COLUMN theme_mode text NOT NULL DEFAULT 'dark' CHECK (theme_mode IN ('light','dark'));` and widen the `theme` column's allowed set to the four names (drop any existing CHECK, add new one).
+- Update `src/lib/preferences.functions.ts` `PreferencesUpdateSchema`: `theme: z.enum(['slate','midnight','lavender','forest']).optional()` and `theme_mode: z.enum(['light','dark']).optional()`.
+- Sync rules in the provider:
+  - On auth state = signed-in: fetch preferences, merge into local state (server wins for `themeName` / `mode` if both present).
+  - On change while signed-in: debounce 400 ms → `updatePreferences({ theme, theme_mode })`.
+  - On sign-out: keep last theme in `localStorage` (good UX).
+  - Migration shim: existing local prefs with `theme: 'dark'|'light'` → mapped to `{ themeName: 'slate', mode: <that value> }` on first load.
+
+## Settings UI (`/settings`)
+
+New section `<ThemeSettings />` placed above `RemindersSettings` (themes are the most discoverable preference). Layout for the current 571px viewport: 2-column card grid → 4 cards.
+
+Each card:
+
+```
+┌────────────────────────────┐
+│  ▢▢▢▢   ← 4 swatches       │
+│  Slate                     │
+│  Calm, broad-appeal blue   │
+└────────────────────────────┘
+```
+
+- Swatches show background, surface, accent, highlight (rendered with inline `style` from `THEMES.preview`, not Tailwind classes — only place hex is allowed in components).
+- Selected card: ring in `--ring`, checkmark badge.
+- Below the grid: a `Light / Dark / System` segmented control bound to `mode`.
+- Switching either control applies instantly via the provider.
+- Persists to localStorage immediately; queues the Supabase write.
+
+## Files touched
+
+- **New:** `src/styles/themes.css`, `src/lib/themes.ts`, `src/components/settings/ThemeSettings.tsx`.
+- **Edit:** `src/styles.css` (import themes.css; remove the hard-coded `:root` / `.dark` blocks that now live per-theme), `src/types/preferences.ts`, `src/providers/PreferencesProvider.tsx`, `src/components/layout/ThemeToggle.tsx` (point at `mode`), `src/routes/settings.tsx` (mount `<ThemeSettings />`), `src/lib/preferences.functions.ts` (schema).
+- **Migration:** add `theme_mode` column + update CHECK on `theme`.
+- **Untouched:** every component already on semantic tokens — no visual regressions expected outside the four palettes.
+
+## Open question
+
+- Do you want a `System` (auto light/dark) option in addition to explicit Light/Dark? If yes, provider listens to `matchMedia('(prefers-color-scheme: dark)')` while `mode === 'system'`. Default assumption in this plan: **yes, include System**.
