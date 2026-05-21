@@ -55,10 +55,14 @@ function DashboardPage() {
   );
   const score = useMemo(() => balanceScore(events, week), [events, week]);
 
+  const hour = now.getHours();
+  const tod = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
+  const greeting = `Good ${tod}`;
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <PageHeader
-        title={greeting()}
+        title={greeting}
         subtitle={format(now, "EEEE, MMMM d")}
         right={<ThemeToggle />}
       >
