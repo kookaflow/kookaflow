@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import logo from "@/assets/shiftsync-logo.png";
+import { BRAND_GRADIENT } from "@/lib/colours";
 
 export function SplashScreen({ duration = 1500 }: { duration?: number }) {
   const [visible, setVisible] = useState(true);
@@ -20,7 +21,7 @@ export function SplashScreen({ duration = 1500 }: { duration?: number }) {
     <div
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-opacity duration-500"
       style={{
-        background: "linear-gradient(160deg, #1E2A6E 0%, #6B35CC 100%)",
+        background: BRAND_GRADIENT,
         opacity: fade ? 0 : 1,
         pointerEvents: fade ? "none" : "auto",
       }}
