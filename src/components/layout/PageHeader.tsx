@@ -29,7 +29,8 @@ export function PageHeader({ title, subtitle, right, children }: PageHeaderProps
           <img
             src={logo}
             alt="ShiftSync"
-            className="h-8 w-auto object-contain"
+            style={{ height: 36, width: "auto" }}
+            className="object-contain"
           />
         </Link>
         {children ? <div className="flex items-center gap-2">{children}</div> : null}

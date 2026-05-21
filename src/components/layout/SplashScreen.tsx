@@ -29,7 +29,7 @@ export function SplashScreen({ duration = 1500 }: { duration?: number }) {
       <img
         src={logo}
         alt="ShiftSync"
-        style={{ height: 120, width: "auto" }}
+        style={{ height: 140, width: "auto" }}
         className="object-contain"
       />
       <div className="mt-4 text-3xl font-bold tracking-tight text-white">
