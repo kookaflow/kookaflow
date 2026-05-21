@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { CalendarDays, LayoutDashboard, Settings, CalendarHeart } from "lucide-react";
+import { CalendarDays, LayoutDashboard, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/shiftsync-logo.png";
 
 const NAV_ITEMS = [
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
@@ -16,9 +17,7 @@ export function AppNav() {
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-56 flex-col border-r border-border bg-card md:flex lg:w-56">
         <div className="flex items-center gap-2 px-5 py-5">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground shadow-sm">
-            <CalendarHeart className="size-5" />
-          </div>
+          <img src={logo} alt="ShiftSync" style={{ height: 40, width: "auto" }} className="object-contain" />
           <span className="text-lg font-bold tracking-tight">ShiftSync</span>
         </div>
         <nav className="flex flex-1 flex-col gap-1 px-3">

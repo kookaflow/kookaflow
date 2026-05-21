@@ -1,5 +1,5 @@
-import { CalendarHeart } from "lucide-react";
 import type { ReactNode } from "react";
+import logo from "@/assets/shiftsync-logo.png";
 
 export function AuthShell({
   tagline,
@@ -36,12 +36,12 @@ export function AuthShell({
         />
 
         <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="mb-4 flex items-center gap-2">
-            <div className="flex size-10 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm ring-1 ring-white/20">
-              <CalendarHeart className="size-5" />
-            </div>
-            <span className="text-lg font-semibold tracking-tight">ShiftSync</span>
-          </div>
+          <img
+            src={logo}
+            alt="ShiftSync"
+            style={{ height: 80, width: "auto" }}
+            className="mb-4 object-contain"
+          />
           <h1 className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl">
             {tagline}
           </h1>
