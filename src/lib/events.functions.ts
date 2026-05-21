@@ -20,6 +20,7 @@ const ShiftTypeSchema = z
     "night",
     "oncall",
     "split",
+    "side_hustle",
     "sick_leave",
     "annual_leave",
     "travel",
