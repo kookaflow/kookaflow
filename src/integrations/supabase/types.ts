@@ -280,6 +280,7 @@ export type Database = {
           phone: string | null
           reminder_minutes_before: number
           reminders: Json
+          shift_alert_sound: string
           sound_enabled: boolean
           sounds: Json
           theme: string
@@ -306,6 +307,7 @@ export type Database = {
           phone?: string | null
           reminder_minutes_before?: number
           reminders?: Json
+          shift_alert_sound?: string
           sound_enabled?: boolean
           sounds?: Json
           theme?: string
@@ -332,6 +334,7 @@ export type Database = {
           phone?: string | null
           reminder_minutes_before?: number
           reminders?: Json
+          shift_alert_sound?: string
           sound_enabled?: boolean
           sounds?: Json
           theme?: string
