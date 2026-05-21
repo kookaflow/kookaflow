@@ -10,7 +10,8 @@ const ProfileUpdateSchema = z.object({
 });
 
 const PreferencesUpdateSchema = z.object({
-  theme: z.enum(["dark", "light"]).optional(),
+  theme: z.enum(["slate", "midnight", "lavender", "forest"]).optional(),
+  theme_mode: z.enum(["light", "dark"]).optional(),
   default_view: z.enum(["month", "week", "day"]).optional(),
   week_starts_on: z.union([z.literal(0), z.literal(1)]).optional(),
   reminders: z.record(z.string(), z.unknown()).optional(),
@@ -81,7 +82,7 @@ export const getPreferences = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("user_preferences")
-      .select("user_id,theme,default_view,week_starts_on,reminders,sounds,email,phone")
+      .select("user_id,theme,theme_mode,default_view,week_starts_on,reminders,sounds,email,phone")
       .eq("user_id", userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -97,7 +98,7 @@ export const updatePreferences = createServerFn({ method: "POST" })
       .from("user_preferences")
       .update(data as never)
       .eq("user_id", userId)
-      .select("user_id,theme,default_view,week_starts_on,reminders,sounds,email,phone")
+      .select("user_id,theme,theme_mode,default_view,week_starts_on,reminders,sounds,email,phone")
       .single();
     if (error) throw new Error(error.message);
     return row;

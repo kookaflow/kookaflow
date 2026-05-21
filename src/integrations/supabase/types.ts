@@ -138,6 +138,7 @@ export type Database = {
           reminders: Json
           sounds: Json
           theme: string
+          theme_mode: string
           updated_at: string
           user_id: string
           week_starts_on: number
@@ -149,6 +150,7 @@ export type Database = {
           reminders?: Json
           sounds?: Json
           theme?: string
+          theme_mode?: string
           updated_at?: string
           user_id: string
           week_starts_on?: number
@@ -160,6 +162,7 @@ export type Database = {
           reminders?: Json
           sounds?: Json
           theme?: string
+          theme_mode?: string
           updated_at?: string
           user_id?: string
           week_starts_on?: number
