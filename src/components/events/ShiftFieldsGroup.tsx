@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import {
-  Sun, Sunset, Moon, Radio, GitBranch, Thermometer, Umbrella, MoreHorizontal,
+  Sun, Sunset, Moon, Radio, GitBranch, Zap, Thermometer, Umbrella, MoreHorizontal,
   type LucideIcon,
 } from "lucide-react";
 import type { ShiftMeta, ShiftType } from "@/types/event";
@@ -19,6 +19,7 @@ const TYPES: { value: ShiftType; label: string; Icon: LucideIcon; color: string 
   { value: "night", label: "Night", Icon: Moon, color: "#6366F1" },
   { value: "oncall", label: "On-Call", Icon: Radio, color: "#14B8A6" },
   { value: "split", label: "Split Shift", Icon: GitBranch, color: "#A855F7" },
+  { value: "side_hustle", label: "Side Hustle", Icon: Zap, color: "#F59E0B" },
   { value: "sick_leave", label: "Sick Leave", Icon: Thermometer, color: "#EF4444" },
   { value: "annual_leave", label: "Annual Leave", Icon: Umbrella, color: "#0EA5E9" },
   { value: "custom", label: "Other", Icon: MoreHorizontal, color: "#64748B" },
