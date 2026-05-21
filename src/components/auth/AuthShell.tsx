@@ -39,7 +39,7 @@ export function AuthShell({
           <img
             src={logo}
             alt="ShiftSync"
-            style={{ height: 80, width: "auto" }}
+            style={{ height: 100, width: "auto" }}
             className="mb-4 object-contain"
           />
           <h1 className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl">
