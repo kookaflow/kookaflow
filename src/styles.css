@@ -74,6 +74,8 @@
   --color-cat-family-foreground: var(--cat-family-foreground);
   --color-cat-personal: var(--cat-personal);
   --color-cat-personal-foreground: var(--cat-personal-foreground);
+  --color-cat-travel: var(--cat-travel);
+  --color-cat-travel-foreground: var(--cat-travel-foreground);
 }
 
 :root {
