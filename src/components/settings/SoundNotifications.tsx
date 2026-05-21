@@ -462,6 +462,60 @@ export function SoundNotifications() {
           />
         </div>
 
+        {/* Shift start alert sound */}
+        <div className={cn("space-y-3 rounded-lg border border-border p-4", disabled && "opacity-50")}>
+          <div>
+            <Label className="text-base font-medium">Shift start alert sound</Label>
+            <p className="text-xs text-muted-foreground">
+              Plays when your shift is about to begin.
+            </p>
+          </div>
+          <div className="space-y-2">
+            {SHIFT_ALERT_SOUNDS.map((s) => {
+              const selected = prefs.shiftAlertSound === s.value;
+              return (
+                <div
+                  key={s.value}
+                  className={cn(
+                    "flex items-center justify-between rounded-md border px-3 py-2 transition-colors",
+                    selected ? "border-primary bg-primary/5" : "border-border bg-card",
+                  )}
+                >
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => update("shiftAlertSound", s.value)}
+                    className="flex flex-1 items-center gap-2 text-left text-sm font-medium"
+                  >
+                    <span
+                      className={cn(
+                        "inline-flex size-4 items-center justify-center rounded-full border",
+                        selected ? "border-primary" : "border-muted-foreground/40",
+                      )}
+                    >
+                      {selected && <span className="size-2 rounded-full bg-primary" />}
+                    </span>
+                    {s.label}
+                  </button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={disabled || s.value === "none"}
+                    onClick={() => playShiftAlertSound(s.value)}
+                    aria-label={`Preview ${s.label}`}
+                  >
+                    <Play className="size-3.5" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            💡 For the alert to play, ShiftSync must be open or running in the background. Enable push notifications for alerts when the app is closed.
+          </p>
+        </div>
+
         {/* Ambient focus mode */}
         <div className={cn("space-y-3 rounded-lg border border-border p-4", disabled && "opacity-50")}>
           <div>
