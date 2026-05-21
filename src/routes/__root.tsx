@@ -4,12 +4,14 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
 import { PreferencesProvider } from "@/providers/PreferencesProvider";
+import { AppNav } from "@/components/layout/AppNav";
 
 function NotFoundComponent() {
   return (
@@ -115,8 +117,28 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <PreferencesProvider>
-        <Outlet />
+        <AppLayout />
       </PreferencesProvider>
     </QueryClientProvider>
+  );
+}
+
+function AppLayout() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const showNav = ["/calendar", "/dashboard", "/settings"].some((p) =>
+    pathname.startsWith(p),
+  );
+
+  if (!showNav) return <Outlet />;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <AppNav />
+      <div className="md:pl-56">
+        <div className="pb-16 md:pb-0">
+          <Outlet />
+        </div>
+      </div>
+    </div>
   );
 }
