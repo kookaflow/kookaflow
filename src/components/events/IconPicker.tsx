@@ -70,7 +70,7 @@ export function IconPicker({ value, gradient, onChange }: Props) {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 mx-0 my-0">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">Icon</span>
         {value && (

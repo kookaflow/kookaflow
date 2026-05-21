@@ -50,7 +50,7 @@ export function SplitShiftFields({ value, onChange }: Props) {
         Split shift details
       </p>
 
-      <div className="space-y-2">
+      <div className="space-y-2 mx-0 my-0">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">First shift</p>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
@@ -77,7 +77,7 @@ export function SplitShiftFields({ value, onChange }: Props) {
         </Select>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 mx-0 my-0">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Second shift</p>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
