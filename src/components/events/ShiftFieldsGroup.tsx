@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ShiftMeta, ShiftType } from "@/types/event";
+import { SplitShiftFields, DEFAULT_SPLIT } from "./SplitShiftFields";
 
 interface Props {
   value: ShiftMeta;
@@ -13,6 +14,8 @@ const TYPES: { value: ShiftType; label: string }[] = [
   { value: "afternoon", label: "Afternoon" },
   { value: "night", label: "Night" },
   { value: "rotating", label: "Rotating" },
+  { value: "oncall", label: "On-Call" },
+  { value: "split", label: "Split" },
 ];
 
 export function ShiftFieldsGroup({ value, onChange }: Props) {
@@ -40,6 +43,12 @@ export function ShiftFieldsGroup({ value, onChange }: Props) {
           <Input value={value.location} onChange={(e) => onChange({ ...value, location: e.target.value })} placeholder="e.g. Ward 4B" />
         </div>
       </div>
+      {value.shiftType === "split" && (
+        <SplitShiftFields
+          value={value.split ?? DEFAULT_SPLIT}
+          onChange={(split) => onChange({ ...value, split })}
+        />
+      )}
     </div>
   );
 }
