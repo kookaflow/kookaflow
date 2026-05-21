@@ -37,7 +37,7 @@ function OnboardingPage() {
   const [shiftPattern, setShiftPattern] = useState("rotating");
   const [hourlyRate, setHourlyRate] = useState("");
   const [currency, setCurrency] = useState("AUD");
-  const [theme, setTheme] = useState("slate");
+  const [theme, setTheme] = useState("midnight");
   const [saving, setSaving] = useState(false);
 
   const next = () => setStep((s) => Math.min(4, s + 1));
