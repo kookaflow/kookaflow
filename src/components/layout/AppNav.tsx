@@ -17,7 +17,12 @@ export function AppNav() {
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-56 flex-col border-r border-border bg-card md:flex lg:w-56">
         <div className="flex items-center gap-2 px-5 py-5">
-          <img src={logo} alt="ShiftSync" style={{ height: 40, width: "auto" }} className="object-contain" />
+          <div
+            className="flex h-10 w-10 items-center justify-center rounded-xl p-1.5 shadow-sm"
+            style={{ background: "var(--brand-gradient)" }}
+          >
+            <img src={logo} alt="ShiftSync" className="h-full w-full object-contain" />
+          </div>
           <span className="text-lg font-bold tracking-tight">ShiftSync</span>
         </div>
         <nav className="flex flex-1 flex-col gap-1 px-3">
