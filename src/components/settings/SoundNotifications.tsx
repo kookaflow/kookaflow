@@ -369,17 +369,17 @@ export function SoundNotifications() {
             <div className="flex flex-wrap gap-2">
               {LEAD_OPTIONS.map((m) => (
                 <button
-                  key={m}
+                  key={m.value}
                   type="button"
-                  onClick={() => update("eventAlertMinutes", m)}
+                  onClick={() => update("eventAlertMinutes", m.value)}
                   className={cn(
                     "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                    prefs.eventAlertMinutes === m
+                    prefs.eventAlertMinutes === m.value
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border bg-card hover:bg-accent",
                   )}
                 >
-                  {m} min
+                  {m.label}
                 </button>
               ))}
             </div>
