@@ -114,6 +114,20 @@ function CalendarPage() {
           <span className="text-lg font-bold tracking-tight">ShiftSync</span>
         </div>
 
+        <nav className="flex items-center gap-1 rounded-full border border-border bg-card p-1">
+          <span className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground shadow">
+            <CalendarDays className="size-3.5" />
+            <span className="hidden sm:inline">Calendar</span>
+          </span>
+          <Link
+            to="/dashboard"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <LayoutDashboard className="size-3.5" />
+            <span className="hidden sm:inline">Dashboard</span>
+          </Link>
+        </nav>
+
         <div className="mx-auto flex items-center gap-1 rounded-full border border-border bg-card p-1">
           {(["month", "week", "day"] as ViewMode[]).map((v) => (
             <button
