@@ -1,116 +1,165 @@
-# ShiftSync — Targeted Improvements Plan
+# ShiftSync — Phase 5B Database Schema (Refreshed)
 
-Scope: 7 changes to event modal, calendar rendering, and dashboard. No touching `/dashboard` earnings logic, Supabase config, or routing.
+Replaces the previous Phase 5A schema plan. Captures every field the app now relies on (themes, split shifts, payday, travel, icons, future earnings) so we never need a breaking migration later.
 
----
-
-## Change 1 — Split Shift type
-
-Add `"split"` to `ShiftType` union. In the Event modal's `ShiftFieldsGroup` (Work category), when `shiftType === "split"` render three controls:
-- First Shift: start / end time
-- Break: Select (30m, 45m, 1h, 1.5h, 2h)
-- Second Shift: start / end time
-
-Extend `ShiftMeta` with optional `split?: { firstStart, firstEnd, breakMinutes, secondStart, secondEnd }`. Stored inside the existing event `shift` blob — no schema migration.
-
-## Change 2 — Travel category
-
-Add `"travel"` to `CategoryId` in `src/types/event.ts` and `src/components/calendar-page/constants.ts`.
-- Color `#64748B`, Lucide `Car` icon
-- Added to `CATEGORIES` → flows into selector, badges, calendar coloring
-- Dashboard: new `CategoryCard` "Travel Time" (weekly hours); `metrics.ts` includes `travel`
-- Balance Score includes `travel` with a neutral weight (similar to `personal`)
-
-## Change 3 — Quick Add preset row
-
-New `src/components/events/QuickAddPresets.tsx` at top of `EventForm`. Horizontal scroll, iOS 17 chip style: `rounded-full`, `bg-[color]/15`, `text-[color]`, icon + label.
-
-Presets in `src/components/events/presets.ts`:
-1. Morning (Sun, amber, 06–14, Work)
-2. Afternoon (Sunset, orange, 14–22, Work)
-3. Night (Moon, indigo, 22–06, Work)
-4. On-Call (Radio, teal, all-day, Work)
-5. Split Shift (GitBranch, purple, opens split fields, Work)
-6. Sick Leave (Thermometer, red, all-day, Work)
-7. Annual Leave (Umbrella, sky, all-day, Work)
-8. Travel (Car, slate, Travel)
-9. Payday (DollarSign, gold, all-day, Work + payday=true)
-
-Tapping calls `applyPreset(p)` that sets title, category, times, allDay, shiftType, icon, isPayday in one go.
-
-## Change 4 — Modern icon picker
-
-New `src/components/events/IconPicker.tsx` replacing the current icon section.
-- 5-column grid of rounded-2xl `aspect-square` tiles
-- White Lucide icon on a gradient (`bg-gradient-to-br from-X to-Y`)
-- 6 gradients (Sunrise, Ocean, Forest, Lavender, Slate, Coral) cycled by tapping the already-selected tile
-- Selected: `ring-2 ring-white ring-offset-2 ring-offset-background`
-- Icon set (30): Sun, Moon, Sunset, Car, Briefcase, Heart, Dumbbell, Users, Home, Coffee, Music, Book, Plane, Utensils, Bike, Leaf, Star, Bell, Zap, Thermometer, Umbrella, Radio, GitBranch, DollarSign, Baby, Dog, Gamepad, ShoppingBag, Stethoscope, Bus
-
-Model: add `iconName?: string` and `iconGradient?: GradientId` to `CalendarEvent`. Replace existing free-text `icon` field.
-
-## Change 5 — Icons visible on calendar
-
-Always render the event icon:
-- Month view (`MonthDayCell` / `MonthView`): 16×16 icon beside the dot + title
-- Week view (`WeekDayColumn` / `EventBlock`): icon on left inside the block
-- Day view (`DayView`): icon prominently next to title
-
-Helper `src/lib/event-icon.ts`: returns `{ Icon, gradient }` from event — falls back to category icon. Travel auto-gets `Car`.
-
-## Change 6 — Payday toggle + banner
-
-- `isPayday: boolean` on `CalendarEvent` (Work-only UI)
-- Switch in `EventForm` under Work fields
-- `TodayPanel` / `DateHero`: banner "💰 Payday today!" when any today event has `isPayday`
-- Quick Add preset (#9)
-
-## Change 7 — Sync warning banner
-
-No Google Calendar sync exists yet. Add `src/providers/SyncStatusProvider.tsx` (in-memory `isSyncing`) and `src/components/settings/SyncBanner.tsx`. While syncing, AppLayout renders:
-
-> "Syncing your calendar — this may take a few minutes depending on how many events you have ☕"
-
-Auto-dismiss on complete. Trigger stubbed for the future Google Calendar settings button.
+Auth + RLS model is unchanged from 5A: Supabase Auth, every user-scoped row keyed by `user_id = auth.uid()`, `profiles` + `user_preferences` rows auto-created via `handle_new_user()` trigger.
 
 ---
 
-## Files to create
+## Tables
 
-- `src/components/events/QuickAddPresets.tsx`
-- `src/components/events/presets.ts`
-- `src/components/events/IconPicker.tsx`
-- `src/components/events/SplitShiftFields.tsx`
-- `src/lib/event-icon.ts`
-- `src/lib/gradients.ts`
-- `src/components/settings/SyncBanner.tsx`
-- `src/providers/SyncStatusProvider.tsx`
+### 1. `profiles` (1:1 with `auth.users`)
 
-## Files to modify
+| column | type | notes |
+|---|---|---|
+| id | uuid PK | references `auth.users(id)` on delete cascade |
+| display_name | text | onboarding |
+| role | text | e.g. Nurse, Paramedic |
+| shift_pattern | text | e.g. 4-on-4-off, rotating |
+| timezone | text not null default 'UTC' | IANA tz |
+| onboarded_at | timestamptz | null until onboarding completed |
+| created_at / updated_at | timestamptz default now() | `updated_at` via trigger |
 
-- `src/types/event.ts` — `travel` category, `split` shift type, `ShiftMeta.split`, `iconName`, `iconGradient`, `isPayday`
-- `src/components/calendar-page/constants.ts` — Travel category + Split shift style
-- `src/lib/categories.ts` — Travel entry + tailwind classes
-- `src/components/events/EventForm.tsx` — Quick Add row, IconPicker, Payday toggle, Split shift wiring
-- `src/components/events/ShiftFieldsGroup.tsx` — Split option in shift-type select
-- `src/components/calendar/EventBlock.tsx`, `EventChip.tsx`, `MonthDayCell.tsx`, `WeekDayColumn.tsx`, `DayView.tsx`, `MonthView.tsx` — render icon inline
-- `src/components/dashboard/lib/metrics.ts` + dashboard page — Travel card + Balance Score
-- `src/components/today/TodayPanel.tsx` (or `DateHero.tsx`) — Payday banner
-- `src/routes/__root.tsx` — mount `SyncStatusProvider` + render `SyncBanner` in `AppLayout`
+No emails/phones here — those live on `user_preferences` for reminder routing.
 
-## Implementation order
+### 2. `user_preferences` (1:1 with user)
 
-1. Types + category registry (foundation for Changes 1, 2)
-2. Gradients + IconPicker (Change 4) — needed by presets
-3. Quick Add presets + Split shift fields in EventForm (Changes 3, 1 UI)
-4. Payday toggle + daily banner (Change 6)
-5. Calendar icon rendering across all 3 views (Change 5)
-6. Dashboard Travel card + Balance Score (Change 2 dashboard side)
-7. Sync banner + provider stub (Change 7)
+| column | type | notes |
+|---|---|---|
+| user_id | uuid PK | references `auth.users(id)` on delete cascade |
+| theme | text not null default 'slate' | CHECK in (`slate`,`midnight`,`lavender`,`forest`) |
+| theme_mode | text not null default 'light' | CHECK in (`light`,`dark`) |
+| accent_colour | text | optional override hex; null = theme default |
+| default_view | text not null default 'week' | CHECK in (`month`,`week`,`day`) |
+| week_starts_on | smallint not null default 1 | 0 Sun, 1 Mon |
+| hourly_rate | numeric(10,2) | user default rate, nullable |
+| currency | text not null default 'AUD' | ISO 4217 |
+| country | text not null default 'AU' | ISO 3166-1 alpha-2, drives public holidays |
+| reminders | jsonb not null default `{}` | channel + cadence config |
+| sounds | jsonb not null default `{}` | per-event-type sound prefs |
+| email | text | reminder destination |
+| phone | text | SMS destination |
+| updated_at | timestamptz default now() | trigger |
 
-## Breaking changes / risks
+### 3. `categories` (reference table, read-only to clients)
 
-- `CalendarEvent.icon` (free-text) → replaced by `iconName` + `iconGradient`. Existing localStorage events lose icon string (mock data only). Add a one-line migration in `EventsProvider` to drop the old field.
-- Adding `travel` to `CategoryId` widens exhaustive switches — check `lib/selectors.ts`, `metrics.ts`, `nudges.ts`.
-- Dashboard already iterates `CATEGORIES` so Travel flows in automatically; verify Balance Score weighting isn't double-counting work-adjacent time.
-- No Supabase / routing / `/dashboard` earnings logic touched.
+| column | type | notes |
+|---|---|---|
+| id | text PK | `work`, `rest`, `wellness`, `exercise`, `social`, `family`, `personal`, `travel` |
+| label | text not null | |
+| color | text not null | hex |
+| icon | text not null | Lucide icon name |
+| sort_order | int not null default 0 | |
+
+Seeded with all 8 categories (Travel added). Public SELECT, no writes.
+
+### 4. `events` (the heavy table)
+
+| column | type | notes |
+|---|---|---|
+| id | uuid PK default gen_random_uuid() | |
+| user_id | uuid not null | references `auth.users(id)` on delete cascade |
+| title | text not null | |
+| category | text not null | FK → `categories(id)` |
+| starts_at | timestamptz not null | |
+| ends_at | timestamptz not null | |
+| all_day | bool not null default false | |
+| location | text | |
+| notes | text | |
+| **shift_type** | text | CHECK in (`morning`,`afternoon`,`night`,`oncall`,`split`,`sick_leave`,`annual_leave`,`travel`,`payday`); nullable for non-work events |
+| shift_role | text | denormalised role override (per-event) |
+| **split_shift_first_start** | time | |
+| **split_shift_first_end** | time | |
+| **split_shift_break_duration** | int | minutes |
+| **split_shift_second_start** | time | |
+| **split_shift_second_end** | time | |
+| **is_payday** | bool not null default false | |
+| **icon_name** | text | Lucide icon id |
+| **icon_gradient** | text | gradient id (`sunrise`,`ocean`,`forest`,`lavender`,`slate`,`coral`) |
+| **travel_duration_minutes** | int | for `travel` category or commute-tagged shifts |
+| **hourly_rate** | numeric(10,2) | per-event override; falls back to `user_preferences.hourly_rate` |
+| recurrence | jsonb not null default `{"kind":"none"}` | RRULE-shaped blob |
+| created_at / updated_at | timestamptz default now() | `updated_at` trigger |
+
+Validation via trigger (NOT CHECK) so we can compare time fields, e.g. ensure split-shift fields are all-or-nothing when `shift_type='split'`. Avoids the immutability issue with CHECK constraints.
+
+Indexes: `(user_id, starts_at)`, `(user_id, category)`, `(user_id, is_payday) where is_payday`.
+
+### 5. `public_holidays` (forward-looking, included now to avoid later breaking change)
+
+| column | type | notes |
+|---|---|---|
+| id | uuid PK | |
+| country | text not null | matches `user_preferences.country` |
+| region | text | state/province, nullable |
+| date | date not null | |
+| name | text not null | |
+| unique (country, region, date, name) | | |
+
+Public SELECT, no writes from clients. Seeded later by a server job.
+
+---
+
+## RLS Policies
+
+RLS enabled on every table. Pattern per user-scoped table:
+
+- `profiles`: SELECT/UPDATE/INSERT where `id = auth.uid()`. No DELETE.
+- `user_preferences`: SELECT/UPDATE/INSERT where `user_id = auth.uid()`. No DELETE.
+- `events`: SELECT/INSERT/UPDATE/DELETE where `user_id = auth.uid()` (INSERT/UPDATE also `WITH CHECK`).
+- `categories`: SELECT to `anon, authenticated`. No write policies.
+- `public_holidays`: SELECT to `anon, authenticated`. No write policies.
+
+Service-role writes (seeding categories/holidays) bypass RLS as usual.
+
+---
+
+## Triggers & Functions
+
+- `public.set_updated_at()` — already exists, attach to `profiles`, `user_preferences`, `events` BEFORE UPDATE.
+- `public.handle_new_user()` — already exists; inserts default `profiles` + `user_preferences` rows on `auth.users` insert.
+- `public.validate_event()` — new BEFORE INSERT/UPDATE trigger on `events`:
+  - `ends_at >= starts_at`
+  - if `shift_type='split'`: all five split fields non-null; first_end < second_start (in same TZ)
+  - if `shift_type` in (`sick_leave`,`annual_leave`): `all_day = true`
+  - if `is_payday=true`: `category='work'`
+  - if `category='travel'`: `travel_duration_minutes` non-null
+
+---
+
+## Field-by-field check against current frontend
+
+Cross-checked against `src/types/event.ts`, `src/types/preferences.ts`, `src/lib/themes.ts`, `src/lib/gradients.ts`, `src/components/events/presets.ts`:
+
+- `CalendarEvent.iconName` → `events.icon_name` ✓
+- `CalendarEvent.iconGradient` → `events.icon_gradient` ✓
+- `CalendarEvent.isPayday` → `events.is_payday` ✓
+- `ShiftMeta.split.*` → 5 `split_shift_*` columns ✓
+- `ShiftType` union (incl. `split`) → `shift_type` CHECK list, extended to cover preset-only types (`sick_leave`, `annual_leave`, `travel`, `payday`) so presets can round-trip without coercion ✓
+- `CategoryId` (8 values incl. `travel`) → `categories` seed + `events.category` FK ✓
+- `UserPreferences.themeName/mode/defaultView/weekStartsOn` → `user_preferences` columns ✓
+- New: `accent_colour`, `hourly_rate`, `currency`, `country` on `user_preferences` ✓
+- New on events: `travel_duration_minutes`, `hourly_rate` ✓
+
+No frontend field is unrepresented; no schema field is unused by the app or near-term roadmap (earnings, holidays).
+
+---
+
+## Migration order
+
+1. `categories` — create + seed 8 rows (idempotent upsert), enable RLS + public select.
+2. `profiles` — table, RLS, trigger.
+3. `user_preferences` — table with new columns (`accent_colour`, `hourly_rate`, `currency`, `country`), RLS, trigger.
+4. `events` — table with all new columns + CHECK on `shift_type`, FK to `categories`, indexes, RLS, `set_updated_at` + `validate_event` triggers.
+5. `public_holidays` — table, RLS, public select.
+6. `handle_new_user()` trigger on `auth.users` (already present — verify).
+
+Current DB already has earlier versions of `categories`, `profiles`, `user_preferences`, `events`. Migration will be `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` for new columns, plus the new `validate_event` trigger and `public_holidays` table. No destructive drops.
+
+---
+
+## Known non-goals (deferred, but schema-compatible)
+
+- Earnings ledger table — can be derived from `events.hourly_rate` + split durations later; no schema change to events needed.
+- External calendar sync metadata — will land as `event_sources` join table; doesn't change `events` shape.
+- Notification delivery log — separate table later; doesn't affect current tables.
