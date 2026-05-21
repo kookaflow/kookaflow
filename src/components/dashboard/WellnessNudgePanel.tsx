@@ -1,27 +1,83 @@
 import { useEffect, useState } from "react";
-import { Sparkles, AlertTriangle, Info, Heart } from "lucide-react";
-import type { Nudge } from "./lib/nudges";
+import { Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function WellnessNudgePanel({ nudges }: { nudges: Nudge[] }) {
+interface Tip {
+  message: string;
+  source: string;
+}
+
+const TIPS: Tip[] = [
+  {
+    message:
+      "Aim for 7–9 hours of sleep. Each hour of lost sleep measurably impairs memory consolidation, mood, and immune response the next day.",
+    source: "Matthew Walker, Why We Sleep",
+  },
+  {
+    message:
+      "After a run of night shifts, give yourself a 24-hour recovery window before stacking more. Circadian resets take time, not willpower.",
+    source: "Walker, sleep & shift-work research",
+  },
+  {
+    message:
+      "Get morning light within 30 minutes of waking — even on cloudy days. Bright light is the single strongest cue to anchor your circadian rhythm.",
+    source: "Matthew Walker, Why We Sleep",
+  },
+  {
+    message:
+      "Target at least 150 minutes of moderate physical activity per week, plus two muscle-strengthening sessions. Movement protects heart, mood, and sleep.",
+    source: "WHO Physical Activity Guidelines",
+  },
+  {
+    message:
+      "Even short walking breaks count. Replacing sitting time with light activity is associated with lower all-cause mortality.",
+    source: "WHO Physical Activity Guidelines",
+  },
+  {
+    message:
+      "Strong social connection is associated with a 50% increase in longevity — comparable in impact to quitting smoking.",
+    source: "Holt-Lunstad et al., meta-analysis on social relationships",
+  },
+  {
+    message:
+      "Loneliness carries a health risk on par with smoking 15 cigarettes a day. A 10-minute call to someone you love is not a luxury — it's medicine.",
+    source: "Holt-Lunstad, social connection research",
+  },
+  {
+    message:
+      "A short daily mindfulness practice changes brain regions tied to attention and emotion regulation in as little as eight weeks.",
+    source: "Harvard / Sara Lazar, MBSR neuroimaging studies",
+  },
+  {
+    message:
+      "Protected, distraction-free time with family or close friends is one of the strongest predictors of life satisfaction across cultures.",
+    source: "Seligman, PERMA model of positive psychology",
+  },
+  {
+    message:
+      "Savor one small good moment from your day before bed. People who regularly notice positive events report higher wellbeing within two weeks.",
+    source: "Seligman, positive psychology interventions",
+  },
+];
+
+export function WellnessNudgePanel(_props: { nudges?: unknown } = {}) {
   const [idx, setIdx] = useState(0);
+  const [visible, setVisible] = useState(true);
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    if (paused || nudges.length <= 1) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % nudges.length), 8000);
-    return () => clearInterval(t);
-  }, [paused, nudges.length]);
+    if (paused) return;
+    const interval = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setIdx((i) => (i + 1) % TIPS.length);
+        setVisible(true);
+      }, 400);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [paused]);
 
-  useEffect(() => {
-    if (idx >= nudges.length) setIdx(0);
-  }, [nudges.length, idx]);
-
-  const n = nudges[idx];
-  if (!n) return null;
-
-  const Icon =
-    n.tone === "warning" ? AlertTriangle : n.tone === "info" ? Info : Heart;
+  const tip = TIPS[idx];
 
   return (
     <div
@@ -30,35 +86,34 @@ export function WellnessNudgePanel({ nudges }: { nudges: Nudge[] }) {
       className="relative flex h-full flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card to-card/40 p-5"
     >
       <div className="flex items-center gap-2">
-        <Sparkles className="size-4 text-primary" />
+        <Lightbulb className="size-4 text-primary" />
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Wellness nudge
+          ShiftSync Tip
         </h2>
       </div>
 
-      <div key={n.id} className="flex flex-1 gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div
-          className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-lg",
-            n.tone === "warning" && "bg-destructive/15 text-destructive",
-            n.tone === "info" && "bg-primary/15 text-primary",
-            n.tone === "affirm" && "bg-emerald-500/15 text-emerald-500",
-          )}
-        >
-          <Icon className="size-4" />
-        </div>
-        <div className="flex flex-col gap-2">
-          <p className="text-sm leading-relaxed text-foreground">{n.message}</p>
-          <p className="text-[11px] italic text-muted-foreground">— {n.source}</p>
-        </div>
+      <div
+        className={cn(
+          "flex flex-1 flex-col gap-2 transition-opacity duration-400 ease-in-out",
+          visible ? "opacity-100" : "opacity-0",
+        )}
+      >
+        <p className="text-sm leading-relaxed text-foreground">{tip.message}</p>
+        <p className="text-[11px] italic text-muted-foreground">— {tip.source}</p>
       </div>
 
       <div className="flex items-center justify-center gap-1.5">
-        {nudges.map((_, i) => (
+        {TIPS.map((_, i) => (
           <button
             key={i}
             type="button"
-            onClick={() => setIdx(i)}
+            onClick={() => {
+              setVisible(false);
+              setTimeout(() => {
+                setIdx(i);
+                setVisible(true);
+              }, 200);
+            }}
             aria-label={`Show tip ${i + 1}`}
             className={cn(
               "h-1.5 rounded-full transition-all",
