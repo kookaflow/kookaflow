@@ -141,6 +141,67 @@ function playSound(id: SoundId) {
   }
 }
 
+function playShiftAlertSound(id: ShiftAlertSoundId) {
+  if (id === "none") return;
+  const ctx = getCtx();
+  switch (id) {
+    case "triple_chime": {
+      // Three ascending sine tones with brief gaps; gentle fade on last
+      playTone({ freq: 440, type: "sine", duration: 0.3, startOffset: 0,    gain: 0.18 });
+      playTone({ freq: 554, type: "sine", duration: 0.3, startOffset: 0.4,  gain: 0.18 });
+      playTone({ freq: 659, type: "sine", duration: 0.5, startOffset: 0.8,  gain: 0.18 });
+      break;
+    }
+    case "rising_alert": {
+      const t0 = ctx.currentTime;
+      const dur = 2.0;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(300, t0);
+      osc.frequency.linearRampToValueAtTime(600, t0 + dur);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.2, t0 + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g).connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.05);
+      break;
+    }
+    case "double_bell": {
+      // Bell-like: sharp attack, slow exponential decay (triangle + sine partial)
+      const ring = (offset: number) => {
+        const t0 = ctx.currentTime + offset;
+        const dur = 0.4;
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc1.type = "triangle";
+        osc2.type = "sine";
+        osc1.frequency.setValueAtTime(528, t0);
+        osc2.frequency.setValueAtTime(1056, t0);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.22, t0 + 0.005); // sharp attack
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+        osc1.connect(g);
+        osc2.connect(g);
+        g.connect(ctx.destination);
+        osc1.start(t0); osc2.start(t0);
+        osc1.stop(t0 + dur + 0.05); osc2.stop(t0 + dur + 0.05);
+      };
+      ring(0);
+      ring(0.6); // 0.4s bell + 0.2s gap
+      break;
+    }
+    case "gentle_pulse": {
+      for (let i = 0; i < 3; i++) {
+        playTone({ freq: 392, type: "sine", duration: 0.2, startOffset: i * 0.3, gain: 0.1 });
+      }
+      break;
+    }
+  }
+}
+
 // ---------- Ambient engine ----------
 
 type AmbientHandle = {
