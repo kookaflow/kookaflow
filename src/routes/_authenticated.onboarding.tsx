@@ -77,7 +77,7 @@ function OnboardingPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <div
         className="flex flex-col items-center gap-3 px-6 py-10 text-center text-white"
-        style={{ background: "linear-gradient(160deg, #1E2A6E 0%, #6B35CC 100%)" }}
+        style={{ background: "var(--brand-gradient)" }}
       >
         <img src={logo} alt="ShiftSync" style={{ height: 80, width: "auto" }} className="object-contain" />
         <h1 className="text-2xl font-bold tracking-tight">Welcome to ShiftSync</h1>
@@ -86,7 +86,7 @@ function OnboardingPage() {
             <span
               key={i}
               className="h-2 w-2 rounded-full"
-              style={{ background: i === step ? "#5B8DEF" : "rgba(255,255,255,0.4)" }}
+              style={{ background: i === step ? "var(--brand-highlight)" : "rgba(255,255,255,0.4)" }}
             />
           ))}
         </div>
