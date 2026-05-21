@@ -18,6 +18,8 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
+import { Route as ApiPublicHooksSendWeeklyReminderRouteImport } from './routes/api/public/hooks/send-weekly-reminder'
+import { Route as ApiPublicHooksSendDailyReminderRouteImport } from './routes/api/public/hooks/send-daily-reminder'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -63,6 +65,18 @@ const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const ApiPublicHooksSendWeeklyReminderRoute =
+  ApiPublicHooksSendWeeklyReminderRouteImport.update({
+    id: '/api/public/hooks/send-weekly-reminder',
+    path: '/api/public/hooks/send-weekly-reminder',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSendDailyReminderRoute =
+  ApiPublicHooksSendDailyReminderRouteImport.update({
+    id: '/api/public/hooks/send-daily-reminder',
+    path: '/api/public/hooks/send-daily-reminder',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -73,6 +87,8 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
+  '/api/public/hooks/send-weekly-reminder': typeof ApiPublicHooksSendWeeklyReminderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -83,6 +99,8 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
+  '/api/public/hooks/send-weekly-reminder': typeof ApiPublicHooksSendWeeklyReminderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,6 +113,8 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
+  '/api/public/hooks/send-weekly-reminder': typeof ApiPublicHooksSendWeeklyReminderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,6 +127,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/onboarding'
     | '/settings'
+    | '/api/public/hooks/send-daily-reminder'
+    | '/api/public/hooks/send-weekly-reminder'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -117,6 +139,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/onboarding'
     | '/settings'
+    | '/api/public/hooks/send-daily-reminder'
+    | '/api/public/hooks/send-weekly-reminder'
   id:
     | '__root__'
     | '/'
@@ -128,6 +152,8 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/onboarding'
     | '/_authenticated/settings'
+    | '/api/public/hooks/send-daily-reminder'
+    | '/api/public/hooks/send-weekly-reminder'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -136,6 +162,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  ApiPublicHooksSendDailyReminderRoute: typeof ApiPublicHooksSendDailyReminderRoute
+  ApiPublicHooksSendWeeklyReminderRoute: typeof ApiPublicHooksSendWeeklyReminderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -203,6 +231,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCalendarRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/hooks/send-weekly-reminder': {
+      id: '/api/public/hooks/send-weekly-reminder'
+      path: '/api/public/hooks/send-weekly-reminder'
+      fullPath: '/api/public/hooks/send-weekly-reminder'
+      preLoaderRoute: typeof ApiPublicHooksSendWeeklyReminderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/send-daily-reminder': {
+      id: '/api/public/hooks/send-daily-reminder'
+      path: '/api/public/hooks/send-daily-reminder'
+      fullPath: '/api/public/hooks/send-daily-reminder'
+      preLoaderRoute: typeof ApiPublicHooksSendDailyReminderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -230,6 +272,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  ApiPublicHooksSendDailyReminderRoute: ApiPublicHooksSendDailyReminderRoute,
+  ApiPublicHooksSendWeeklyReminderRoute: ApiPublicHooksSendWeeklyReminderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

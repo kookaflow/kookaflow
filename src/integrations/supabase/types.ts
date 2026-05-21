@@ -244,6 +244,30 @@ export type Database = {
         }
         Relationships: []
       }
+      reminder_sends: {
+        Row: {
+          id: string
+          kind: string
+          sent_at: string
+          sent_for_date: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          kind: string
+          sent_at?: string
+          sent_for_date: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          kind?: string
+          sent_at?: string
+          sent_for_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_category_visibility: {
         Row: {
           category_id: string
