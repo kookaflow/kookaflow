@@ -72,7 +72,7 @@ export type WeekDayBucket = { day: string; date: Date; total: number } & Record<
 
 function emptyTotals(): Record<CategoryId, number> {
   return {
-    work: 0, rest: 0, wellness: 0, exercise: 0, social: 0, family: 0, personal: 0,
+    work: 0, rest: 0, wellness: 0, exercise: 0, social: 0, family: 0, personal: 0, travel: 0,
   };
 }
 
@@ -169,7 +169,7 @@ export function categoryCard(
 }
 
 export const DASHBOARD_CARD_CATEGORIES: CategoryId[] = [
-  "work", "rest", "wellness", "exercise", "social", "family",
+  "work", "rest", "wellness", "exercise", "social", "family", "travel",
 ];
 
 export interface BalanceScore {
