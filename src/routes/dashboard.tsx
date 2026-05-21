@@ -16,7 +16,6 @@ import {
   wakingHoursPerWeek,
   weeklyByDay,
 } from "@/components/dashboard/lib/metrics";
-import { buildNudges } from "@/components/dashboard/lib/nudges";
 import { BalanceScoreCard } from "@/components/dashboard/BalanceScoreCard";
 import { WellnessNudgePanel } from "@/components/dashboard/WellnessNudgePanel";
 import { WeeklyStackedBarChart } from "@/components/dashboard/WeeklyStackedBarChart";
@@ -64,7 +63,6 @@ function DashboardPage() {
     [events, week, lastWeek, waking],
   );
   const score = useMemo(() => balanceScore(events, week), [events, week]);
-  const nudges = useMemo(() => buildNudges(events, now), [events]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -114,7 +112,7 @@ function DashboardPage() {
             <BalanceScoreCard data={score} />
           </div>
           <div className="lg:col-span-2">
-            <WellnessNudgePanel nudges={nudges} />
+            <WellnessNudgePanel />
           </div>
         </div>
 

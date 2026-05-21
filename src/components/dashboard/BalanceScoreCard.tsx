@@ -1,6 +1,14 @@
 import type { BalanceScore } from "./lib/metrics";
 import { cn } from "@/lib/utils";
 
+function encouragement(score: number | null): string {
+  if (score === null) return "Add a few more events to see your balance.";
+  if (score >= 80) return "You're thriving 🌟";
+  if (score >= 60) return "Good balance, keep it up 💪";
+  if (score >= 40) return "Some areas need attention 🌱";
+  return "Time to rebalance ❤️";
+}
+
 export function BalanceScoreCard({ data }: { data: BalanceScore }) {
   const score = data.score ?? 0;
   const radius = 56;
@@ -22,7 +30,7 @@ export function BalanceScoreCard({ data }: { data: BalanceScore }) {
     <div className="flex h-full flex-col gap-4 rounded-2xl border border-border bg-card p-5">
       <div className="flex items-baseline justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Balance Score
+          Your Life Balance Score
         </h2>
         <span
           className={cn(
@@ -70,7 +78,10 @@ export function BalanceScoreCard({ data }: { data: BalanceScore }) {
             </span>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground">{data.copy}</p>
+        <div className="flex flex-col gap-1">
+          <p className="text-base font-semibold text-foreground">{encouragement(data.score)}</p>
+          <p className="text-sm text-muted-foreground">{data.copy}</p>
+        </div>
       </div>
     </div>
   );

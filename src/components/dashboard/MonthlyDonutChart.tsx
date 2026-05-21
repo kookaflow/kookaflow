@@ -31,6 +31,10 @@ export function MonthlyDonutChart({ totals, totalHours }: Props) {
                 outerRadius={88}
                 paddingAngle={2}
                 stroke="none"
+                isAnimationActive
+                animationBegin={0}
+                animationDuration={900}
+                animationEasing="ease-out"
               >
                 {visible.map((d) => (
                   <Cell key={d.category} fill={d.color} />
