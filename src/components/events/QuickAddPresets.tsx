@@ -10,7 +10,7 @@ export function QuickAddPresets({ onPick }: Props) {
       <p className="px-1 pb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         Quick add
       </p>
-      <div className="flex snap-x gap-2 overflow-x-auto px-1 pb-1 scrollbar-none">
+      <div className="flex flex-wrap gap-2 px-1 pb-1">
         {PRESETS.map((p) => {
           const Icon = p.Icon;
           return (
@@ -18,7 +18,7 @@ export function QuickAddPresets({ onPick }: Props) {
               key={p.id}
               type="button"
               onClick={() => onPick(p)}
-              className="group flex shrink-0 snap-start items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition active:scale-95"
+              className="group flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition active:scale-95"
               style={{
                 backgroundColor: `${p.color}26`,
                 color: p.color,

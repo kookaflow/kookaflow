@@ -83,7 +83,7 @@ export function IconPicker({ value, gradient, onChange }: Props) {
           </button>
         )}
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-5 gap-2">
         {ICONS.map(({ name, Icon }) => {
           const selected = value === name;
           const g = selected ? getGradient(activeGradient) : GRADIENT_MAP.slate;
