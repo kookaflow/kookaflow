@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { EventsProvider } from "@/providers/EventsProvider";
+import { ShiftAlertWatcher } from "@/components/notifications/ShiftAlertWatcher";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -50,6 +51,7 @@ function AuthenticatedLayout() {
   }
   return (
     <EventsProvider>
+      <ShiftAlertWatcher />
       <Outlet />
     </EventsProvider>
   );
