@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { getCategory } from "@/lib/categories";
+import { getEventIcon } from "@/lib/event-icon";
 import type { CalendarEvent } from "@/types/event";
 import { format } from "date-fns";
 
@@ -12,6 +13,7 @@ interface Props {
 
 export function EventChip({ event, onClick, showTime = true, className }: Props) {
   const c = getCategory(event.category);
+  const { Icon } = getEventIcon(event);
   return (
     <button
       type="button"
@@ -27,6 +29,7 @@ export function EventChip({ event, onClick, showTime = true, className }: Props)
       )}
       title={event.title}
     >
+      <Icon className="size-3 shrink-0 opacity-90" strokeWidth={2.5} />
       {showTime && !event.allDay && (
         <span className="shrink-0 opacity-80">{format(new Date(event.start), "HH:mm")}</span>
       )}
