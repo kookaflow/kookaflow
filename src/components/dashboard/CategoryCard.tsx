@@ -12,7 +12,10 @@ export function CategoryCard({ data }: { data: CategoryCardData }) {
   const max = Math.max(0.5, ...data.sparkline);
 
   return (
-    <div className="group flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-md">
+    <div
+      className="group relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-border bg-card p-4 pl-5 transition-all hover:-translate-y-0.5 hover:shadow-md"
+      style={{ borderLeft: `4px solid ${def.color}` }}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span
