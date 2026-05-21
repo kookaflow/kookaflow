@@ -5,10 +5,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Volume2, Play, Check, Waves, CloudRain, Trees } from "lucide-react";
+import { updatePreferences } from "@/lib/preferences.functions";
 
 type SoundId = "soft-chime" | "bell" | "nature" | "digital-ping" | "none";
 type AmbientId = "off" | "rain" | "white-noise" | "forest";
-type LeadMinutes = 5 | 10 | 15 | 30;
+type LeadMinutes = 5 | 10 | 15 | 30 | 60 | 120;
+type ShiftAlertSoundId = "triple_chime" | "rising_alert" | "double_bell" | "gentle_pulse" | "none";
 
 type Prefs = {
   masterEnabled: boolean;
@@ -16,6 +18,7 @@ type Prefs = {
   eventAlertEnabled: boolean;
   eventAlertMinutes: LeadMinutes;
   shiftAlertEnabled: boolean;
+  shiftAlertSound: ShiftAlertSoundId;
   ambient: AmbientId;
 };
 
@@ -27,6 +30,7 @@ const DEFAULT_PREFS: Prefs = {
   eventAlertEnabled: true,
   eventAlertMinutes: 10,
   shiftAlertEnabled: true,
+  shiftAlertSound: "triple_chime",
   ambient: "off",
 };
 
@@ -38,7 +42,22 @@ const SOUNDS: { value: SoundId; label: string }[] = [
   { value: "none", label: "None" },
 ];
 
-const LEAD_OPTIONS: LeadMinutes[] = [5, 10, 15, 30];
+const LEAD_OPTIONS: { value: LeadMinutes; label: string }[] = [
+  { value: 5, label: "5 min" },
+  { value: 10, label: "10 min" },
+  { value: 15, label: "15 min" },
+  { value: 30, label: "30 min" },
+  { value: 60, label: "1 hour" },
+  { value: 120, label: "2 hours" },
+];
+
+const SHIFT_ALERT_SOUNDS: { value: ShiftAlertSoundId; label: string }[] = [
+  { value: "triple_chime", label: "Triple Chime (recommended)" },
+  { value: "rising_alert", label: "Rising Alert" },
+  { value: "double_bell", label: "Double Bell" },
+  { value: "gentle_pulse", label: "Gentle Pulse" },
+  { value: "none", label: "None" },
+];
 
 const AMBIENT_OPTIONS: { value: AmbientId; label: string; icon: React.ReactNode }[] = [
   { value: "off", label: "Off", icon: <Volume2 className="size-3.5" /> },
@@ -119,6 +138,67 @@ function playSound(id: SoundId) {
       playTone({ freq: 1760, type: "square", duration: 0.12, gain: 0.1 });
       playTone({ freq: 2200, type: "square", duration: 0.12, startOffset: 0.1, gain: 0.08 });
       break;
+  }
+}
+
+function playShiftAlertSound(id: ShiftAlertSoundId) {
+  if (id === "none") return;
+  const ctx = getCtx();
+  switch (id) {
+    case "triple_chime": {
+      // Three ascending sine tones with brief gaps; gentle fade on last
+      playTone({ freq: 440, type: "sine", duration: 0.3, startOffset: 0,    gain: 0.18 });
+      playTone({ freq: 554, type: "sine", duration: 0.3, startOffset: 0.4,  gain: 0.18 });
+      playTone({ freq: 659, type: "sine", duration: 0.5, startOffset: 0.8,  gain: 0.18 });
+      break;
+    }
+    case "rising_alert": {
+      const t0 = ctx.currentTime;
+      const dur = 2.0;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(300, t0);
+      osc.frequency.linearRampToValueAtTime(600, t0 + dur);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.2, t0 + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g).connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.05);
+      break;
+    }
+    case "double_bell": {
+      // Bell-like: sharp attack, slow exponential decay (triangle + sine partial)
+      const ring = (offset: number) => {
+        const t0 = ctx.currentTime + offset;
+        const dur = 0.4;
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc1.type = "triangle";
+        osc2.type = "sine";
+        osc1.frequency.setValueAtTime(528, t0);
+        osc2.frequency.setValueAtTime(1056, t0);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.22, t0 + 0.005); // sharp attack
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+        osc1.connect(g);
+        osc2.connect(g);
+        g.connect(ctx.destination);
+        osc1.start(t0); osc2.start(t0);
+        osc1.stop(t0 + dur + 0.05); osc2.stop(t0 + dur + 0.05);
+      };
+      ring(0);
+      ring(0.6); // 0.4s bell + 0.2s gap
+      break;
+    }
+    case "gentle_pulse": {
+      for (let i = 0; i < 3; i++) {
+        playTone({ freq: 392, type: "sine", duration: 0.2, startOffset: i * 0.3, gain: 0.1 });
+      }
+      break;
+    }
   }
 }
 
@@ -272,10 +352,18 @@ export function SoundNotifications() {
     if (prefs.masterEnabled) playSound(id);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
     } catch {/* noop */}
+    try {
+      await updatePreferences({
+        data: {
+          reminder_minutes_before: prefs.eventAlertMinutes,
+          shift_alert_sound: prefs.shiftAlertSound,
+        },
+      });
+    } catch {/* noop — keep local save even if remote fails */}
     setSaved(true);
     setTimeout(() => setSaved(false), 1800);
   };
@@ -350,17 +438,17 @@ export function SoundNotifications() {
             <div className="flex flex-wrap gap-2">
               {LEAD_OPTIONS.map((m) => (
                 <button
-                  key={m}
+                  key={m.value}
                   type="button"
-                  onClick={() => update("eventAlertMinutes", m)}
+                  onClick={() => update("eventAlertMinutes", m.value)}
                   className={cn(
                     "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                    prefs.eventAlertMinutes === m
+                    prefs.eventAlertMinutes === m.value
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border bg-card hover:bg-accent",
                   )}
                 >
-                  {m} min
+                  {m.label}
                 </button>
               ))}
             </div>
@@ -380,6 +468,60 @@ export function SoundNotifications() {
             checked={prefs.shiftAlertEnabled}
             onCheckedChange={(v) => update("shiftAlertEnabled", v)}
           />
+        </div>
+
+        {/* Shift start alert sound */}
+        <div className={cn("space-y-3 rounded-lg border border-border p-4", disabled && "opacity-50")}>
+          <div>
+            <Label className="text-base font-medium">Shift start alert sound</Label>
+            <p className="text-xs text-muted-foreground">
+              Plays when your shift is about to begin.
+            </p>
+          </div>
+          <div className="space-y-2">
+            {SHIFT_ALERT_SOUNDS.map((s) => {
+              const selected = prefs.shiftAlertSound === s.value;
+              return (
+                <div
+                  key={s.value}
+                  className={cn(
+                    "flex items-center justify-between rounded-md border px-3 py-2 transition-colors",
+                    selected ? "border-primary bg-primary/5" : "border-border bg-card",
+                  )}
+                >
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => update("shiftAlertSound", s.value)}
+                    className="flex flex-1 items-center gap-2 text-left text-sm font-medium"
+                  >
+                    <span
+                      className={cn(
+                        "inline-flex size-4 items-center justify-center rounded-full border",
+                        selected ? "border-primary" : "border-muted-foreground/40",
+                      )}
+                    >
+                      {selected && <span className="size-2 rounded-full bg-primary" />}
+                    </span>
+                    {s.label}
+                  </button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={disabled || s.value === "none"}
+                    onClick={() => playShiftAlertSound(s.value)}
+                    aria-label={`Preview ${s.label}`}
+                  >
+                    <Play className="size-3.5" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            💡 For the alert to play, ShiftSync must be open or running in the background. Enable push notifications for alerts when the app is closed.
+          </p>
         </div>
 
         {/* Ambient focus mode */}
