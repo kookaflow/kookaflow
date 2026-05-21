@@ -127,6 +127,8 @@
   --cat-family-foreground: oklch(0.2 0.02 50);
   --cat-personal: oklch(0.7 0.04 250);
   --cat-personal-foreground: oklch(0.2 0.02 250);
+  --cat-travel: oklch(0.58 0.06 240);
+  --cat-travel-foreground: oklch(0.98 0 0);
 }
 
 .dark {
@@ -177,6 +179,8 @@
   --cat-family-foreground: oklch(0.2 0.02 50);
   --cat-personal: oklch(0.78 0.04 250);
   --cat-personal-foreground: oklch(0.2 0.02 250);
+  --cat-travel: oklch(0.58 0.06 240);
+  --cat-travel-foreground: oklch(0.98 0 0);
 }
 
 @layer base {
