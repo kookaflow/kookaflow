@@ -208,3 +208,87 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
     </div>
   );
 }
+
+const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+function RecurrenceBlock({
+  pattern,
+  days,
+  onPatternChange,
+  onDaysChange,
+}: {
+  pattern: RecurrencePattern | null;
+  days: string[];
+  onPatternChange: (p: RecurrencePattern | null) => void;
+  onDaysChange: (d: string[]) => void;
+}) {
+  const isOn = pattern !== null;
+  const toggleDay = (key: string) => {
+    if (days.includes(key)) {
+      onDaysChange(days.filter((d) => d !== key));
+    } else {
+      onDaysChange([...days, key]);
+    }
+  };
+  return (
+    <div className="space-y-3 rounded-md border border-border p-2.5">
+      <div className="flex items-center justify-between">
+        <Label className="cursor-pointer text-sm font-normal">Recurring</Label>
+        <Switch
+          checked={isOn}
+          onCheckedChange={(v) => onPatternChange(v ? "weekly" : null)}
+        />
+      </div>
+      {isOn && (
+        <>
+          <div className="flex flex-wrap gap-1.5">
+            {(["daily", "weekly", "fortnightly", "custom"] as RecurrencePattern[]).map(
+              (k) => {
+                const active = pattern === k;
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => onPatternChange(k)}
+                    className={cn(
+                      "rounded-full border px-3 py-1 text-xs font-medium capitalize transition-all",
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card hover:border-foreground/30",
+                    )}
+                  >
+                    {k}
+                  </button>
+                );
+              },
+            )}
+          </div>
+          {pattern === "custom" && (
+            <div className="flex gap-1">
+              {WEEKDAY_LABELS.map((label, i) => {
+                const key = WEEKDAY_KEYS[i];
+                const active = days.includes(key);
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => toggleDay(key)}
+                    className={cn(
+                      "flex size-9 items-center justify-center rounded-full border text-xs font-semibold transition-all",
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card hover:border-foreground/30",
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
