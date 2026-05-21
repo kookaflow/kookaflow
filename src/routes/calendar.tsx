@@ -15,6 +15,7 @@ import {
   CalendarIcon,
   Moon,
   Sun,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -24,6 +25,8 @@ import { MonthView } from "@/components/calendar-page/MonthView";
 import { TimeGrid } from "@/components/calendar-page/TimeGrid";
 import { TodayPanel } from "@/components/calendar-page/TodayPanel";
 import { buildMockEvents } from "@/components/calendar-page/mock";
+import { EventDialog } from "@/components/calendar-page/EventDialog";
+import type { MockEvent } from "@/components/calendar-page/constants";
 
 type ViewMode = "month" | "week" | "day";
 
@@ -35,6 +38,12 @@ function CalendarPage() {
   const [view, setView] = useState<ViewMode>("month");
   const [date, setDate] = useState<Date>(new Date());
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [events, setEvents] = useState<MockEvent[]>(() =>
+    buildMockEvents(new Date()),
+  );
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<MockEvent | null>(null);
+  const [dialogDefault, setDialogDefault] = useState<Date>(new Date());
 
   useEffect(() => {
     const root = document.documentElement;
@@ -45,12 +54,32 @@ function CalendarPage() {
     };
   }, [theme]);
 
-  const events = useMemo(() => buildMockEvents(new Date()), []);
-
   const goPrev = () => {
     if (view === "month") setDate((d) => addMonths(d, -1));
     else if (view === "week") setDate((d) => addDays(d, -7));
     else setDate((d) => addDays(d, -1));
+  };
+
+  const openCreate = (d?: Date) => {
+    setEditing(null);
+    setDialogDefault(d ?? new Date());
+    setDialogOpen(true);
+  };
+  const openEdit = (e: MockEvent) => {
+    setEditing(e);
+    setDialogOpen(true);
+  };
+  const handleSave = (e: MockEvent) => {
+    setEvents((prev) => {
+      const idx = prev.findIndex((p) => p.id === e.id);
+      if (idx === -1) return [...prev, e];
+      const next = prev.slice();
+      next[idx] = e;
+      return next;
+    });
+  };
+  const handleDelete = (id: string) => {
+    setEvents((prev) => prev.filter((p) => p.id !== id));
   };
   const goNext = () => {
     if (view === "month") setDate((d) => addMonths(d, 1));
@@ -154,6 +183,14 @@ function CalendarPage() {
               <Moon className="size-4" />
             )}
           </Button>
+          <Button
+            size="sm"
+            onClick={() => openCreate(date)}
+            className="gap-1.5"
+          >
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">Add event</span>
+          </Button>
         </div>
       </header>
 
@@ -174,6 +211,8 @@ function CalendarPage() {
               selected={date}
               events={events}
               onSelect={setDate}
+              onCreate={openCreate}
+              onEventClick={openEdit}
             />
           )}
           {view === "week" && (
@@ -182,6 +221,8 @@ function CalendarPage() {
               events={events}
               selected={date}
               onSelectDay={setDate}
+              onCreate={openCreate}
+              onEventClick={openEdit}
             />
           )}
           {view === "day" && (
@@ -190,11 +231,22 @@ function CalendarPage() {
               events={events}
               selected={date}
               onSelectDay={setDate}
+              onCreate={openCreate}
+              onEventClick={openEdit}
             />
           )}
         </main>
-        <TodayPanel date={date} events={events} />
+        <TodayPanel date={date} events={events} onEventClick={openEdit} />
       </div>
+
+      <EventDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        editing={editing}
+        defaultDate={dialogDefault}
+        onSave={handleSave}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

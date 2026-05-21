@@ -18,9 +18,18 @@ interface Props {
   selected: Date;
   events: MockEvent[];
   onSelect: (d: Date) => void;
+  onCreate?: (d: Date) => void;
+  onEventClick?: (e: MockEvent) => void;
 }
 
-export function MonthView({ cursor, selected, events, onSelect }: Props) {
+export function MonthView({
+  cursor,
+  selected,
+  events,
+  onSelect,
+  onCreate,
+  onEventClick,
+}: Props) {
   const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 1 });
   const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start, end });
@@ -52,6 +61,7 @@ export function MonthView({ cursor, selected, events, onSelect }: Props) {
               key={day.toISOString()}
               type="button"
               onClick={() => onSelect(day)}
+              onDoubleClick={() => onCreate?.(day)}
               className={cn(
                 "group relative flex min-h-[80px] flex-col gap-2 rounded-xl border border-border/60 bg-card/40 p-2 text-left transition-all duration-200",
                 "hover:border-primary/60 hover:bg-card/80 hover:shadow-sm hover:-translate-y-0.5",
@@ -85,6 +95,12 @@ export function MonthView({ cursor, selected, events, onSelect }: Props) {
                 {dots.map((e) => (
                   <span
                     key={e.id}
+                    role={onEventClick ? "button" : undefined}
+                    onClick={(ev) => {
+                      if (!onEventClick) return;
+                      ev.stopPropagation();
+                      onEventClick(e);
+                    }}
                     className="size-1.5 rounded-full"
                     style={{ backgroundColor: CATEGORY_MAP[e.category].color }}
                     title={e.title}
