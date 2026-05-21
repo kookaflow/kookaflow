@@ -1,62 +1,22 @@
-import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { PreferencesProvider } from "@/providers/PreferencesProvider";
-import { EventsProvider } from "@/providers/EventsProvider";
-import { CalendarProvider } from "@/providers/CalendarProvider";
-import { TopNav } from "@/components/layout/TopNav";
-import { TodayPanel } from "@/components/today/TodayPanel";
-import { CalendarSurface } from "@/components/calendar/CalendarSurface";
-import { EventDialog } from "@/components/events/EventDialog";
-import { WeeklySummaryPanel } from "@/components/weekly/WeeklySummaryPanel";
+import { useEffect } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: IndexRedirect,
 });
 
-function Index() {
+function IndexRedirect() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      navigate({ to: data.user ? "/calendar" : "/login" });
+    })();
+  }, [navigate]);
   return (
-    <PreferencesProvider>
-      <EventsProvider>
-        <CalendarProvider>
-          <CalendarPage />
-        </CalendarProvider>
-      </EventsProvider>
-    </PreferencesProvider>
-  );
-}
-
-function CalendarPage() {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [defaultStart, setDefaultStart] = useState<Date | undefined>(undefined);
-
-  const openCreate = (d?: Date) => {
-    setEditingId(null);
-    setDefaultStart(d ?? new Date());
-    setDialogOpen(true);
-  };
-  const openEdit = (id: string) => {
-    setEditingId(id);
-    setDefaultStart(undefined);
-    setDialogOpen(true);
-  };
-
-  return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <TopNav onNewEvent={() => openCreate()} />
-      <div className="flex flex-1 overflow-hidden">
-        <TodayPanel onEditEvent={openEdit} />
-        <main className="flex-1 overflow-hidden">
-          <CalendarSurface onCreate={openCreate} onEditEvent={openEdit} />
-        </main>
-      </div>
-      <EventDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        eventId={editingId}
-        defaultStart={defaultStart}
-      />
-      <WeeklySummaryPanel />
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="text-sm text-muted-foreground">Loading…</div>
     </div>
   );
 }

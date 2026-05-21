@@ -14,6 +14,11 @@ import { PreferencesProvider } from "@/providers/PreferencesProvider";
 import { AppNav } from "@/components/layout/AppNav";
 import { SyncStatusProvider } from "@/providers/SyncStatusProvider";
 import { SyncBanner } from "@/components/settings/SyncBanner";
+import { Toaster } from "@/components/ui/sonner";
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 function NotFoundComponent() {
   return (
@@ -121,10 +126,28 @@ function RootComponent() {
       <PreferencesProvider>
         <SyncStatusProvider>
           <AppLayout />
+          <Toaster />
+          <AuthListener />
         </SyncStatusProvider>
       </PreferencesProvider>
     </QueryClientProvider>
   );
+}
+
+function AuthListener() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        toast("Your session timed out — please sign in again");
+      }
+      router.invalidate();
+      queryClient.invalidateQueries();
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [router, queryClient]);
+  return null;
 }
 
 function AppLayout() {

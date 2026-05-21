@@ -33,7 +33,7 @@ import { useEventsStore, setEvents as setStoreEvents } from "@/lib/events-store"
 
 type ViewMode = "month" | "week" | "day";
 
-export const Route = createFileRoute("/calendar")({
+export const Route = createFileRoute("/_authenticated/calendar")({
   component: CalendarPage,
 });
 
