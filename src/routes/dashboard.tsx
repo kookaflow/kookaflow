@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarHeart, Moon, Sun, LayoutDashboard, CalendarDays } from "lucide-react";
+import { CalendarHeart, Moon, Sun, LayoutDashboard, CalendarDays, Settings } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -89,6 +89,15 @@ function DashboardPage() {
             <LayoutDashboard className="size-4" />
             Dashboard
           </span>
+          <Link
+            to="/settings"
+            className={cn(
+              "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground",
+            )}
+          >
+            <Settings className="size-4" />
+            Settings
+          </Link>
         </nav>
 
         <div className="ml-auto flex items-center gap-2">

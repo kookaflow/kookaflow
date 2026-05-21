@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { CalendarHeart, LayoutDashboard, PanelRightOpen } from "lucide-react";
+import { CalendarHeart, LayoutDashboard, PanelRightOpen, Settings } from "lucide-react";
 import { ViewToggle } from "./ViewToggle";
 import { DatePicker } from "./DatePicker";
 import { ThemeToggle } from "./ThemeToggle";
@@ -7,7 +7,6 @@ import { NewEventButton } from "./NewEventButton";
 import { useCalendar } from "@/providers/CalendarProvider";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
 
 interface Props {
   onNewEvent: () => void;
@@ -34,6 +33,15 @@ export function TopNav({ onNewEvent }: Props) {
         >
           <LayoutDashboard className="size-4" />
           Dashboard
+        </Link>
+        <Link
+          to="/settings"
+          className={cn(
+            "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
+          )}
+        >
+          <Settings className="size-4" />
+          Settings
         </Link>
       </div>
       <div className="flex items-center gap-1">
