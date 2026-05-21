@@ -20,6 +20,7 @@ import {
   Camera,
   Smile,
   Zap,
+  Zap,
   Clock,
   PhoneCall,
   Car,
