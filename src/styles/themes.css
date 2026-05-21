@@ -8,6 +8,8 @@
 [data-theme="slate"] {
   --background: oklch(0.985 0.005 250);
   --foreground: oklch(0.18 0.04 260);
+  --page-header-from: #1E3A5F;
+  --page-header-to: #312E81;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.04 260);
   --popover: oklch(1 0 0);
@@ -37,6 +39,8 @@
 [data-theme="slate"].dark {
   --background: oklch(0.18 0.03 260);         /* #0F172A */
   --foreground: oklch(0.97 0.005 250);
+  --page-header-from: #1E3A5F;
+  --page-header-to: #312E81;
   --card: oklch(0.23 0.035 260);
   --card-foreground: oklch(0.97 0.005 250);
   --popover: oklch(0.23 0.035 260);
@@ -64,6 +68,8 @@
   /* ShiftSync brand — light mode */
   --background: #F5F6FF;                      /* very pale lavender */
   --foreground: #1E2A6E;                      /* deep navy headings */
+  --page-header-from: #0F172A;
+  --page-header-to: #1E3A5F;
   --card: #FFFFFF;
   --card-foreground: #374151;
   --popover: #FFFFFF;
@@ -97,6 +103,8 @@
 [data-theme="midnight"].dark {
   --background: #0F1535;                      /* darker navy */
   --foreground: #FFFFFF;
+  --page-header-from: #0F172A;
+  --page-header-to: #1E3A5F;
   --card: #1A2456;                            /* slightly lighter */
   --card-foreground: #FFFFFF;
   --popover: #1A2456;
@@ -130,6 +138,8 @@
 [data-theme="lavender"] {
   --background: oklch(0.975 0.015 300);       /* #F5F3FF */
   --foreground: oklch(0.22 0.06 295);
+  --page-header-from: #7C3AED;
+  --page-header-to: #C026D3;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.22 0.06 295);
   --popover: oklch(1 0 0);
@@ -159,6 +169,8 @@
 [data-theme="lavender"].dark {
   --background: oklch(0.22 0.04 295);         /* #1E1B2E */
   --foreground: oklch(0.97 0.01 300);
+  --page-header-from: #7C3AED;
+  --page-header-to: #C026D3;
   --card: oklch(0.27 0.05 295);
   --card-foreground: oklch(0.97 0.01 300);
   --popover: oklch(0.27 0.05 295);
@@ -185,6 +197,8 @@
 [data-theme="forest"] {
   --background: oklch(0.985 0.025 145);       /* #F0FDF4 */
   --foreground: oklch(0.2 0.04 160);
+  --page-header-from: #064E3B;
+  --page-header-to: #065F46;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.2 0.04 160);
   --popover: oklch(1 0 0);
@@ -214,6 +228,8 @@
 [data-theme="forest"].dark {
   --background: oklch(0.2 0.025 280);         /* #1C1C2E */
   --foreground: oklch(0.97 0.01 145);
+  --page-header-from: #064E3B;
+  --page-header-to: #065F46;
   --card: oklch(0.25 0.03 280);
   --card-foreground: oklch(0.97 0.01 145);
   --popover: oklch(0.25 0.03 280);

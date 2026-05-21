@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   addDays,
@@ -9,15 +9,13 @@ import {
   format,
 } from "date-fns";
 import {
-  CalendarHeart,
   ChevronLeft,
   ChevronRight,
   CalendarIcon,
-  Moon,
-  Sun,
   Plus,
   LayoutDashboard,
   CalendarDays,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -31,6 +29,8 @@ import { WeekSummaryDialog } from "@/components/calendar-page/WeekSummaryDialog"
 import type { MockEvent, ShiftType as MockShiftType, IconName } from "@/components/calendar-page/constants";
 import { useEvents } from "@/providers/EventsProvider";
 import type { CalendarEvent } from "@/types/event";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 type ViewMode = "month" | "week" | "day";
 
@@ -41,7 +41,6 @@ export const Route = createFileRoute("/_authenticated/calendar")({
 function CalendarPage() {
   const [view, setView] = useState<ViewMode>("month");
   const [date, setDate] = useState<Date>(new Date());
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const { events: rawEvents } = useEvents();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -49,15 +48,6 @@ function CalendarPage() {
   const [weekSummaryOpen, setWeekSummaryOpen] = useState(false);
 
   const events = useMemo(() => rawEvents.map(toMockEvent), [rawEvents]);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const prev = root.classList.contains("dark");
-    root.classList.toggle("dark", theme === "dark");
-    return () => {
-      root.classList.toggle("dark", prev);
-    };
-  }, [theme]);
 
   const goPrev = () => {
     if (view === "month") setDate((d) => addMonths(d, -1));
@@ -98,108 +88,108 @@ function CalendarPage() {
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
-      {/* Top nav */}
-      <header className="flex flex-wrap items-center gap-3 border-b border-border bg-background/80 px-4 py-3 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground shadow-sm">
-            <CalendarHeart className="size-5" />
-          </div>
-          <span className="text-lg font-bold tracking-tight">ShiftSync</span>
-        </div>
-
-        <nav className="flex items-center gap-1 rounded-full border border-border bg-card p-1">
-          <span className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground shadow">
+      <PageHeader
+        title={heading}
+        subtitle={`${events.length} events this period`}
+        right={
+          <>
+            <ThemeToggle />
+            <Button
+              size="sm"
+              onClick={() => openCreate(date)}
+              className="gap-1.5 bg-white/20 text-white hover:bg-white/30"
+            >
+              <Plus className="size-4" />
+              <span className="hidden sm:inline">Add event</span>
+            </Button>
+          </>
+        }
+      >
+        <nav className="flex items-center gap-1 rounded-full border border-white/20 bg-white/10 p-1 backdrop-blur">
+          <span className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white shadow">
             <CalendarDays className="size-3.5" />
             <span className="hidden sm:inline">Calendar</span>
           </span>
           <Link
             to="/dashboard"
-            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white/80 transition-colors hover:text-white"
           >
             <LayoutDashboard className="size-3.5" />
             <span className="hidden sm:inline">Dashboard</span>
           </Link>
+          <Link
+            to="/settings"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white/80 transition-colors hover:text-white"
+          >
+            <Settings className="size-3.5" />
+            <span className="hidden sm:inline">Settings</span>
+          </Link>
         </nav>
-
-        <div className="mx-auto flex items-center gap-1 rounded-full border border-border bg-card p-1">
+        <div className="flex items-center gap-1 rounded-full border border-white/20 bg-white/10 p-1 backdrop-blur">
           {(["month", "week", "day"] as ViewMode[]).map((v) => (
             <button
               key={v}
               type="button"
               onClick={() => setView(v)}
               className={cn(
-                "rounded-full px-4 py-1.5 text-sm font-medium capitalize transition-all duration-200",
+                "rounded-full px-3 py-1 text-xs font-medium capitalize transition-all duration-200",
                 view === v
-                  ? "bg-primary text-primary-foreground shadow"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-white/25 text-white shadow"
+                  : "text-white/80 hover:text-white",
               )}
             >
               {v}
             </button>
           ))}
         </div>
-
-        <div className="ml-auto flex items-center gap-1.5">
-          <Button variant="outline" size="sm" onClick={() => setDate(new Date())}>
-            Today
-          </Button>
-          <div className="flex items-center rounded-md border border-border">
-            <button
-              type="button"
-              onClick={goPrev}
-              className="px-1.5 py-1.5 transition-colors hover:bg-accent"
-              aria-label="Previous"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={goNext}
-              className="border-l border-border px-1.5 py-1.5 transition-colors hover:bg-accent"
-              aria-label="Next"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <CalendarIcon className="size-4" />
-                <span className="hidden sm:inline">{heading}</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={(d) => d && setDate(d)}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-            aria-label="Toggle theme"
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setDate(new Date())}
+          className="border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+        >
+          Today
+        </Button>
+        <div className="flex items-center rounded-md border border-white/30 bg-white/10">
+          <button
+            type="button"
+            onClick={goPrev}
+            className="px-1.5 py-1.5 text-white transition-colors hover:bg-white/20"
+            aria-label="Previous"
           >
-            {theme === "dark" ? (
-              <Sun className="size-4" />
-            ) : (
-              <Moon className="size-4" />
-            )}
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => openCreate(date)}
-            className="gap-1.5"
+            <ChevronLeft className="size-4" />
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            className="border-l border-white/30 px-1.5 py-1.5 text-white transition-colors hover:bg-white/20"
+            aria-label="Next"
           >
-            <Plus className="size-4" />
-            <span className="hidden sm:inline">Add event</span>
-          </Button>
+            <ChevronRight className="size-4" />
+          </button>
         </div>
-      </header>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+            >
+              <CalendarIcon className="size-4" />
+              <span className="hidden sm:inline">{heading}</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={(d) => d && setDate(d)}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+      </PageHeader>
 
       {/* Sub header */}
       <div className="flex items-center justify-between border-b border-border px-5 py-2.5">
