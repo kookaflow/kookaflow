@@ -24,6 +24,9 @@ import {
   PhoneCall,
   Car,
   GitBranch,
+  Thermometer,
+  Umbrella,
+  MoreHorizontal,
   type LucideIcon,
 } from "lucide-react";
 
@@ -37,7 +40,15 @@ export type CategoryId =
   | "personal"
   | "travel";
 
-export type ShiftType = "morning" | "afternoon" | "night" | "oncall" | "split";
+export type ShiftType =
+  | "morning"
+  | "afternoon"
+  | "night"
+  | "oncall"
+  | "split"
+  | "sick_leave"
+  | "annual_leave"
+  | "custom";
 
 export interface CategoryDef {
   id: CategoryId;
@@ -77,6 +88,9 @@ export const SHIFT_STYLES: Record<ShiftType, ShiftStyle> = {
   night: { label: "Night", color: "#6366F1", icon: Moon },
   oncall: { label: "On-Call", color: "#8B5CF6", icon: PhoneCall },
   split: { label: "Split", color: "#A855F7", icon: GitBranch },
+  sick_leave: { label: "Sick Leave", color: "#EF4444", icon: Thermometer },
+  annual_leave: { label: "Annual Leave", color: "#0EA5E9", icon: Umbrella },
+  custom: { label: "Other", color: "#64748B", icon: MoreHorizontal },
 };
 
 export interface MockEvent {
