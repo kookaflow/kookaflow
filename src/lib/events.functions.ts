@@ -43,7 +43,7 @@ const EventInputSchema = z.object({
   location: z.string().max(200).nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
   iconName: z.string().max(40).nullable().optional(),
-  iconGradient: z.string().max(20).nullable().optional(),
+  iconColor: z.string().max(20).nullable().optional(),
   splitFirstStart: z.string().nullable().optional(),
   splitFirstEnd: z.string().nullable().optional(),
   splitBreakMinutes: z.number().int().min(0).max(360).nullable().optional(),
@@ -69,7 +69,7 @@ export type EventDTO = {
   location: string | null;
   notes: string | null;
   iconName: string | null;
-  iconGradient: string | null;
+  iconColor: string | null;
   splitFirstStart: string | null;
   splitFirstEnd: string | null;
   splitBreakMinutes: number | null;
@@ -86,7 +86,7 @@ export type EventDTO = {
 };
 
 const ROW_COLS =
-  "id,title,category,start_time,end_time,is_all_day,is_payday,shift_type,shift_role,location,notes,icon_name,icon_gradient,split_shift_first_start,split_shift_first_end,split_shift_break_duration,split_shift_second_start,split_shift_second_end,travel_duration_minutes,hourly_rate,calculated_earnings,is_recurring,recurrence_pattern,recurrence_days,recurrence_end_date,recurrence_group_id";
+  "id,title,category,start_time,end_time,is_all_day,is_payday,shift_type,shift_role,location,notes,icon_name,icon_color,split_shift_first_start,split_shift_first_end,split_shift_break_duration,split_shift_second_start,split_shift_second_end,travel_duration_minutes,hourly_rate,calculated_earnings,is_recurring,recurrence_pattern,recurrence_days,recurrence_end_date,recurrence_group_id";
 
 type EventRow = {
   id: string;
@@ -101,7 +101,7 @@ type EventRow = {
   location: string | null;
   notes: string | null;
   icon_name: string | null;
-  icon_gradient: string | null;
+  icon_color: string | null;
   split_shift_first_start: string | null;
   split_shift_first_end: string | null;
   split_shift_break_duration: number | null;
@@ -131,7 +131,7 @@ function rowToDTO(r: EventRow): EventDTO {
     location: r.location,
     notes: r.notes,
     iconName: r.icon_name,
-    iconGradient: r.icon_gradient,
+    iconColor: r.icon_color,
     splitFirstStart: r.split_shift_first_start,
     splitFirstEnd: r.split_shift_first_end,
     splitBreakMinutes: r.split_shift_break_duration,
@@ -176,7 +176,7 @@ function inputToInsert(data: z.infer<typeof EventInputSchema>, userId: string) {
     location: data.location ?? null,
     notes: data.notes ?? null,
     icon_name: data.iconName ?? null,
-    icon_gradient: data.iconGradient ?? null,
+    icon_color: data.iconColor ?? null,
     split_shift_first_start: data.splitFirstStart ?? null,
     split_shift_first_end: data.splitFirstEnd ?? null,
     split_shift_break_duration: data.splitBreakMinutes ?? null,
