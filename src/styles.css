@@ -201,9 +201,9 @@
   --auth-accent: #F97316;
 }
 [data-theme="midnight"] {
-  --auth-gradient-from: #1E2A6E;
-  --auth-gradient-to: #6B35CC;
-  --auth-accent: #5B8DEF;
+  --auth-gradient-from: #162264;
+  --auth-gradient-to: #5D46DC;
+  --auth-accent: #B6BAE3;
 }
 [data-theme="lavender"] {
   --auth-gradient-from: #4C1D95;
