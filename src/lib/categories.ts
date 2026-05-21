@@ -6,6 +6,7 @@ import {
   Users,
   Home,
   Sparkles,
+  Car,
   type LucideIcon,
 } from "lucide-react";
 import type { CategoryId } from "@/types/event";
@@ -30,6 +31,7 @@ export const CATEGORIES: CategoryDef[] = [
   { id: "social", label: "Social", icon: Users, bgClass: "bg-cat-social", textClass: "text-cat-social", fgClass: "text-cat-social-foreground", borderClass: "border-cat-social", dotClass: "bg-cat-social", cssVar: "var(--cat-social)" },
   { id: "family", label: "Family", icon: Home, bgClass: "bg-cat-family", textClass: "text-cat-family", fgClass: "text-cat-family-foreground", borderClass: "border-cat-family", dotClass: "bg-cat-family", cssVar: "var(--cat-family)" },
   { id: "personal", label: "Personal", icon: Sparkles, bgClass: "bg-cat-personal", textClass: "text-cat-personal", fgClass: "text-cat-personal-foreground", borderClass: "border-cat-personal", dotClass: "bg-cat-personal", cssVar: "var(--cat-personal)" },
+  { id: "travel", label: "Travel", icon: Car, bgClass: "bg-cat-travel", textClass: "text-cat-travel", fgClass: "text-cat-travel-foreground", borderClass: "border-cat-travel", dotClass: "bg-cat-travel", cssVar: "var(--cat-travel)" },
 ];
 
 export const CATEGORY_MAP: Record<CategoryId, CategoryDef> = CATEGORIES.reduce(
