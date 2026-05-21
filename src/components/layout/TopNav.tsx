@@ -26,6 +26,15 @@ export function TopNav({ onNewEvent }: Props) {
       <div className="flex flex-wrap items-center gap-2">
         <ViewToggle />
         <DatePicker />
+        <Link
+          to="/dashboard"
+          className={cn(
+            "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
+          )}
+        >
+          <LayoutDashboard className="size-4" />
+          Dashboard
+        </Link>
       </div>
       <div className="flex items-center gap-1">
         {view === "week" && (
