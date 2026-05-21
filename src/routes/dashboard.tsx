@@ -43,7 +43,9 @@ function DashboardPage() {
     const root = document.documentElement;
     const prev = root.classList.contains("dark");
     root.classList.toggle("dark", theme === "dark");
-    return () => root.classList.toggle("dark", prev);
+    return () => {
+      root.classList.toggle("dark", prev);
+    };
   }, [theme]);
 
   const now = new Date();
