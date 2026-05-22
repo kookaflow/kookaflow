@@ -199,7 +199,7 @@ function DayCell({
       }}
       onDoubleClick={() => onCreate?.(day)}
       className={cn(
-        "group relative flex min-h-0 flex-col gap-1 rounded-lg border border-border/60 bg-card/40 p-1 text-left transition-all duration-200",
+        "group relative flex min-h-0 flex-col gap-0.5 overflow-hidden rounded-md border border-border/60 bg-card/40 p-0.5 text-left transition-all duration-200",
         "hover:border-primary/60 hover:bg-card/80 hover:shadow-sm",
         !inMonth && "opacity-40",
         isSel && "border-primary ring-2 ring-primary/30 bg-card",
