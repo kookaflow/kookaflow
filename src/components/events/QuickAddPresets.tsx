@@ -1,4 +1,41 @@
-import { PRESETS, type PresetDef } from "./presets";
+import { SHIFT_CONFIG, type ShiftKey } from "@/lib/shiftConfig";
+import type { LucideIcon } from "lucide-react";
+import type { CategoryId, ShiftType } from "@/types/event";
+
+export interface PresetDef {
+  id: string;
+  label: string;
+  Icon: LucideIcon;
+  color: string;
+  category: CategoryId;
+  shiftType?: ShiftType;
+  allDay?: boolean;
+  startTime?: string;
+  endTime?: string;
+  overnight?: boolean;
+  iconName?: string;
+  isPayday?: boolean;
+  defaultTitle: string;
+}
+
+export const PRESETS: PresetDef[] = (Object.keys(SHIFT_CONFIG) as ShiftKey[]).map((key) => {
+  const c = SHIFT_CONFIG[key];
+  return {
+    id: key,
+    label: c.label,
+    Icon: c.Icon,
+    color: c.colour,
+    category: c.category,
+    shiftType: (key === "payday" ? undefined : (key as ShiftType)),
+    allDay: c.isAllDay,
+    startTime: c.defaultStart ?? undefined,
+    endTime: c.defaultEnd ?? undefined,
+    overnight: c.overnight,
+    iconName: c.icon,
+    isPayday: c.isPayday,
+    defaultTitle: c.label,
+  };
+});
 
 interface Props {
   onPick: (p: PresetDef) => void;

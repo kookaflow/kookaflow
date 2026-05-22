@@ -1,11 +1,11 @@
 import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
-import { CATEGORY_MAP } from "@/components/calendar-page/constants";
+import { getCategoryConfig } from "@/lib/shiftConfig";
 import type { CategoryCardData } from "./lib/metrics";
 import { cn } from "@/lib/utils";
 
 export function CategoryCard({ data }: { data: CategoryCardData }) {
-  const def = CATEGORY_MAP[data.category];
-  const Icon = def.icon;
+  const def = getCategoryConfig(data.category);
+  const Icon = def.Icon;
   const TrendIcon =
     data.trend === "up" ? ArrowUpRight : data.trend === "down" ? ArrowDownRight : Minus;
 
@@ -14,13 +14,13 @@ export function CategoryCard({ data }: { data: CategoryCardData }) {
   return (
     <div
       className="group relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-border bg-card p-4 pl-5 transition-all hover:-translate-y-0.5 hover:shadow-md"
-      style={{ borderLeft: `4px solid ${def.color}` }}
+      style={{ borderLeft: `4px solid ${def.colour}` }}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span
             className="flex size-9 items-center justify-center rounded-lg text-white"
-            style={{ backgroundColor: def.color }}
+            style={{ backgroundColor: def.colour }}
           >
             <Icon className="size-5" />
           </span>
@@ -52,7 +52,7 @@ export function CategoryCard({ data }: { data: CategoryCardData }) {
             className="flex-1 rounded-sm transition-all"
             style={{
               height: `${Math.max(4, (v / max) * 100)}%`,
-              backgroundColor: def.color,
+              backgroundColor: def.colour,
               opacity: v > 0 ? 0.85 : 0.2,
             }}
             title={`${v.toFixed(1)}h`}

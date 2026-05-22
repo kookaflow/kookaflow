@@ -1,6 +1,7 @@
 import { format, isSameDay, isToday, startOfDay, differenceInMinutes } from "date-fns";
 import { useEffect, useRef } from "react";
-import { CATEGORY_MAP, type MockEvent } from "./constants";
+import { type MockEvent } from "./constants";
+import { getCategoryConfig } from "@/lib/shiftConfig";
 import { cn } from "@/lib/utils";
 
 const HOUR_HEIGHT = 56;
@@ -144,8 +145,8 @@ export function TimeGrid({
                     20,
                     ((endMin - startMin) / 60) * HOUR_HEIGHT - 2,
                   );
-                  const cat = CATEGORY_MAP[e.category];
-                  const Icon = cat.icon;
+                  const cat = getCategoryConfig(e.category);
+                  const Icon = cat.Icon;
                   return (
                     <button
                       key={e.id}
@@ -155,7 +156,7 @@ export function TimeGrid({
                       style={{
                         top,
                         height,
-                        backgroundColor: cat.color,
+                        backgroundColor: cat.colour,
                         borderLeftColor: "rgba(0,0,0,0.25)",
                       }}
                     >

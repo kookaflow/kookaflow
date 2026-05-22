@@ -7,7 +7,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { CATEGORIES } from "@/components/calendar-page/constants";
+import { CATEGORY_LIST } from "@/lib/shiftConfig";
 import type { WeekDayBucket } from "./lib/metrics";
 
 export function WeeklyStackedBarChart({ data }: { data: WeekDayBucket[] }) {
@@ -47,23 +47,23 @@ export function WeeklyStackedBarChart({ data }: { data: WeekDayBucket[] }) {
               }}
               formatter={(v: number, name: string) => [`${v.toFixed(1)}h`, name]}
             />
-            {CATEGORIES.map((c, i) => (
+            {CATEGORY_LIST.map((c, i) => (
               <Bar
                 key={c.id}
                 dataKey={c.id}
                 name={c.label}
                 stackId="a"
-                fill={c.color}
-                radius={i === CATEGORIES.length - 1 ? [6, 6, 0, 0] : 0}
+                fill={c.colour}
+                radius={i === CATEGORY_LIST.length - 1 ? [6, 6, 0, 0] : 0}
               />
             ))}
           </BarChart>
         </ResponsiveContainer>
       </div>
       <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
-        {CATEGORIES.map((c) => (
+        {CATEGORY_LIST.map((c) => (
           <li key={c.id} className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full" style={{ backgroundColor: c.color }} />
+            <span className="size-2 rounded-full" style={{ backgroundColor: c.colour }} />
             <span className="text-muted-foreground">{c.label}</span>
           </li>
         ))}

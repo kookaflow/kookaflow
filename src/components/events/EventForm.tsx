@@ -5,12 +5,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CATEGORIES, getCategory } from "@/lib/categories";
+import { CATEGORY_LIST, getCategoryConfig } from "@/lib/shiftConfig";
 import { toInputDateTime, fromInputDateTime } from "@/lib/date";
 import { ShiftFieldsGroup } from "./ShiftFieldsGroup";
-import { QuickAddPresets } from "./QuickAddPresets";
+import { QuickAddPresets, type PresetDef } from "./QuickAddPresets";
 import { IconPicker } from "./IconPicker";
-import type { PresetDef } from "./presets";
 import type {
   CalendarEvent,
   EventDraft,
@@ -72,7 +71,7 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
     initial?.recurrenceDays ?? [],
   );
 
-  const cat = getCategory(category);
+  const cat = getCategoryConfig(category);
   const invalidRange = new Date(end) < new Date(start);
 
   const startDate = start.slice(0, 10);
@@ -139,16 +138,16 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
           <SelectTrigger>
             <SelectValue>
               <span className="flex items-center gap-2">
-                <span className={`size-3 rounded-full ${cat.dotClass}`} />
+                <span className="size-3 rounded-full" style={{ backgroundColor: cat.colour }} />
                 {cat.label}
               </span>
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {CATEGORIES.map((c) => (
+            {CATEGORY_LIST.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 <span className="flex items-center gap-2">
-                  <span className={`size-3 rounded-full ${c.dotClass}`} />
+                  <span className="size-3 rounded-full" style={{ backgroundColor: c.colour }} />
                   {c.label}
                 </span>
               </SelectItem>
