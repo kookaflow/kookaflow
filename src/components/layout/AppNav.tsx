@@ -1,12 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { CalendarDays, LayoutDashboard, Settings } from "lucide-react";
+import { BarChart2, Briefcase, CalendarDays, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/kookaflow-logo.png";
 
 const NAV_ITEMS = [
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/dashboard", label: "Dashboard", icon: BarChart2 },
+  { to: "/shifts", label: "Shifts", icon: Briefcase },
+  { to: "/more", label: "More", icon: LayoutGrid },
 ] as const;
 
 export function AppNav() {
@@ -36,7 +37,7 @@ export function AppNav() {
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   active
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-primary/15 text-primary"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
@@ -61,11 +62,17 @@ export function AppNav() {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-colors",
+                "flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition-colors",
                 active ? "text-primary" : "text-muted-foreground",
               )}
             >
-              <Icon className={cn("size-[22px]", active && "text-primary")} />
+              <Icon
+                size={22}
+                strokeWidth={active ? 2.5 : 2}
+                fill={active ? "currentColor" : "none"}
+                fillOpacity={active ? 0.15 : 0}
+                className={cn(active && "text-primary")}
+              />
               <span>{item.label}</span>
             </Link>
           );
