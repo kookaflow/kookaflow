@@ -97,6 +97,11 @@ function buildDraftFromStamp(stamp: StampDef, day: Date): EventDraft {
     // satisfies validate_event trigger
     (draft as EventDraft & { travelDurationMinutes?: number }).travelDurationMinutes = 60;
   }
+  // Persist unpaid break for earnings when stamping from a template (non-split path).
+  if (stamp.template && !stamp.template.isSplitShift && stamp.template.unpaidBreakMinutes) {
+    (draft as EventDraft & { unpaidBreakMinutes?: number }).unpaidBreakMinutes =
+      stamp.template.unpaidBreakMinutes;
+  }
   return draft;
 }
 
