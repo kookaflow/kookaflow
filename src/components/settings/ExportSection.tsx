@@ -116,7 +116,7 @@ function eventsToCsv(events: CalendarEvent[]): string {
       format(start, "HH:mm"),
       format(end, "HH:mm"),
       hours.toFixed(2),
-      e.calculatedEarnings != null ? String(e.calculatedEarnings) : "",
+      "",
     ];
   });
   return [headers, ...rows]
