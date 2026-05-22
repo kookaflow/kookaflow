@@ -163,7 +163,7 @@ function AuthListener() {
 
 function AppLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const showNav = ["/calendar", "/dashboard", "/settings"].some((p) =>
+  const showNav = ["/calendar", "/dashboard", "/shifts", "/settings", "/more"].some((p) =>
     pathname.startsWith(p),
   );
 

@@ -13,9 +13,7 @@ import {
   ChevronRight,
   CalendarIcon,
   Plus,
-  LayoutDashboard,
   CalendarDays,
-  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -180,26 +178,6 @@ function CalendarPageInner() {
           </>
         }
       >
-        <nav className="flex items-center gap-1 rounded-full border border-white/20 bg-white/10 p-1 backdrop-blur">
-          <span className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white shadow">
-            <CalendarDays className="size-3.5" />
-            <span className="hidden sm:inline">Calendar</span>
-          </span>
-          <Link
-            to="/dashboard"
-            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white/80 transition-colors hover:text-white"
-          >
-            <LayoutDashboard className="size-3.5" />
-            <span className="hidden sm:inline">Dashboard</span>
-          </Link>
-          <Link
-            to="/settings"
-            className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white/80 transition-colors hover:text-white"
-          >
-            <Settings className="size-3.5" />
-            <span className="hidden sm:inline">Settings</span>
-          </Link>
-        </nav>
         <div className="flex items-center gap-1 rounded-full border border-white/20 bg-white/10 p-1 backdrop-blur">
           {(["month", "week", "day"] as ViewMode[]).map((v) => (
             <button

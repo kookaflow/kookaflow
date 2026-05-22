@@ -1,8 +1,6 @@
 import { useMemo } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { LayoutDashboard, CalendarDays, Settings } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import { useEventsStore } from "@/lib/events-store";
 import {
   balanceScore,
@@ -65,32 +63,7 @@ function DashboardPage() {
         title={greeting}
         subtitle={format(now, "EEEE, MMMM d")}
         right={<ThemeToggle />}
-      >
-        <nav className="flex items-center gap-1 rounded-full border border-white/20 bg-white/10 p-1 backdrop-blur">
-          <Link
-            to="/calendar"
-            className={cn(
-              "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white/80 transition-all hover:text-white",
-            )}
-          >
-            <CalendarDays className="size-3.5" />
-            <span className="hidden sm:inline">Calendar</span>
-          </Link>
-          <span className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white shadow">
-            <LayoutDashboard className="size-3.5" />
-            <span className="hidden sm:inline">Dashboard</span>
-          </span>
-          <Link
-            to="/settings"
-            className={cn(
-              "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white/80 transition-all hover:text-white",
-            )}
-          >
-            <Settings className="size-3.5" />
-            <span className="hidden sm:inline">Settings</span>
-          </Link>
-        </nav>
-      </PageHeader>
+      />
 
       <main className="mx-auto flex max-w-7xl flex-col gap-4 p-4 sm:p-6">
         <div className="grid gap-4 lg:grid-cols-3">
