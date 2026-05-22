@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   addDays,
@@ -32,7 +32,20 @@ import { useEvents } from "@/providers/EventsProvider";
 import type { CalendarEvent } from "@/types/event";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { listGoogleEvents } from "@/lib/google-calendar.functions";
+import {
+  listGoogleEvents,
+  triggerGoogleSync,
+  getGoogleConnectionStatus,
+} from "@/lib/google-calendar.functions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { format as fmt } from "date-fns";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { StampProvider, useStamp } from "@/providers/StampProvider";
@@ -58,15 +71,29 @@ function CalendarPageInner() {
   const [date, setDate] = useState<Date>(new Date());
   const { events: rawEvents } = useEvents();
   const fetchGoogle = useServerFn(listGoogleEvents);
+  const fetchStatus = useServerFn(getGoogleConnectionStatus);
+  const runSync = useServerFn(triggerGoogleSync);
   const { data: googleEvents = [] } = useQuery({
     queryKey: ["google-events"],
     queryFn: () => fetchGoogle({ data: {} }),
     staleTime: 60_000,
   });
+  const { data: gStatus } = useQuery({
+    queryKey: ["google-connection-status"],
+    queryFn: () => fetchStatus(),
+    staleTime: 60_000,
+  });
+  const syncedOnceRef = useRef(false);
+  useEffect(() => {
+    if (!gStatus?.connected || syncedOnceRef.current) return;
+    syncedOnceRef.current = true;
+    runSync().catch(() => undefined);
+  }, [gStatus?.connected, runSync]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogDefault, setDialogDefault] = useState<Date>(new Date());
   const [weekSummaryOpen, setWeekSummaryOpen] = useState(false);
+  const [googleDetail, setGoogleDetail] = useState<MockEvent | null>(null);
   const { selected: stamp, applyStamp, panelOpen } = useStamp();
 
   const events = useMemo(() => {
@@ -105,7 +132,7 @@ function CalendarPageInner() {
   };
   const openEdit = (e: MockEvent) => {
     if (e.source === "google") {
-      if (e.externalUrl) window.open(e.externalUrl, "_blank", "noopener");
+      setGoogleDetail(e);
       return;
     }
     setEditingId(e.id);
@@ -314,6 +341,53 @@ function CalendarPageInner() {
         weekAnchor={date}
         events={events}
       />
+
+      <Dialog
+        open={!!googleDetail}
+        onOpenChange={(o) => !o && setGoogleDetail(null)}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <svg viewBox="0 0 24 24" className="size-4 text-muted-foreground" fill="currentColor" aria-hidden="true">
+                <path d="M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 18H5V8h14v13z" />
+              </svg>
+              {googleDetail?.title || "(no title)"}
+            </DialogTitle>
+            <DialogDescription>From Google Calendar · read-only</DialogDescription>
+          </DialogHeader>
+          {googleDetail && (
+            <div className="space-y-2 text-sm">
+              <p>
+                <span className="text-muted-foreground">Date:</span>{" "}
+                {fmt(googleDetail.start, "EEEE, MMM d, yyyy")}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Time:</span>{" "}
+                {fmt(googleDetail.start, "h:mm a")} – {fmt(googleDetail.end, "h:mm a")}
+              </p>
+              {googleDetail.location && (
+                <p>
+                  <span className="text-muted-foreground">Location:</span>{" "}
+                  {googleDetail.location}
+                </p>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            {googleDetail?.externalUrl && (
+              <a
+                href={googleDetail.externalUrl}
+                target="_blank"
+                rel="noopener"
+                className="text-xs text-muted-foreground underline hover:text-foreground"
+              >
+                Open in Google Calendar ↗
+              </a>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <QuickAddFab />
       <QuickAddPanel
