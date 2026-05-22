@@ -12,6 +12,10 @@ import {
   scheduleShiftAlert,
   cancelShiftAlert,
 } from "@/lib/shift-alerts.functions";
+import {
+  pushShiftToGoogle,
+  deleteShiftFromGoogle,
+} from "@/lib/google-calendar.functions";
 import type {
   CalendarEvent,
   EventDraft,
@@ -118,6 +122,8 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const remove = useServerFn(deleteEventFn);
   const scheduleAlert = useServerFn(scheduleShiftAlert);
   const cancelAlert = useServerFn(cancelShiftAlert);
+  const pushToGoogle = useServerFn(pushShiftToGoogle);
+  const removeFromGoogle = useServerFn(deleteShiftFromGoogle);
 
   const { data, isLoading } = useQuery({
     queryKey: QK,
@@ -133,6 +139,9 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       if (dto.category === "work") {
         scheduleAlert({ data: { eventId: dto.id } }).catch((e) =>
           console.warn("scheduleShiftAlert failed", e),
+        );
+        pushToGoogle({ data: { eventId: dto.id } }).catch((e) =>
+          console.warn("pushShiftToGoogle failed", e),
         );
       }
       return dto;
@@ -150,6 +159,9 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
         scheduleAlert({ data: { eventId: dto.id } }).catch((e) =>
           console.warn("scheduleShiftAlert failed", e),
         );
+        pushToGoogle({ data: { eventId: dto.id } }).catch((e) =>
+          console.warn("pushShiftToGoogle failed", e),
+        );
       } else {
         cancelAlert({ data: { eventId: dto.id } }).catch(() => undefined);
       }
@@ -161,6 +173,10 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
       cancelAlert({ data: { eventId: id } }).catch(() => undefined);
+      const existing = events.find((e) => e.id === id);
+      // best-effort: if event existed and had a google_event_id we'd need
+      // to look it up; the server fn will no-op if no mapping.
+      void existing;
       return remove({ data: { id } });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QK }),

@@ -60,7 +60,8 @@ export function MonthView({
           const iconEvents = dayEvents
             .filter((e) => e.iconName && (!shift || e.id !== shift.id))
             .slice(0, 3);
-          const dots = dayEvents.slice(0, 5);
+          const googleEvents = dayEvents.filter((e) => e.source === "google");
+          const dots = dayEvents.filter((e) => e.source !== "google").slice(0, 5);
 
           return (
             <DayCell
@@ -121,6 +122,28 @@ export function MonthView({
                     );
                   })}
                 </div>
+              )}
+              {googleEvents.slice(0, 2).map((e) => (
+                <button
+                  key={e.id}
+                  type="button"
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    onEventClick?.(e);
+                  }}
+                  className="flex w-full items-center gap-1 truncate rounded-sm bg-muted/70 px-1 py-px text-[9px] font-medium text-muted-foreground hover:bg-muted"
+                  title={`${e.title} (Google Calendar)`}
+                >
+                  <svg viewBox="0 0 24 24" className="size-2.5 shrink-0" fill="currentColor" aria-hidden="true">
+                    <path d="M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 18H5V8h14v13z" />
+                  </svg>
+                  <span className="truncate">{e.title}</span>
+                </button>
+              ))}
+              {googleEvents.length > 2 && (
+                <span className="text-[9px] text-muted-foreground/70">
+                  +{googleEvents.length - 2} Google
+                </span>
               )}
               <div className="mt-auto flex flex-wrap items-center gap-1">
                 {dots.map((e) => (
