@@ -13,6 +13,7 @@ import {
   ChevronRight,
   CalendarIcon,
   Plus,
+  CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
