@@ -63,11 +63,11 @@ export function LegalPage({
 export function LegalFooterLinks() {
   return (
     <nav className="flex items-center justify-center gap-3 text-[11px] text-muted-foreground">
-      <a href="/privacy" className="hover:text-foreground hover:underline">Privacy</a>
+      <Link to="/privacy" className="hover:text-foreground hover:underline">Privacy</Link>
       <span aria-hidden>·</span>
-      <a href="/terms" className="hover:text-foreground hover:underline">Terms</a>
+      <Link to="/terms" className="hover:text-foreground hover:underline">Terms</Link>
       <span aria-hidden>·</span>
-      <a href="/support" className="hover:text-foreground hover:underline">Support</a>
+      <Link to="/support" className="hover:text-foreground hover:underline">Support</Link>
     </nav>
   );
 }
