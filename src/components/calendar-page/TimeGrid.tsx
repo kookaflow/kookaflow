@@ -145,8 +145,10 @@ export function TimeGrid({
                     20,
                     ((endMin - startMin) / 60) * HOUR_HEIGHT - 2,
                   );
+                  const isGoogle = e.source === "google";
                   const cat = getCategoryConfig(e.category);
                   const Icon = cat.Icon;
+                  const bg = isGoogle ? "#94A3B8" : cat.colour;
                   return (
                     <button
                       key={e.id}
@@ -156,12 +158,19 @@ export function TimeGrid({
                       style={{
                         top,
                         height,
-                        backgroundColor: cat.colour,
+                        backgroundColor: bg,
                         borderLeftColor: "rgba(0,0,0,0.25)",
                       }}
+                      title={isGoogle ? `${e.title} (Google Calendar)` : e.title}
                     >
                       <span className="flex items-center gap-1 font-semibold leading-tight">
-                        <Icon className={cn("shrink-0", days.length === 1 ? "size-[18px]" : "size-4")} />
+                        {isGoogle ? (
+                          <svg viewBox="0 0 24 24" className={cn("shrink-0", days.length === 1 ? "size-[18px]" : "size-4")} fill="currentColor" aria-hidden="true">
+                            <path d="M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 18H5V8h14v13z" />
+                          </svg>
+                        ) : (
+                          <Icon className={cn("shrink-0", days.length === 1 ? "size-[18px]" : "size-4")} />
+                        )}
                         <span className="truncate">{e.title}</span>
                       </span>
                       {height > 32 && (
