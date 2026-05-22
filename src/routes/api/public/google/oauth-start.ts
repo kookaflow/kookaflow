@@ -1,5 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { createServerClient } from "@supabase/ssr";
+import { createFileRoute } from "@tanstack/react-router";
 import {
   GOOGLE_SCOPES,
   getRedirectUri,
@@ -10,39 +9,34 @@ export const Route = createFileRoute("/api/public/google/oauth-start")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        // Validate logged-in user via supabase session cookie
-        const cookieHeader = request.headers.get("cookie") ?? "";
-        const cookies = Object.fromEntries(
-          cookieHeader.split(";").map((c) => {
-            const idx = c.indexOf("=");
-            if (idx < 0) return [c.trim(), ""];
-            return [c.slice(0, idx).trim(), c.slice(idx + 1).trim()];
-          }),
-        );
-        const authHeader = request.headers.get("authorization");
         const url = new URL(request.url);
-        const accessTokenFromQuery = url.searchParams.get("access_token");
+        const accessToken =
+          url.searchParams.get("access_token") ??
+          request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
+          null;
+        if (!accessToken) {
+          return new Response("Unauthorized — missing access token", {
+            status: 401,
+          });
+        }
 
+        // Validate the user's access token against Supabase Auth REST API.
         const supabaseUrl = process.env.SUPABASE_URL!;
-        const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-        const supabase = createServerClient(supabaseUrl, supabaseKey, {
-          cookies: {
-            getAll: () =>
-              Object.entries(cookies).map(([name, value]) => ({ name, value })),
-            setAll: () => undefined,
+        const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
+        const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+          headers: {
+            apikey: publishableKey,
+            Authorization: `Bearer ${accessToken}`,
           },
-          global: authHeader
-            ? { headers: { Authorization: authHeader } }
-            : accessTokenFromQuery
-              ? { headers: { Authorization: `Bearer ${accessTokenFromQuery}` } }
-              : undefined,
         });
-
-        const { data, error } = await supabase.auth.getUser();
-        if (error || !data.user) {
+        if (!userRes.ok) {
           return new Response("Unauthorized — please sign in first", {
             status: 401,
           });
+        }
+        const user = (await userRes.json()) as { id?: string };
+        if (!user.id) {
+          return new Response("Unauthorized", { status: 401 });
         }
 
         const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
@@ -51,7 +45,7 @@ export const Route = createFileRoute("/api/public/google/oauth-start")({
         }
 
         const redirectUri = getRedirectUri(request);
-        const state = signState(data.user.id);
+        const state = signState(user.id);
 
         const authorize = new URL("https://accounts.google.com/o/oauth2/v2/auth");
         authorize.searchParams.set("client_id", clientId);
@@ -68,6 +62,3 @@ export const Route = createFileRoute("/api/public/google/oauth-start")({
     },
   },
 });
-
-// keep redirect import referenced for tree-shaking safety
-void redirect;
