@@ -31,26 +31,48 @@ const TemplateInputSchema = z.object({
 export type ShiftTemplateDTO = {
   id: string;
   name: string;
+  showAs: string | null;
   colour: string;
   iconName: string | null;
   defaultStart: string | null;
   defaultEnd: string | null;
   category: "working" | "leave" | "non_working";
+  lifeCategory: "work" | "rest" | "wellness" | "exercise" | "social" | "family" | "personal" | "travel";
+  isAllDay: boolean;
+  isSplitShift: boolean;
+  is24Hour: boolean;
+  totalHours: number | null;
+  unpaidBreakMinutes: number;
+  paidBreakMinutes: number;
+  splitStart2: string | null;
+  splitEnd2: string | null;
+  isActive: boolean;
   baseType: string | null;
   sortOrder: number;
 };
 
 const COLS =
-  "id,name,colour,icon_name,default_start,default_end,category,base_type,sort_order";
+  "id,name,show_as,colour,icon_name,default_start,default_end,category,life_category,is_all_day,is_split_shift,is_24_hour,total_hours,unpaid_break_minutes,paid_break_minutes,split_start_2,split_end_2,is_active,base_type,sort_order";
 
 type Row = {
   id: string;
   name: string;
+  show_as: string | null;
   colour: string;
   icon_name: string | null;
   default_start: string | null;
   default_end: string | null;
   category: ShiftTemplateDTO["category"];
+  life_category: ShiftTemplateDTO["lifeCategory"];
+  is_all_day: boolean;
+  is_split_shift: boolean;
+  is_24_hour: boolean;
+  total_hours: number | string | null;
+  unpaid_break_minutes: number;
+  paid_break_minutes: number;
+  split_start_2: string | null;
+  split_end_2: string | null;
+  is_active: boolean;
   base_type: string | null;
   sort_order: number;
 };
@@ -59,11 +81,22 @@ function rowToDTO(r: Row): ShiftTemplateDTO {
   return {
     id: r.id,
     name: r.name,
+    showAs: r.show_as,
     colour: r.colour,
     iconName: r.icon_name,
     defaultStart: r.default_start,
     defaultEnd: r.default_end,
     category: r.category,
+    lifeCategory: r.life_category ?? "work",
+    isAllDay: r.is_all_day ?? false,
+    isSplitShift: r.is_split_shift ?? false,
+    is24Hour: r.is_24_hour ?? false,
+    totalHours: r.total_hours == null ? null : Number(r.total_hours),
+    unpaidBreakMinutes: r.unpaid_break_minutes ?? 0,
+    paidBreakMinutes: r.paid_break_minutes ?? 0,
+    splitStart2: r.split_start_2,
+    splitEnd2: r.split_end_2,
+    isActive: r.is_active ?? true,
     baseType: r.base_type,
     sortOrder: r.sort_order,
   };
