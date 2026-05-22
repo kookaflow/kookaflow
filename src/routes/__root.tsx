@@ -15,6 +15,7 @@ import { AppNav } from "@/components/layout/AppNav";
 import { SyncStatusProvider } from "@/providers/SyncStatusProvider";
 import { OneSignalProvider } from "@/providers/OneSignalProvider";
 import { SyncBanner } from "@/components/settings/SyncBanner";
+import { OfflineBanner } from "@/components/shared/OfflineBanner";
 import { SplashScreen } from "@/components/layout/SplashScreen";
 import { Toaster } from "@/components/ui/sonner";
 import { useEffect } from "react";
@@ -171,6 +172,7 @@ function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background">
+      <OfflineBanner />
       <SyncBanner />
       <AppNav />
       <div className="md:pl-56">
