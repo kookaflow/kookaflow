@@ -77,7 +77,7 @@ export function MonthView({
                   className={cn(
                     "flex size-5 items-center justify-center rounded-full text-[11px] font-semibold",
                     today
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-[#F59E0B] text-white"
                       : "text-foreground",
                   )}
                 >
