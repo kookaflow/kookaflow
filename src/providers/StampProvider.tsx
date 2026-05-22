@@ -53,7 +53,7 @@ function buildDraftFromStamp(stamp: StampDef, day: Date): EventDraft {
         : undefined,
     };
     if (allDayDraft.category === "travel" || stamp.shiftType === "travel") {
-      (allDayDraft as EventDraft & { travelDurationMinutes?: number }).travelDurationMinutes = 60;
+      allDayDraft.travelDurationMinutes = 60;
     }
     return allDayDraft;
   }
@@ -84,7 +84,7 @@ function buildDraftFromStamp(stamp: StampDef, day: Date): EventDraft {
   }
   if (stamp.category === "travel") {
     // satisfies validate_event trigger
-    (draft as EventDraft & { travelDurationMinutes?: number }).travelDurationMinutes = 60;
+    draft.travelDurationMinutes = 60;
   }
   return draft;
 }
