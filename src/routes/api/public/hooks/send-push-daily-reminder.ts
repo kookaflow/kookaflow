@@ -9,10 +9,41 @@ import {
 } from "@/lib/reminders/email.server";
 import {
   appUrl,
+  computeBalanceScore,
   pickTip,
   sendOneSignalPush,
-  shortShiftLabel,
 } from "@/lib/reminders/push.server";
+
+function fmtTime(iso: string, tz: string): string {
+  try {
+    return new Date(iso).toLocaleTimeString("en-AU", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: tz,
+    });
+  } catch {
+    return new Date(iso).toISOString().slice(11, 16);
+  }
+}
+
+function shiftLabel(t: string | null | undefined): string {
+  switch (t) {
+    case "morning":
+    case "afternoon":
+    case "evening":
+    case "night":
+      return t;
+    case "split":
+      return "split";
+    case "side_hustle":
+      return "side hustle";
+    case "oncall":
+      return "on-call";
+    default:
+      return "work";
+  }
+}
 
 export const Route = createFileRoute(
   "/api/public/hooks/send-push-daily-reminder",
@@ -93,15 +124,30 @@ export const Route = createFileRoute(
             .order("start_time", { ascending: true });
 
           const evs = (events ?? []) as EventRow[];
-          const tip = pickTip(zoned.year * 366 + zoned.month * 31 + zoned.day);
-          const content = `${evs.length} events today. Shift: ${shortShiftLabel(evs)}. Tip: ${tip}.`;
+          const shift = evs.find((e) => e.category === "work");
+          const score = computeBalanceScore(evs);
+          let content: string;
+          if (shift) {
+            const startStr = shift.is_all_day
+              ? "all day"
+              : `at ${fmtTime(shift.start_time, tz)}`;
+            content = `📅 Today: ${shiftLabel(shift.shift_type)} ${startStr}. You have ${evs.length} events today. Balance score: ${score}/100 🦅`;
+          } else if (evs.length > 0) {
+            const tip = pickTip(
+              zoned.year * 366 + zoned.month * 31 + zoned.day,
+            );
+            void tip;
+            content = `🌿 No shifts today — enjoy your time off! You have ${evs.length} personal events. Balance score: ${score}/100`;
+          } else {
+            content = `☀️ A free day! Perfect time for rest, family or something you love.`;
+          }
 
           try {
             await sendOneSignalPush({
               externalUserIds: [p.user_id],
-              heading: "Kookaflow — Today",
+              heading: "Your Kookaflow Day Ahead 🦅",
               content,
-              url: appUrl(),
+              url: `${appUrl()}/calendar`,
             });
             results.push({ user_id: p.user_id, status: "sent" });
           } catch (e: any) {

@@ -8,6 +8,10 @@ import {
   deleteEvent as deleteEventFn,
   type EventDTO,
 } from "@/lib/events.functions";
+import {
+  scheduleShiftAlert,
+  cancelShiftAlert,
+} from "@/lib/shift-alerts.functions";
 import type {
   CalendarEvent,
   EventDraft,
@@ -112,6 +116,8 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const create = useServerFn(createEventFn);
   const update = useServerFn(updateEventFn);
   const remove = useServerFn(deleteEventFn);
+  const scheduleAlert = useServerFn(scheduleShiftAlert);
+  const cancelAlert = useServerFn(cancelShiftAlert);
 
   const { data, isLoading } = useQuery({
     queryKey: QK,
@@ -122,7 +128,15 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const events = useMemo(() => (data ?? []).map(dtoToCalendarEvent), [data]);
 
   const createMut = useMutation({
-    mutationFn: (draft: EventDraft) => create({ data: draftToInput(draft) }),
+    mutationFn: async (draft: EventDraft) => {
+      const dto = await create({ data: draftToInput(draft) });
+      if (dto.category === "work") {
+        scheduleAlert({ data: { eventId: dto.id } }).catch((e) =>
+          console.warn("scheduleShiftAlert failed", e),
+        );
+      }
+      return dto;
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QK }),
   });
 
@@ -131,13 +145,24 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       const existing = events.find((e) => e.id === args.id);
       if (!existing) throw new Error("Event not found");
       const merged: EventDraft = { ...existing, ...args.patch };
-      return update({ data: { id: args.id, ...draftToInput(merged) } });
+      const dto = await update({ data: { id: args.id, ...draftToInput(merged) } });
+      if (dto.category === "work") {
+        scheduleAlert({ data: { eventId: dto.id } }).catch((e) =>
+          console.warn("scheduleShiftAlert failed", e),
+        );
+      } else {
+        cancelAlert({ data: { eventId: dto.id } }).catch(() => undefined);
+      }
+      return dto;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QK }),
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => remove({ data: { id } }),
+    mutationFn: async (id: string) => {
+      cancelAlert({ data: { eventId: id } }).catch(() => undefined);
+      return remove({ data: { id } });
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QK }),
   });
 

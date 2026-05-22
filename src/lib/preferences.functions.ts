@@ -9,7 +9,10 @@ const ProfileUpdateSchema = z.object({
   timezone: z.string().max(80).optional(),
 });
 
-const ChannelSchema = z.enum(["email", "sms", "both"]).nullable().optional();
+const ChannelSchema = z
+  .enum(["email", "sms", "push", "both"])
+  .nullable()
+  .optional();
 const PreferencesUpdateSchema = z.object({
   theme: z.enum(["slate", "midnight", "lavender", "forest"]).optional(),
   theme_mode: z.enum(["light", "dark"]).optional(),

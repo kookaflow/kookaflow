@@ -286,6 +286,45 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_push_alerts: {
+        Row: {
+          created_at: string
+          event_id: string
+          fire_at: string
+          id: string
+          message: string
+          sent_at: string | null
+          title: string
+          updated_at: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          fire_at: string
+          id?: string
+          message: string
+          sent_at?: string | null
+          title: string
+          updated_at?: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          fire_at?: string
+          id?: string
+          message?: string
+          sent_at?: string | null
+          title?: string
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       shift_templates: {
         Row: {
           base_type: string | null

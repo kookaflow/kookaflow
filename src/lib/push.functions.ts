@@ -45,3 +45,24 @@ export const getPushStatus = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data;
   });
+
+export const updatePushPrefs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        push_daily_reminder: z.boolean().optional(),
+        push_weekly_reminder: z.boolean().optional(),
+        push_shift_alerts: z.boolean().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("profiles")
+      .update(data)
+      .eq("id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
