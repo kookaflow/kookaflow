@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { SplitShiftMeta } from "@/types/event";
+import { getCategoryConfig } from "@/lib/shiftConfig";
 
 const BREAKS = [
   { v: 30, label: "30 min" },
@@ -30,6 +31,7 @@ function gt(a: string, b: string) {
 
 export function SplitShiftFields({ value, onChange }: Props) {
   const set = (patch: Partial<SplitShiftMeta>) => onChange({ ...value, ...patch });
+  const workColour = getCategoryConfig("work").colour;
 
   const firstEndError =
     value.firstStart && value.firstEnd && !gt(value.firstEnd, value.firstStart)
@@ -45,8 +47,11 @@ export function SplitShiftFields({ value, onChange }: Props) {
       : null;
 
   return (
-    <div className="mt-3 space-y-4 rounded-lg border border-cat-work/40 bg-cat-work/5 p-3">
-      <p className="text-xs font-semibold uppercase tracking-wider text-cat-work">
+    <div
+      className="mt-3 space-y-4 rounded-lg border p-3"
+      style={{ borderColor: `${workColour}66`, backgroundColor: `${workColour}0D` }}
+    >
+      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: workColour }}>
         Split shift details
       </p>
 

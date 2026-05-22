@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { ShiftMeta, ShiftType } from "@/types/event";
 import { SplitShiftFields, DEFAULT_SPLIT } from "./SplitShiftFields";
+import { getCategoryConfig } from "@/lib/shiftConfig";
 
 interface Props {
   value: ShiftMeta;
@@ -28,9 +29,15 @@ const TYPES: { value: ShiftType; label: string; Icon: LucideIcon; color: string 
 export function ShiftFieldsGroup({ value, onChange }: Props) {
   const isSplit = value.shiftType === "split";
   const isCustom = value.shiftType === "custom";
+  const workColour = getCategoryConfig("work").colour;
   return (
-    <div className="space-y-3 rounded-lg border border-cat-work/40 bg-cat-work/5 p-3">
-      <p className="text-xs font-semibold uppercase tracking-wider text-cat-work">Shift details</p>
+    <div
+      className="space-y-3 rounded-lg border p-3"
+      style={{ borderColor: `${workColour}66`, backgroundColor: `${workColour}0D` }}
+    >
+      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: workColour }}>
+        Shift details
+      </p>
 
       <div className="space-y-1.5">
         <Label>Shift type</Label>
