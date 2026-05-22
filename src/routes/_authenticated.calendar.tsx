@@ -50,6 +50,8 @@ import { StampProvider, useStamp } from "@/providers/StampProvider";
 import { QuickAddFab } from "@/components/calendar/QuickAddFab";
 import { QuickAddPanel } from "@/components/calendar/QuickAddPanel";
 import { WellnessNudgeBanner } from "@/components/calendar/WellnessNudgeBanner";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { KookaburraOnCalendar } from "@/components/shared/empty-illustrations";
 import type { CategoryId } from "@/types/event";
 
 type ViewMode = "month" | "week" | "day";
@@ -218,7 +220,7 @@ function CalendarPageInner() {
           <button
             type="button"
             onClick={goPrev}
-            className="px-1.5 py-1.5 text-white transition-colors hover:bg-white/20"
+            className="flex h-11 w-11 items-center justify-center text-white transition-colors hover:bg-white/20"
             aria-label="Previous"
           >
             <ChevronLeft className="size-4" />
@@ -226,7 +228,7 @@ function CalendarPageInner() {
           <button
             type="button"
             onClick={goNext}
-            className="border-l border-white/30 px-1.5 py-1.5 text-white transition-colors hover:bg-white/20"
+            className="flex h-11 w-11 items-center justify-center border-l border-white/30 text-white transition-colors hover:bg-white/20"
             aria-label="Next"
           >
             <ChevronRight className="size-4" />
@@ -289,7 +291,15 @@ function CalendarPageInner() {
         style={{ paddingBottom: panelOpen ? "28vh" : 0 }}
       >
         <main className="flex-1 overflow-hidden">
-          {view === "month" && (
+          {events.length === 0 ? (
+            <EmptyState
+              illustration={<KookaburraOnCalendar className="w-full h-auto" />}
+              title="Your calendar is empty"
+              subtitle="Add your first shift to get started 🦅"
+              actionLabel="Add Event"
+              onAction={() => openCreate(date)}
+            />
+          ) : view === "month" ? (
             <MonthView
               cursor={date}
               selected={date}
@@ -298,8 +308,7 @@ function CalendarPageInner() {
               onCreate={openCreate}
               onEventClick={openEdit}
             />
-          )}
-          {view === "week" && (
+          ) : view === "week" ? (
             <TimeGrid
               days={weekDays}
               events={events}
@@ -308,8 +317,7 @@ function CalendarPageInner() {
               onCreate={openCreate}
               onEventClick={openEdit}
             />
-          )}
-          {view === "day" && (
+          ) : (
             <TimeGrid
               days={[date]}
               events={events}

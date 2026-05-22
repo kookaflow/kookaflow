@@ -20,6 +20,9 @@ import { MonthlyDonutChart } from "@/components/dashboard/MonthlyDonutChart";
 import { CategoryCard } from "@/components/dashboard/CategoryCard";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { BalanceScale } from "@/components/shared/empty-illustrations";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -35,6 +38,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
   const events = useEventsStore();
+  const navigate = useNavigate();
 
   const now = new Date();
   const week = useMemo(() => currentWeekRange(now), [events]);
@@ -56,6 +60,27 @@ function DashboardPage() {
   const hour = now.getHours();
   const tod = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
   const greeting = `Good ${tod}`;
+
+  if (events.length === 0) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <PageHeader
+          title={greeting}
+          subtitle={format(now, "EEEE, MMMM d")}
+          right={<ThemeToggle />}
+        />
+        <main className="mx-auto flex max-w-7xl items-center justify-center p-4 sm:p-6 min-h-[60vh]">
+          <EmptyState
+            illustration={<BalanceScale className="w-full h-auto" />}
+            title="No data yet"
+            subtitle="Add some events to see your life balance score"
+            actionLabel="Go to Calendar"
+            onAction={() => navigate({ to: "/calendar" })}
+          />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">

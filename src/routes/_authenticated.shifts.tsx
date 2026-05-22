@@ -9,6 +9,8 @@ import { ShiftEditorSheet } from "@/components/shifts/ShiftEditorSheet";
 import type { ShiftTemplateDTO } from "@/lib/shift-templates.functions";
 import { getIcon } from "@/components/events/IconPicker";
 import { Sparkles } from "lucide-react";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { BriefcaseEmpty } from "@/components/shared/empty-illustrations";
 
 export const Route = createFileRoute("/_authenticated/shifts")({
   component: ShiftsPage,
@@ -80,6 +82,20 @@ function ShiftsPage() {
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-4 space-y-6">
+        {templates.length === 0 && search.trim() === "" && (
+          <div className="rounded-xl border border-border bg-card">
+            <EmptyState
+              illustration={<BriefcaseEmpty className="w-full h-auto" />}
+              title="No custom shifts yet"
+              subtitle="Create your first custom shift type"
+              actionLabel="Create Shift"
+              onAction={() => {
+                setEditing(null);
+                setEditorOpen(true);
+              }}
+            />
+          </div>
+        )}
         <Section title="WORKING">
           {builtinWorking.map((s) => (
             <BuiltinRow key={s.id} stamp={s} />
