@@ -1,4 +1,4 @@
-/* Theme palettes for ShiftSync.
+/* Theme palettes for Kookaflow.
  * Each theme defines the same semantic tokens used by Tailwind's @theme inline
  * mapping in styles.css. The active theme is selected via [data-theme="…"] on
  * <html>; the dark mode variant is layered with the existing .dark class.

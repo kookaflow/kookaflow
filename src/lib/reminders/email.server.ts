@@ -212,7 +212,7 @@ export function buildWeeklyEmail(args: {
     .sort((a, b) => b[1] - a[1])
     .map(
       ([cat, mins]) =>
-        `<tr><td style="padding:6px 0;color:#162264;">${CATEGORY_LABELS[cat] ?? cat}</td><td style="padding:6px 0;text-align:right;font-weight:600;">${(mins / 60).toFixed(1)}h</td></tr>`,
+        `<tr><td style="padding:6px 0;color:#1E2A6E;">${CATEGORY_LABELS[cat] ?? cat}</td><td style="padding:6px 0;text-align:right;font-weight:600;">${(mins / 60).toFixed(1)}h</td></tr>`,
     )
     .join("");
 

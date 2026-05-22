@@ -520,7 +520,7 @@ export function SoundNotifications() {
             })}
           </div>
           <p className="text-xs text-muted-foreground">
-            💡 For the alert to play, ShiftSync must be open or running in the background. Enable push notifications for alerts when the app is closed.
+            💡 For the alert to play, Kookaflow must be open or running in the background. Enable push notifications for alerts when the app is closed.
           </p>
         </div>
 

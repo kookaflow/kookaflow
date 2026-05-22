@@ -1,5 +1,5 @@
 /**
- * ShiftSync brand palette — extracted directly from the official logo.
+ * Kookaflow brand palette — navy → amber sunrise.
  * Single source of truth. Any component needing a raw brand hex value imports
  * from here; theme tokens in src/styles/themes.css mirror these constants.
  */
