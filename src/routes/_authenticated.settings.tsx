@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarDays, LayoutDashboard, Settings } from "lucide-react";
+import { CalendarDays, ChevronRight, Layers, LayoutDashboard, Settings } from "lucide-react";
 import { RemindersSettings } from "@/components/settings/RemindersSettings";
 import { SoundNotifications } from "@/components/settings/SoundNotifications";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -54,6 +55,28 @@ function SettingsPage() {
       </PageHeader>
 
       <main className="mx-auto max-w-3xl p-4 sm:p-6">
+        <section className="mb-6">
+          <h2 className="mb-2 px-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Shifts
+          </h2>
+          <Card className="overflow-hidden p-0">
+            <Link
+              to="/shifts"
+              className="flex items-center gap-3 p-4 transition-colors hover:bg-accent/40"
+            >
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Layers size={18} />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold">Manage Shift Templates</p>
+                <p className="text-xs text-muted-foreground">
+                  Create and edit your custom shift types
+                </p>
+              </div>
+              <ChevronRight className="size-4 text-muted-foreground" />
+            </Link>
+          </Card>
+        </section>
         <ThemeSettings />
         <RemindersSettings />
         <SoundNotifications />
