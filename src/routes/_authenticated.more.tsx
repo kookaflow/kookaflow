@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { MoreHero } from "@/components/more/MoreHero";
 import { AccountSection } from "@/components/more/AccountSection";
 import { ShiftsLinkRow } from "@/components/more/ShiftsLinkRow";
