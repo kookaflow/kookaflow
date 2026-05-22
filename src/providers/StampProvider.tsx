@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { isSameDay } from "date-fns";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { useEvents } from "@/providers/EventsProvider";
 import type { StampDef } from "@/lib/stamps";
 import type { EventDraft } from "@/types/event";
