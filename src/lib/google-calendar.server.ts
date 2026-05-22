@@ -6,8 +6,9 @@ const SIGNING_KEY =
 
 export const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
-  "https://www.googleapis.com/auth/userinfo.email",
   "openid",
+  "email",
+  "profile",
 ].join(" ");
 
 export function signState(userId: string): string {
