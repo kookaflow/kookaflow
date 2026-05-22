@@ -10,8 +10,9 @@ import {
   format,
   addDays,
 } from "date-fns";
-import { CATEGORY_MAP, SHIFT_STYLES, type MockEvent } from "./constants";
+import { type MockEvent } from "./constants";
 import { ICON_MAP } from "@/components/events/IconPicker";
+import { getCategoryConfig, getShiftConfig } from "@/lib/shiftConfig";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -52,7 +53,7 @@ export function MonthView({
           const inMonth = isSameMonth(day, cursor);
           const dayEvents = events.filter((e) => isSameDay(e.start, day));
           const shift = dayEvents.find((e) => e.shiftType);
-          const shiftStyle = shift ? SHIFT_STYLES[shift.shiftType!] : null;
+          const shiftStyle = shift ? getShiftConfig(shift.shiftType) : null;
           const isSel = isSameDay(day, selected);
           const today = isToday(day);
           const iconEvents = dayEvents
@@ -88,10 +89,10 @@ export function MonthView({
               {shiftStyle && (
                 <span
                   className="flex w-full items-center justify-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm"
-                  style={{ backgroundColor: shiftStyle.color }}
+                  style={{ backgroundColor: shiftStyle.colour }}
                   title={`${shiftStyle.label} shift`}
                 >
-                  <shiftStyle.icon className="size-3" />
+                  <shiftStyle.Icon className="size-3" />
                   <span className="truncate">{shiftStyle.label}</span>
                 </span>
               )}
@@ -123,7 +124,7 @@ export function MonthView({
                       onEventClick(e);
                     }}
                     className="size-1.5 rounded-full"
-                    style={{ backgroundColor: CATEGORY_MAP[e.category].color }}
+                    style={{ backgroundColor: getCategoryConfig(e.category).colour }}
                     title={e.title}
                   />
                 ))}
