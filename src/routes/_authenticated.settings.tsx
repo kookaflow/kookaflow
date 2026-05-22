@@ -3,6 +3,7 @@ import { CalendarDays, ChevronRight, Layers, LayoutDashboard, Settings } from "l
 import { RemindersSettings } from "@/components/settings/RemindersSettings";
 import { SoundNotifications } from "@/components/settings/SoundNotifications";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
+import { ConnectedCalendars } from "@/components/settings/ConnectedCalendars";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Card } from "@/components/ui/card";
@@ -79,6 +80,7 @@ function SettingsPage() {
         </section>
         <ThemeSettings />
         <RemindersSettings />
+        <ConnectedCalendars />
         <SoundNotifications />
       </main>
     </div>
