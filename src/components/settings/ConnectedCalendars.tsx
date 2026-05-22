@@ -46,7 +46,6 @@ export function ConnectedCalendars() {
   const qc = useQueryClient();
   const fetchStatus = useServerFn(getGoogleConnectionStatus);
   const disconnect = useServerFn(disconnectGoogleCalendar);
-  const setTwoWay = useServerFn(setTwoWaySync);
   const triggerSync = useServerFn(triggerGoogleSync);
   const [connecting, setConnecting] = useState(false);
 
@@ -72,8 +71,15 @@ export function ConnectedCalendars() {
   }, [qc]);
 
   const syncMut = useMutation({
-    mutationFn: () => triggerSync(),
+    mutationFn: () => {
+      toast.message(
+        "Syncing your calendar — this may take a few minutes depending on how many events you have ☕",
+        { icon: <Coffee className="size-4" />, duration: 8000, id: "google-sync" },
+      );
+      return triggerSync();
+    },
     onSuccess: (res) => {
+      toast.dismiss("google-sync");
       if (res.ok) {
         toast.success(
           `Synced ${res.imported} event${res.imported === 1 ? "" : "s"}${
@@ -97,12 +103,6 @@ export function ConnectedCalendars() {
     },
   });
 
-  const twoWayMut = useMutation({
-    mutationFn: (enabled: boolean) => setTwoWay({ data: { enabled } }),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["google-connection-status"] }),
-  });
-
   const handleConnect = async () => {
     setConnecting(true);
     try {
@@ -113,7 +113,7 @@ export function ConnectedCalendars() {
         setConnecting(false);
         return;
       }
-      window.location.href = `/api/public/google/oauth-start?access_token=${encodeURIComponent(token)}`;
+      window.location.href = `/auth/google/start?access_token=${encodeURIComponent(token)}`;
     } catch {
       setConnecting(false);
       toast.error("Could not start Google connection");
@@ -160,27 +160,13 @@ export function ConnectedCalendars() {
               {status.lastSyncError && (
                 <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-300">
                   <AlertTriangle className="size-4 shrink-0" />
-                  <span>Last sync error: {status.lastSyncError}</span>
+                  <span>
+                    Google Calendar disconnected — reconnect to continue syncing.
+                    <br />
+                    <span className="opacity-70">({status.lastSyncError})</span>
+                  </span>
                 </div>
               )}
-
-              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
-                <div>
-                  <Label htmlFor="two-way" className="text-sm font-medium">
-                    Push my shifts to Google Calendar
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Work shifts you create in Kookaflow will appear on your Google
-                    Calendar.
-                  </p>
-                </div>
-                <Switch
-                  id="two-way"
-                  checked={status.twoWaySyncEnabled}
-                  onCheckedChange={(v) => twoWayMut.mutate(v)}
-                  disabled={twoWayMut.isPending}
-                />
-              </div>
 
               <div className="flex gap-2">
                 <Button
@@ -199,7 +185,12 @@ export function ConnectedCalendars() {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    if (confirm("Disconnect Google Calendar?")) disconnectMut.mutate();
+                    if (
+                      confirm(
+                        "Disconnect Google Calendar? Your imported events will be removed from Kookaflow.",
+                      )
+                    )
+                      disconnectMut.mutate();
                   }}
                   disabled={disconnectMut.isPending}
                   className="gap-2 text-destructive hover:text-destructive"
@@ -210,10 +201,20 @@ export function ConnectedCalendars() {
               </div>
             </>
           ) : (
-            <Button onClick={handleConnect} disabled={connecting} className="gap-2">
-              <GoogleLogo className="size-4" />
-              {connecting ? "Connecting…" : "Connect Google Calendar"}
-            </Button>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Import your Google Calendar events into Kookaflow.
+              </p>
+              <Button
+                onClick={handleConnect}
+                disabled={connecting}
+                variant="outline"
+                className="gap-2 bg-background"
+              >
+                <GoogleLogo className="size-4" />
+                {connecting ? "Connecting…" : "Connect"}
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
