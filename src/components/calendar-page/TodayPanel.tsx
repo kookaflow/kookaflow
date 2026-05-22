@@ -6,13 +6,9 @@ import {
   startOfDay,
   endOfDay,
 } from "date-fns";
-import {
-  CATEGORIES,
-  CATEGORY_MAP,
-  SHIFT_STYLES,
-  type MockEvent,
-  type ShiftType,
-} from "./constants";
+import { type MockEvent } from "./constants";
+import type { ShiftType } from "@/types/event";
+import { CATEGORY_LIST, getCategoryConfig, getShiftConfig } from "@/lib/shiftConfig";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sparkles, Lightbulb } from "lucide-react";
 
@@ -74,11 +70,11 @@ export function TodayPanel({ date, events, onEventClick }: Props) {
       if (mins <= 0) continue;
       totals[e.category] = (totals[e.category] || 0) + mins / 60;
     }
-    return CATEGORIES.map((c) => ({
+    return CATEGORY_LIST.map((c) => ({
       id: c.id,
       name: c.label,
       value: +(totals[c.id] || 0).toFixed(1),
-      color: c.color,
+      color: c.colour,
     })).filter((d) => d.value > 0);
   }, [dayEvents, date]);
 
@@ -87,9 +83,7 @@ export function TodayPanel({ date, events, onEventClick }: Props) {
   const restHours = chartData.find((d) => d.id === "rest")?.value ?? 0;
 
   const shiftEvent = dayEvents.find((e) => e.shiftType);
-  const shiftStyle = shiftEvent?.shiftType
-    ? SHIFT_STYLES[shiftEvent.shiftType]
-    : null;
+  const shiftStyle = getShiftConfig(shiftEvent?.shiftType);
   const shiftMins = shiftEvent
     ? differenceInMinutes(shiftEvent.end, shiftEvent.start)
     : 0;
@@ -122,11 +116,11 @@ export function TodayPanel({ date, events, onEventClick }: Props) {
             <div
               className="flex items-center gap-3 rounded-2xl p-4 text-white shadow-sm"
               style={{
-                background: `linear-gradient(135deg, ${shiftStyle.color}, ${shiftStyle.color}cc)`,
+                background: `linear-gradient(135deg, ${shiftStyle.colour}, ${shiftStyle.colour}cc)`,
               }}
             >
               <span className="flex size-10 items-center justify-center rounded-xl bg-white/20">
-                <shiftStyle.icon className="size-5" />
+                <shiftStyle.Icon className="size-5" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-xs uppercase tracking-wider opacity-80">
@@ -197,9 +191,9 @@ export function TodayPanel({ date, events, onEventClick }: Props) {
             ) : (
               <ul className="flex flex-col gap-2">
                 {dayEvents.map((e) => {
-                  const cat = CATEGORY_MAP[e.category];
-                  const Icon = cat.icon;
-                  const evShift = e.shiftType ? SHIFT_STYLES[e.shiftType] : null;
+                  const cat = getCategoryConfig(e.category);
+                  const Icon = cat.Icon;
+                  const evShift = getShiftConfig(e.shiftType);
                   return (
                     <li key={e.id}>
                       <button
@@ -209,7 +203,7 @@ export function TodayPanel({ date, events, onEventClick }: Props) {
                       >
                         <span
                           className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white"
-                          style={{ backgroundColor: cat.color }}
+                          style={{ backgroundColor: cat.colour }}
                         >
                           <Icon className="size-4" />
                         </span>
@@ -217,7 +211,7 @@ export function TodayPanel({ date, events, onEventClick }: Props) {
                           <div className="flex items-center gap-2">
                             <span
                               className="size-1.5 shrink-0 rounded-full"
-                              style={{ backgroundColor: cat.color }}
+                              style={{ backgroundColor: cat.colour }}
                             />
                           <p className="truncate text-sm font-medium">
                             {e.title}
@@ -229,9 +223,9 @@ export function TodayPanel({ date, events, onEventClick }: Props) {
                           {evShift && (
                             <span
                               className="mt-1 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium text-white"
-                              style={{ backgroundColor: evShift.color }}
+                              style={{ backgroundColor: evShift.colour }}
                             >
-                              <evShift.icon className="size-2.5" />
+                              <evShift.Icon className="size-2.5" />
                               {evShift.label}
                             </span>
                           )}
