@@ -103,6 +103,8 @@ function draftToInput(draft: EventDraft) {
     splitSecondStart: shift?.split?.secondStart ?? null,
     splitSecondEnd: shift?.split?.secondEnd ?? null,
     travelDurationMinutes,
+    unpaidBreakMinutes:
+      (draft as EventDraft & { unpaidBreakMinutes?: number }).unpaidBreakMinutes ?? null,
     recurrencePattern: draft.recurrencePattern ?? null,
     recurrenceDays: draft.recurrenceDays ?? null,
     recurrenceEndDate: draft.recurrenceEndDate ?? null,
