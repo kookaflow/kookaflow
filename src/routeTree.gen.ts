@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -30,6 +31,11 @@ import { Route as ApiPublicHooksSendDailyReminderRouteImport } from './routes/ap
 import { Route as ApiPublicHooksDispatchShiftAlertsRouteImport } from './routes/api/public/hooks/dispatch-shift-alerts'
 import { Route as ApiPublicGoogleSyncAllRouteImport } from './routes/api/public/google/sync-all'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/signup'
+    | '/terms'
     | '/calendar'
     | '/dashboard'
     | '/onboarding'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/signup'
+    | '/terms'
     | '/calendar'
     | '/dashboard'
     | '/onboarding'
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/signup'
+    | '/terms'
     | '/_authenticated/calendar'
     | '/_authenticated/dashboard'
     | '/_authenticated/onboarding'
@@ -275,6 +287,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  TermsRoute: typeof TermsRoute
   AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute
   AuthGoogleStartRoute: typeof AuthGoogleStartRoute
   ApiPublicGoogleSyncAllRoute: typeof ApiPublicGoogleSyncAllRoute
@@ -288,6 +301,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -458,6 +478,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  TermsRoute: TermsRoute,
   AuthGoogleCallbackRoute: AuthGoogleCallbackRoute,
   AuthGoogleStartRoute: AuthGoogleStartRoute,
   ApiPublicGoogleSyncAllRoute: ApiPublicGoogleSyncAllRoute,
