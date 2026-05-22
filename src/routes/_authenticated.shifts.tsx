@@ -42,11 +42,10 @@ function ShiftsPage() {
   const builtinLeave = LEAVE_STAMPS.filter((s) => s.kind === "shift" && filter(s.label));
   const builtinNonWorking = LEAVE_STAMPS.filter((s) => s.kind === "clear" || s.kind === "rest").filter((s) => filter(s.label));
 
-  const groupedCustom = useMemo(() => {
-    const byCat: Record<string, ShiftTemplateDTO[]> = { working: [], leave: [], non_working: [] };
-    templates.filter((t) => filter(t.name)).forEach((t) => byCat[t.category]?.push(t));
-    return byCat;
-  }, [templates, search]);
+  const customAll = useMemo(
+    () => templates.filter((t) => filter(t.name)).sort((a, b) => a.sortOrder - b.sortOrder),
+    [templates, search],
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -80,34 +79,28 @@ function ShiftsPage() {
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-4 space-y-6">
+        {customAll.length > 0 && (
+          <Section title="MY CUSTOM SHIFTS">
+            {customAll.map((t) => (
+              <CustomRow
+                key={t.id}
+                template={t}
+                onEdit={() => { setEditing(t); setEditorOpen(true); }}
+                onDelete={() => remove(t.id)}
+              />
+            ))}
+          </Section>
+        )}
         <Section title="WORKING">
           {builtinWorking.map((s) => (
             <BuiltinRow key={s.id} stamp={s} />
           ))}
-          {groupedCustom.working.map((t) => (
-            <CustomRow
-              key={t.id}
-              template={t}
-              onEdit={() => { setEditing(t); setEditorOpen(true); }}
-              onDelete={() => remove(t.id)}
-            />
-          ))}
         </Section>
         <Section title="LEAVE">
           {builtinLeave.map((s) => (<BuiltinRow key={s.id} stamp={s} />))}
-          {groupedCustom.leave.map((t) => (
-            <CustomRow key={t.id} template={t}
-              onEdit={() => { setEditing(t); setEditorOpen(true); }}
-              onDelete={() => remove(t.id)} />
-          ))}
         </Section>
         <Section title="NON-WORKING">
           {builtinNonWorking.map((s) => (<BuiltinRow key={s.id} stamp={s} />))}
-          {groupedCustom.non_working.map((t) => (
-            <CustomRow key={t.id} template={t}
-              onEdit={() => { setEditing(t); setEditorOpen(true); }}
-              onDelete={() => remove(t.id)} />
-          ))}
         </Section>
       </main>
       <ShiftEditorSheet
