@@ -268,6 +268,51 @@ export type Database = {
         }
         Relationships: []
       }
+      shift_templates: {
+        Row: {
+          base_type: string | null
+          category: string
+          colour: string
+          created_at: string
+          default_end: string | null
+          default_start: string | null
+          icon_name: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_type?: string | null
+          category: string
+          colour: string
+          created_at?: string
+          default_end?: string | null
+          default_start?: string | null
+          icon_name?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_type?: string | null
+          category?: string
+          colour?: string
+          created_at?: string
+          default_end?: string | null
+          default_start?: string | null
+          icon_name?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_category_visibility: {
         Row: {
           category_id: string

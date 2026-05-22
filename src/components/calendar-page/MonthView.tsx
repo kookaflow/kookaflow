@@ -11,6 +11,7 @@ import {
   addDays,
 } from "date-fns";
 import { CATEGORY_MAP, SHIFT_STYLES, type MockEvent } from "./constants";
+import { ICON_MAP } from "@/components/events/IconPicker";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -54,6 +55,9 @@ export function MonthView({
           const shiftStyle = shift ? SHIFT_STYLES[shift.shiftType!] : null;
           const isSel = isSameDay(day, selected);
           const today = isToday(day);
+          const iconEvents = dayEvents
+            .filter((e) => e.iconName && (!shift || e.id !== shift.id))
+            .slice(0, 3);
           const dots = dayEvents.slice(0, 5);
 
           return (
@@ -69,7 +73,7 @@ export function MonthView({
                 isSel && "border-primary ring-2 ring-primary/30 bg-card",
               )}
             >
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between gap-1">
                 <span
                   className={cn(
                     "flex size-7 items-center justify-center rounded-full text-xs font-semibold",
@@ -80,17 +84,34 @@ export function MonthView({
                 >
                   {format(day, "d")}
                 </span>
-                {shiftStyle && (
-                  <span
-                    className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium text-white shadow-sm"
-                    style={{ backgroundColor: shiftStyle.color }}
-                    title={`${shiftStyle.label} shift`}
-                  >
-                    <shiftStyle.icon className="size-3.5" />
-                    <span className="hidden sm:inline">{shiftStyle.label}</span>
-                  </span>
-                )}
               </div>
+              {shiftStyle && (
+                <span
+                  className="flex w-full items-center justify-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm"
+                  style={{ backgroundColor: shiftStyle.color }}
+                  title={`${shiftStyle.label} shift`}
+                >
+                  <shiftStyle.icon className="size-3" />
+                  <span className="truncate">{shiftStyle.label}</span>
+                </span>
+              )}
+              {iconEvents.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1">
+                  {iconEvents.map((e) => {
+                    const Icon = ICON_MAP[e.iconName as string];
+                    if (!Icon) return null;
+                    return (
+                      <span
+                        key={e.id}
+                        className="text-foreground/80"
+                        title={e.title}
+                      >
+                        <Icon className="size-3" />
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
               <div className="mt-auto flex flex-wrap items-center gap-1">
                 {dots.map((e) => (
                   <span

@@ -14,6 +14,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedShiftsRouteImport } from './routes/_authenticated.shifts'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
@@ -44,6 +45,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedShiftsRoute = AuthenticatedShiftsRouteImport.update({
+  id: '/shifts',
+  path: '/shifts',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/shifts': typeof AuthenticatedShiftsRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
   '/api/public/hooks/send-weekly-reminder': typeof ApiPublicHooksSendWeeklyReminderRoute
 }
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/shifts': typeof AuthenticatedShiftsRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
   '/api/public/hooks/send-weekly-reminder': typeof ApiPublicHooksSendWeeklyReminderRoute
 }
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/shifts': typeof AuthenticatedShiftsRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
   '/api/public/hooks/send-weekly-reminder': typeof ApiPublicHooksSendWeeklyReminderRoute
 }
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/onboarding'
     | '/settings'
+    | '/shifts'
     | '/api/public/hooks/send-daily-reminder'
     | '/api/public/hooks/send-weekly-reminder'
   fileRoutesByTo: FileRoutesByTo
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/onboarding'
     | '/settings'
+    | '/shifts'
     | '/api/public/hooks/send-daily-reminder'
     | '/api/public/hooks/send-weekly-reminder'
   id:
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/onboarding'
     | '/_authenticated/settings'
+    | '/_authenticated/shifts'
     | '/api/public/hooks/send-daily-reminder'
     | '/api/public/hooks/send-weekly-reminder'
   fileRoutesById: FileRoutesById
@@ -203,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/shifts': {
+      id: '/_authenticated/shifts'
+      path: '/shifts'
+      fullPath: '/shifts'
+      preLoaderRoute: typeof AuthenticatedShiftsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -253,6 +272,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedShiftsRoute: typeof AuthenticatedShiftsRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -260,6 +280,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedShiftsRoute: AuthenticatedShiftsRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
