@@ -3,14 +3,27 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const CategorySchema = z.enum(["working", "leave", "non_working"]);
+const LifeCategorySchema = z.enum([
+  "work","rest","wellness","exercise","social","family","personal","travel",
+]);
 
 const TemplateInputSchema = z.object({
-  name: z.string().min(1).max(12),
+  name: z.string().min(1).max(20),
+  show_as: z.string().max(6).nullable().optional(),
   colour: z.string().min(1).max(20),
   icon_name: z.string().max(40).nullable().optional(),
   default_start: z.string().nullable().optional(),
   default_end: z.string().nullable().optional(),
   category: CategorySchema,
+  life_category: LifeCategorySchema.optional(),
+  is_all_day: z.boolean().optional(),
+  is_split_shift: z.boolean().optional(),
+  is_24_hour: z.boolean().optional(),
+  unpaid_break_minutes: z.number().int().min(0).max(720).optional(),
+  paid_break_minutes: z.number().int().min(0).max(720).optional(),
+  split_start_2: z.string().nullable().optional(),
+  split_end_2: z.string().nullable().optional(),
+  is_active: z.boolean().optional(),
   base_type: z.string().max(40).nullable().optional(),
   sort_order: z.number().int().optional(),
 });
