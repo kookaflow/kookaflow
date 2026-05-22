@@ -1,19 +1,23 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Bell, Mail, MessageSquare, Smartphone, Check } from "lucide-react";
+import { Bell, BellOff, Mail, Smartphone, Check } from "lucide-react";
+import OneSignal from "react-onesignal";
+import { useServerFn } from "@tanstack/react-start";
+import { getPushStatus, updatePushPrefs } from "@/lib/push.functions";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-type Channel = "email" | "sms" | "both";
+type Channel = "email" | "push" | "both";
 type WeekDay = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
 const WEEK_DAYS: WeekDay[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const CHANNELS: { value: Channel; label: string; icon: React.ReactNode }[] = [
   { value: "email", label: "Email", icon: <Mail className="size-3.5" /> },
-  { value: "sms", label: "SMS", icon: <MessageSquare className="size-3.5" /> },
+  { value: "push", label: "Push Notifications", icon: <Bell className="size-3.5" /> },
   { value: "both", label: "Both", icon: <Smartphone className="size-3.5" /> },
 ];
 
@@ -106,7 +110,6 @@ export function RemindersSettings() {
   const [dailyTime, setDailyTime] = useState("08:00");
   const [dailyChannel, setDailyChannel] = useState<Channel>("email");
   const [dailyEmail, setDailyEmail] = useState("");
-  const [dailyPhone, setDailyPhone] = useState("");
 
   // Weekly reminder state
   const [weeklyEnabled, setWeeklyEnabled] = useState(false);
@@ -114,7 +117,6 @@ export function RemindersSettings() {
   const [weeklyTime, setWeeklyTime] = useState("18:00");
   const [weeklyChannel, setWeeklyChannel] = useState<Channel>("email");
   const [weeklyEmail, setWeeklyEmail] = useState("");
-  const [weeklyPhone, setWeeklyPhone] = useState("");
 
   const [saved, setSaved] = useState(false);
 
@@ -124,9 +126,7 @@ export function RemindersSettings() {
   }, []);
 
   const showDailyEmail = dailyChannel === "email" || dailyChannel === "both";
-  const showDailyPhone = dailyChannel === "sms" || dailyChannel === "both";
   const showWeeklyEmail = weeklyChannel === "email" || weeklyChannel === "both";
-  const showWeeklyPhone = weeklyChannel === "sms" || weeklyChannel === "both";
 
   const sampleDailyMessage = `Good morning! Here's your day at a glance:
 
@@ -141,6 +141,8 @@ Take a breath—you've got this.`;
 
   return (
     <div className="flex flex-col gap-6">
+      <NotificationStatusCard />
+
       {/* Daily Reminder */}
       <Card>
         <CardHeader className="pb-4">
@@ -178,20 +180,6 @@ Take a breath—you've got this.`;
                   placeholder="you@example.com"
                   value={dailyEmail}
                   onChange={(e) => setDailyEmail(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
-            )}
-
-            {showDailyPhone && (
-              <div className="space-y-2">
-                <Label htmlFor="daily-phone" className="text-sm font-medium">Phone number</Label>
-                <Input
-                  id="daily-phone"
-                  type="tel"
-                  placeholder="+1 555 000 0000"
-                  value={dailyPhone}
-                  onChange={(e) => setDailyPhone(e.target.value)}
                   className="max-w-sm"
                 />
               </div>
@@ -246,23 +234,11 @@ Take a breath—you've got this.`;
                 />
               </div>
             )}
-
-            {showWeeklyPhone && (
-              <div className="space-y-2">
-                <Label htmlFor="weekly-phone" className="text-sm font-medium">Phone number</Label>
-                <Input
-                  id="weekly-phone"
-                  type="tel"
-                  placeholder="+1 555 000 0000"
-                  value={weeklyPhone}
-                  onChange={(e) => setWeeklyPhone(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
-            )}
           </CardContent>
         )}
       </Card>
+
+      <ShiftAlertsCard />
 
       {/* Preview */}
       <Card>
@@ -293,5 +269,110 @@ Take a breath—you've got this.`;
         </Button>
       </div>
     </div>
+  );
+}
+
+function usePermissionState() {
+  const [perm, setPerm] = useState<NotificationPermission | "unsupported">(
+    "default",
+  );
+  useEffect(() => {
+    if (typeof Notification === "undefined") {
+      setPerm("unsupported");
+      return;
+    }
+    setPerm(Notification.permission);
+    const id = window.setInterval(() => setPerm(Notification.permission), 1500);
+    return () => window.clearInterval(id);
+  }, []);
+  return perm;
+}
+
+function NotificationStatusCard() {
+  const perm = usePermissionState();
+  const enable = async () => {
+    try {
+      await OneSignal.Notifications.requestPermission();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  if (perm === "granted") {
+    return (
+      <div className="flex items-center gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3">
+        <span className="inline-block size-2 rounded-full bg-emerald-500" />
+        <span className="text-sm text-foreground">
+          🔔 Push notifications are active on this device
+        </span>
+      </div>
+    );
+  }
+  if (perm === "denied") {
+    return (
+      <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+        <span className="inline-block size-2 rounded-full bg-amber-500" />
+        <span className="text-sm text-foreground">
+          Notifications blocked — enable in your browser settings
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3">
+      <div className="flex items-center gap-3">
+        <span className="inline-block size-2 rounded-full bg-muted-foreground/50" />
+        <span className="text-sm text-foreground">🔕 Push notifications are off</span>
+      </div>
+      <Button size="sm" onClick={enable} disabled={perm === "unsupported"}>
+        Enable notifications
+      </Button>
+    </div>
+  );
+}
+
+function ShiftAlertsCard() {
+  const perm = usePermissionState();
+  const qc = useQueryClient();
+  const fetchStatus = useServerFn(getPushStatus);
+  const persist = useServerFn(updatePushPrefs);
+
+  const { data: status } = useQuery({
+    queryKey: ["push-status"],
+    queryFn: () => fetchStatus(),
+  });
+
+  const mut = useMutation({
+    mutationFn: (v: boolean) =>
+      persist({ data: { push_shift_alerts: v } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["push-status"] }),
+  });
+
+  if (perm !== "granted") return null;
+  const enabled = status?.push_shift_alerts ?? true;
+
+  return (
+    <Card>
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <BellOff className="size-4" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Shift Alerts</CardTitle>
+              <CardDescription>
+                Get a push notification before each shift starts
+              </CardDescription>
+            </div>
+          </div>
+          <Switch
+            checked={enabled}
+            disabled={mut.isPending}
+            onCheckedChange={(v) => mut.mutate(v)}
+          />
+        </div>
+      </CardHeader>
+    </Card>
   );
 }
