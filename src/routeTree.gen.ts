@@ -25,6 +25,7 @@ import { Route as ApiPublicHooksSendPushNotificationRouteImport } from './routes
 import { Route as ApiPublicHooksSendPushDailyReminderRouteImport } from './routes/api/public/hooks/send-push-daily-reminder'
 import { Route as ApiPublicHooksSendDailyReminderRouteImport } from './routes/api/public/hooks/send-daily-reminder'
 import { Route as ApiPublicHooksDispatchShiftAlertsRouteImport } from './routes/api/public/hooks/dispatch-shift-alerts'
+import { Route as ApiPublicGoogleOauthStartRouteImport } from './routes/api/public/google/oauth-start'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -111,6 +112,12 @@ const ApiPublicHooksDispatchShiftAlertsRoute =
     path: '/api/public/hooks/dispatch-shift-alerts',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicGoogleOauthStartRoute =
+  ApiPublicGoogleOauthStartRouteImport.update({
+    id: '/api/public/google/oauth-start',
+    path: '/api/public/google/oauth-start',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shifts': typeof AuthenticatedShiftsRoute
+  '/api/public/google/oauth-start': typeof ApiPublicGoogleOauthStartRoute
   '/api/public/hooks/dispatch-shift-alerts': typeof ApiPublicHooksDispatchShiftAlertsRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
   '/api/public/hooks/send-push-daily-reminder': typeof ApiPublicHooksSendPushDailyReminderRoute
@@ -139,6 +147,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shifts': typeof AuthenticatedShiftsRoute
+  '/api/public/google/oauth-start': typeof ApiPublicGoogleOauthStartRoute
   '/api/public/hooks/dispatch-shift-alerts': typeof ApiPublicHooksDispatchShiftAlertsRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
   '/api/public/hooks/send-push-daily-reminder': typeof ApiPublicHooksSendPushDailyReminderRoute
@@ -158,6 +167,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/shifts': typeof AuthenticatedShiftsRoute
+  '/api/public/google/oauth-start': typeof ApiPublicGoogleOauthStartRoute
   '/api/public/hooks/dispatch-shift-alerts': typeof ApiPublicHooksDispatchShiftAlertsRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
   '/api/public/hooks/send-push-daily-reminder': typeof ApiPublicHooksSendPushDailyReminderRoute
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/shifts'
+    | '/api/public/google/oauth-start'
     | '/api/public/hooks/dispatch-shift-alerts'
     | '/api/public/hooks/send-daily-reminder'
     | '/api/public/hooks/send-push-daily-reminder'
@@ -194,6 +205,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/shifts'
+    | '/api/public/google/oauth-start'
     | '/api/public/hooks/dispatch-shift-alerts'
     | '/api/public/hooks/send-daily-reminder'
     | '/api/public/hooks/send-push-daily-reminder'
@@ -212,6 +224,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/_authenticated/settings'
     | '/_authenticated/shifts'
+    | '/api/public/google/oauth-start'
     | '/api/public/hooks/dispatch-shift-alerts'
     | '/api/public/hooks/send-daily-reminder'
     | '/api/public/hooks/send-push-daily-reminder'
@@ -226,6 +239,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  ApiPublicGoogleOauthStartRoute: typeof ApiPublicGoogleOauthStartRoute
   ApiPublicHooksDispatchShiftAlertsRoute: typeof ApiPublicHooksDispatchShiftAlertsRoute
   ApiPublicHooksSendDailyReminderRoute: typeof ApiPublicHooksSendDailyReminderRoute
   ApiPublicHooksSendPushDailyReminderRoute: typeof ApiPublicHooksSendPushDailyReminderRoute
@@ -348,6 +362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDispatchShiftAlertsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/google/oauth-start': {
+      id: '/api/public/google/oauth-start'
+      path: '/api/public/google/oauth-start'
+      fullPath: '/api/public/google/oauth-start'
+      preLoaderRoute: typeof ApiPublicGoogleOauthStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -377,6 +398,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  ApiPublicGoogleOauthStartRoute: ApiPublicGoogleOauthStartRoute,
   ApiPublicHooksDispatchShiftAlertsRoute:
     ApiPublicHooksDispatchShiftAlertsRoute,
   ApiPublicHooksSendDailyReminderRoute: ApiPublicHooksSendDailyReminderRoute,
@@ -391,3 +413,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
