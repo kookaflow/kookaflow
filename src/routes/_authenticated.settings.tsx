@@ -5,6 +5,11 @@ import { SoundNotifications } from "@/components/settings/SoundNotifications";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
 import { ConnectedCalendars } from "@/components/settings/ConnectedCalendars";
 import { DangerZone } from "@/components/settings/DangerZone";
+import { SettingsHero } from "@/components/settings/SettingsHero";
+import { CalendarPreferences } from "@/components/settings/CalendarPreferences";
+import { DisplayPreferences } from "@/components/settings/DisplayPreferences";
+import { ExportSection } from "@/components/settings/ExportSection";
+import { AboutSection } from "@/components/settings/AboutSection";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Card } from "@/components/ui/card";
@@ -57,6 +62,7 @@ function SettingsPage() {
       </PageHeader>
 
       <main className="mx-auto max-w-3xl p-4 sm:p-6">
+        <SettingsHero />
         <section className="mb-6">
           <h2 className="mb-2 px-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Shifts
@@ -79,10 +85,14 @@ function SettingsPage() {
             </Link>
           </Card>
         </section>
+        <CalendarPreferences />
         <ThemeSettings />
+        <DisplayPreferences />
         <RemindersSettings />
         <ConnectedCalendars />
         <SoundNotifications />
+        <ExportSection />
+        <AboutSection />
         <DangerZone />
       </main>
     </div>
