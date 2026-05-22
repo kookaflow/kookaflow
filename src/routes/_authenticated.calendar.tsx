@@ -58,8 +58,7 @@ function CalendarPageInner() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogDefault, setDialogDefault] = useState<Date>(new Date());
   const [weekSummaryOpen, setWeekSummaryOpen] = useState(false);
-  const { selected: stamp, applyStamp } = useStamp();
-  const { panelOpen } = useStamp();
+  const { selected: stamp, applyStamp, panelOpen } = useStamp();
 
   const events = useMemo(() => rawEvents.map(toMockEvent), [rawEvents]);
 
