@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import logo from "@/assets/shiftsync-logo.png";
+import logo from "@/assets/kookaflow-logo.png";
 
 interface PageHeaderProps {
   title: string;
@@ -28,7 +28,7 @@ export function PageHeader({ title, subtitle, right, children }: PageHeaderProps
         <Link to="/dashboard" className="flex items-center gap-2 shrink-0">
           <img
             src={logo}
-            alt="ShiftSync"
+            alt="Kookaflow"
             style={{ height: 36, width: "auto" }}
             className="object-contain"
           />

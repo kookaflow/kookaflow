@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import logo from "@/assets/shiftsync-logo.png";
+import logo from "@/assets/kookaflow-logo.png";
 import { BRAND_GRADIENT } from "@/lib/colours";
 
 export function SplashScreen({ duration = 1500 }: { duration?: number }) {
@@ -28,12 +28,12 @@ export function SplashScreen({ duration = 1500 }: { duration?: number }) {
     >
       <img
         src={logo}
-        alt="ShiftSync"
+        alt="Kookaflow"
         style={{ height: 140, width: "auto" }}
         className="object-contain"
       />
       <div className="mt-4 text-3xl font-bold tracking-tight text-white">
-        ShiftSync
+        Kookaflow
       </div>
     </div>
   );

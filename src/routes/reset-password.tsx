@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/reset-password")({
-  head: () => ({ meta: [{ title: "Reset password — ShiftSync" }] }),
+  head: () => ({ meta: [{ title: "Reset password — Kookaflow" }] }),
   component: ResetPasswordPage,
 });
 

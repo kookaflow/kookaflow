@@ -6,8 +6,8 @@ import { useEvents } from "@/providers/EventsProvider";
 import { getEventColour } from "@/lib/shiftConfig";
 import type { CalendarEvent } from "@/types/event";
 
-const SOUND_PREFS_KEY = "shiftsync.sound-prefs.v1";
-const LAST_OPENED_KEY = "shiftsync.lastOpenedDate";
+const SOUND_PREFS_KEY = "kookaflow.sound-prefs.v1";
+const LAST_OPENED_KEY = "kookaflow.lastOpenedDate";
 
 type SoundPrefs = { eventAlertMinutes?: number; shiftAlertEnabled?: boolean };
 
@@ -79,7 +79,7 @@ function ShiftAlertToast({ id, event, minutesAway, onView }: ShiftToastProps) {
   return (
     <div
       className="relative w-full overflow-hidden rounded-2xl text-white shadow-xl"
-      style={{ background: "linear-gradient(135deg, #1E2A6E 0%, #6B35CC 100%)" }}
+      style={{ background: "linear-gradient(135deg, #1E2A6E 0%, #F59E0B 100%)" }}
     >
       <div className="space-y-2 p-4">
         <div className="flex items-center justify-between gap-2">
@@ -129,7 +129,7 @@ function ShiftAlertToast({ id, event, minutesAway, onView }: ShiftToastProps) {
       </div>
       <div
         className="absolute bottom-0 left-0 h-1 bg-white/70"
-        style={{ animation: "shiftsync-toast-progress 10s linear forwards" }}
+        style={{ animation: "kookaflow-toast-progress 10s linear forwards" }}
       />
     </div>
   );

@@ -95,7 +95,7 @@ export const Route = createFileRoute(
           try {
             await sendOneSignalPush({
               externalUserIds: [p.user_id],
-              heading: "ShiftSync — Today",
+              heading: "Kookaflow — Today",
               content,
               url: appUrl(),
             });

@@ -26,9 +26,9 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — ShiftSync" },
+      { title: "Dashboard — Kookaflow" },
       { name: "description", content: "Your life-balance dashboard: weekly hours, monthly distribution, and research-backed wellness nudges." },
-      { property: "og:title", content: "Dashboard — ShiftSync" },
+      { property: "og:title", content: "Dashboard — Kookaflow" },
       { property: "og:description", content: "See how your time spreads across work, rest, wellness, exercise, and relationships." },
     ],
   }),

@@ -132,7 +132,7 @@ export function buildNudges(events: MockEvent[], now = new Date()): Nudge[] {
     severity: 0,
     tone: "affirm",
     message: "Add some events on the calendar to start seeing personalised wellbeing insights here.",
-    source: "ShiftSync",
+    source: "Kookaflow",
   });
   return picked;
 }

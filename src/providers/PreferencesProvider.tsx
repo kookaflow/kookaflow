@@ -11,7 +11,7 @@ import {
 } from "@/lib/themes";
 import type { UserPreferences, ViewMode } from "@/types/preferences";
 
-const KEY = "shiftsync.prefs.v1";
+const KEY = "kookaflow.prefs.v1";
 
 const DEFAULT: UserPreferences = {
   themeName: DEFAULT_THEME,

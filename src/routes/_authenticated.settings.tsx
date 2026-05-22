@@ -11,10 +11,10 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
-      { title: "Settings — ShiftSync" },
-      { name: "description", content: "Manage your ShiftSync preferences and reminder settings." },
-      { property: "og:title", content: "Settings — ShiftSync" },
-      { property: "og:description", content: "Manage your ShiftSync preferences and reminder settings." },
+      { title: "Settings — Kookaflow" },
+      { name: "description", content: "Manage your Kookaflow preferences and reminder settings." },
+      { property: "og:title", content: "Settings — Kookaflow" },
+      { property: "og:description", content: "Manage your Kookaflow preferences and reminder settings." },
     ],
   }),
   component: SettingsPage,

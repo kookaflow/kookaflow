@@ -8,10 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/shiftsync-logo.png";
+import logo from "@/assets/kookaflow-logo.png";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
-  head: () => ({ meta: [{ title: "Welcome — ShiftSync" }] }),
+  head: () => ({ meta: [{ title: "Welcome — Kookaflow" }] }),
   component: OnboardingPage,
 });
 
@@ -79,8 +79,9 @@ function OnboardingPage() {
         className="flex flex-col items-center gap-3 px-6 py-10 text-center text-white"
         style={{ background: "var(--brand-gradient)" }}
       >
-        <img src={logo} alt="ShiftSync" style={{ height: 80, width: "auto" }} className="object-contain" />
-        <h1 className="text-2xl font-bold tracking-tight">Welcome to ShiftSync</h1>
+        <img src={logo} alt="Kookaflow" style={{ height: 80, width: "auto" }} className="object-contain" />
+        <h1 className="text-2xl font-bold tracking-tight">Welcome to Kookaflow</h1>
+        <p className="text-sm text-white/80">Find your flow, whatever your hours</p>
         <div className="mt-2 flex items-center justify-center gap-2">
           {[0, 1, 2, 3, 4].map((i) => (
             <span
