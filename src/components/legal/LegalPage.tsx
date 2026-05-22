@@ -46,7 +46,7 @@ export function LegalPage({
         </svg>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-        <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground/90 prose-li:text-foreground/90 prose-a:text-primary">
+        <div className="legal-content space-y-4 text-sm leading-relaxed text-foreground/90 [&_h2]:mt-8 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-foreground [&_p]:mb-3 [&_ul]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_a]:text-primary [&_a]:underline-offset-2 hover:[&_a]:underline [&_strong]:text-foreground">
           {children}
         </div>
         <div className="mt-10 flex items-center justify-between text-xs text-muted-foreground">
