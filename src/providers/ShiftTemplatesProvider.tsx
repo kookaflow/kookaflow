@@ -26,11 +26,21 @@ const C = createContext<Ctx | null>(null);
 function toInput(t: Partial<ShiftTemplateDTO>) {
   return {
     name: t.name!,
+    show_as: t.showAs ?? null,
     colour: t.colour!,
     icon_name: t.iconName ?? null,
     default_start: t.defaultStart ?? null,
     default_end: t.defaultEnd ?? null,
     category: t.category!,
+    life_category: t.lifeCategory ?? "work",
+    is_all_day: t.isAllDay ?? false,
+    is_split_shift: t.isSplitShift ?? false,
+    is_24_hour: t.is24Hour ?? false,
+    unpaid_break_minutes: t.unpaidBreakMinutes ?? 0,
+    paid_break_minutes: t.paidBreakMinutes ?? 0,
+    split_start_2: t.splitStart2 ?? null,
+    split_end_2: t.splitEnd2 ?? null,
+    is_active: t.isActive ?? true,
     base_type: t.baseType ?? null,
     sort_order: t.sortOrder ?? 0,
   };
