@@ -74,7 +74,7 @@ export function MonthView({
               <div className="flex items-start justify-between gap-1">
                 <span
                   className={cn(
-                    "flex size-6 items-center justify-center rounded-full p-0.5 text-xs font-semibold",
+                    "flex size-5 items-center justify-center rounded-full text-[11px] font-semibold",
                     today
                       ? "bg-primary text-primary-foreground"
                       : "text-foreground",
