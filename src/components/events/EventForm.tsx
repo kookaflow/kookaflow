@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 interface Props {
   initial?: CalendarEvent;
   defaultStart?: Date;
+  defaultCategory?: CategoryId;
   onSubmit: (draft: EventDraft) => void;
   onDelete?: () => void;
   onCancel: () => void;
@@ -48,14 +49,14 @@ function defaultStartFor(base: Date | undefined): Date {
   return d;
 }
 
-export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel }: Props) {
+export function EventForm({ initial, defaultStart, defaultCategory, onSubmit, onDelete, onCancel }: Props) {
   const start0 = initial?.start ?? defaultStartFor(defaultStart).toISOString();
   const end0 =
     initial?.end ??
     new Date(new Date(start0).getTime() + 8 * 60 * 60 * 1000).toISOString();
 
   const [title, setTitle] = useState(initial?.title ?? "");
-  const [category, setCategory] = useState<CategoryId>(initial?.category ?? "personal");
+  const [category, setCategory] = useState<CategoryId>(initial?.category ?? defaultCategory ?? "personal");
   const [start, setStart] = useState(toInputDateTime(start0));
   const [end, setEnd] = useState(toInputDateTime(end0));
   const [allDay, setAllDay] = useState(initial?.allDay ?? false);
