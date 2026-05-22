@@ -31,6 +31,9 @@ import { useEvents } from "@/providers/EventsProvider";
 import type { CalendarEvent } from "@/types/event";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { StampProvider, useStamp } from "@/providers/StampProvider";
+import { QuickAddFab } from "@/components/calendar/QuickAddFab";
+import { QuickAddPanel } from "@/components/calendar/QuickAddPanel";
 
 type ViewMode = "month" | "week" | "day";
 
@@ -39,6 +42,14 @@ export const Route = createFileRoute("/_authenticated/calendar")({
 });
 
 function CalendarPage() {
+  return (
+    <StampProvider>
+      <CalendarPageInner />
+    </StampProvider>
+  );
+}
+
+function CalendarPageInner() {
   const [view, setView] = useState<ViewMode>("month");
   const [date, setDate] = useState<Date>(new Date());
   const { events: rawEvents } = useEvents();
@@ -46,8 +57,17 @@ function CalendarPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogDefault, setDialogDefault] = useState<Date>(new Date());
   const [weekSummaryOpen, setWeekSummaryOpen] = useState(false);
+  const { selected: stamp, applyStamp } = useStamp();
 
   const events = useMemo(() => rawEvents.map(toMockEvent), [rawEvents]);
+
+  const handleDaySelect = (d: Date) => {
+    if (stamp) {
+      void applyStamp(d);
+      return;
+    }
+    setDate(d);
+  };
 
   const goPrev = () => {
     if (view === "month") setDate((d) => addMonths(d, -1));
@@ -220,7 +240,7 @@ function CalendarPage() {
               cursor={date}
               selected={date}
               events={events}
-              onSelect={setDate}
+              onSelect={handleDaySelect}
               onCreate={openCreate}
               onEventClick={openEdit}
             />
@@ -230,7 +250,7 @@ function CalendarPage() {
               days={weekDays}
               events={events}
               selected={date}
-              onSelectDay={setDate}
+              onSelectDay={handleDaySelect}
               onCreate={openCreate}
               onEventClick={openEdit}
             />
@@ -240,7 +260,7 @@ function CalendarPage() {
               days={[date]}
               events={events}
               selected={date}
-              onSelectDay={setDate}
+              onSelectDay={handleDaySelect}
               onCreate={openCreate}
               onEventClick={openEdit}
             />
@@ -261,6 +281,13 @@ function CalendarPage() {
         onOpenChange={setWeekSummaryOpen}
         weekAnchor={date}
         events={events}
+      />
+
+      <QuickAddFab />
+      <QuickAddPanel
+        onOpenDetailedEvent={() => {
+          openCreate(date);
+        }}
       />
     </div>
   );
