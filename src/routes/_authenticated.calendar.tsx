@@ -236,7 +236,10 @@ function CalendarPageInner() {
       </div>
 
       {/* Body */}
-      <div className="flex flex-1 overflow-hidden">
+      <div
+        className="flex flex-1 overflow-hidden transition-[padding] duration-200"
+        style={{ paddingBottom: panelOpen ? "28vh" : 0 }}
+      >
         <main className="flex-1 overflow-hidden">
           {view === "month" && (
             <MonthView
