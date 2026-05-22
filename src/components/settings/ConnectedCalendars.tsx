@@ -7,18 +7,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getGoogleConnectionStatus,
   disconnectGoogleCalendar,
-  setTwoWaySync,
   triggerGoogleSync,
 } from "@/lib/google-calendar.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarCheck2, RefreshCw, Unplug, AlertTriangle } from "lucide-react";
+import { CalendarCheck2, RefreshCw, Unplug, AlertTriangle, Coffee } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
