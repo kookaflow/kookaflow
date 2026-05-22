@@ -139,7 +139,7 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
           <SelectTrigger>
             <SelectValue>
               <span className="flex items-center gap-2">
-                <span className={`size-3 rounded-full ${cat.dotClass}`} />
+                <cat.icon size={16} className={cat.textClass} />
                 {cat.label}
               </span>
             </SelectValue>
@@ -148,7 +148,7 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
             {CATEGORIES.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 <span className="flex items-center gap-2">
-                  <span className={`size-3 rounded-full ${c.dotClass}`} />
+                  <c.icon size={16} className={c.textClass} />
                   {c.label}
                 </span>
               </SelectItem>
