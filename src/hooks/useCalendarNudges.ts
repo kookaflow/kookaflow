@@ -115,6 +115,7 @@ function hasCategoryLast7Days(
 export function useCalendarNudges(
   events: MockEvent[],
   anchor: Date = new Date(),
+  version: number = 0,
 ): CalendarNudge | null {
   return useMemo(() => {
     const today = new Date();
@@ -140,7 +141,7 @@ export function useCalendarNudges(
       return NUDGE_DEFS[id];
     }
     return null;
-  }, [events, anchor]);
+  }, [events, anchor, version]);
 }
 
 const NUDGE_DEFS: Record<NudgeId, CalendarNudge> = {
