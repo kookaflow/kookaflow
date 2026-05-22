@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   startOfMonth,
   endOfMonth,
@@ -40,7 +41,7 @@ export function MonthView({
   );
 
   return (
-    <div className="flex h-full flex-col gap-2 p-3 sm:p-5 animate-in fade-in duration-200">
+    <div className="flex h-full flex-col gap-2 p-2 sm:p-3 animate-in fade-in duration-200">
       <div className="grid grid-cols-7 gap-1 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {headers.map((d) => (
           <div key={d} className="px-1.5 py-1">
@@ -48,7 +49,7 @@ export function MonthView({
           </div>
         ))}
       </div>
-      <div className="grid flex-1 grid-cols-7 grid-rows-6 gap-1">
+      <div className="grid flex-1 grid-cols-7 grid-rows-6 gap-0.5">
         {days.map((day) => {
           const inMonth = isSameMonth(day, cursor);
           const dayEvents = events.filter((e) => isSameDay(e.start, day));
@@ -62,22 +63,18 @@ export function MonthView({
           const dots = dayEvents.slice(0, 5);
 
           return (
-            <button
+            <DayCell
               key={day.toISOString()}
-              type="button"
-              onClick={() => onSelect(day)}
-              onDoubleClick={() => onCreate?.(day)}
-              className={cn(
-                "group relative flex min-h-[80px] flex-col gap-2 rounded-xl border border-border/60 bg-card/40 p-2 text-left transition-all duration-200",
-                "hover:border-primary/60 hover:bg-card/80 hover:shadow-sm hover:-translate-y-0.5",
-                !inMonth && "opacity-40",
-                isSel && "border-primary ring-2 ring-primary/30 bg-card",
-              )}
+              day={day}
+              inMonth={inMonth}
+              isSel={isSel}
+              onSelect={onSelect}
+              onCreate={onCreate}
             >
               <div className="flex items-start justify-between gap-1">
                 <span
                   className={cn(
-                    "flex size-7 items-center justify-center rounded-full text-xs font-semibold",
+                    "flex size-6 items-center justify-center rounded-full p-0.5 text-xs font-semibold",
                     today
                       ? "bg-primary text-primary-foreground"
                       : "text-foreground",
@@ -86,29 +83,41 @@ export function MonthView({
                   {format(day, "d")}
                 </span>
               </div>
-              {shiftStyle && (
-                <span
-                  className="flex w-full items-center justify-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm"
+              {shiftStyle && shift && (
+                <button
+                  type="button"
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    onEventClick?.(shift);
+                  }}
+                  aria-label={`Edit ${shift.title}`}
+                  className="flex w-full items-center justify-center gap-0.5 truncate rounded-sm px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm"
                   style={{ backgroundColor: shiftStyle.colour }}
                   title={`${shiftStyle.label} shift`}
                 >
-                  <shiftStyle.Icon className="size-3" />
+                  <shiftStyle.Icon className="size-2.5" />
                   <span className="truncate">{shiftStyle.label}</span>
-                </span>
+                </button>
               )}
               {iconEvents.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1">
+                <div className="flex flex-wrap items-center gap-px">
                   {iconEvents.map((e) => {
                     const Icon = ICON_MAP[e.iconName as string];
                     if (!Icon) return null;
                     return (
-                      <span
+                      <button
                         key={e.id}
+                        type="button"
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          onEventClick?.(e);
+                        }}
                         className="text-foreground/80"
                         title={e.title}
+                        aria-label={`Edit ${e.title}`}
                       >
-                        <Icon className="size-3" />
-                      </span>
+                        <Icon className="size-2.5" />
+                      </button>
                     );
                   })}
                 </div>
@@ -134,10 +143,69 @@ export function MonthView({
                   </span>
                 )}
               </div>
-            </button>
+            </DayCell>
           );
         })}
       </div>
     </div>
+  );
+}
+
+function DayCell({
+  day,
+  inMonth,
+  isSel,
+  onSelect,
+  onCreate,
+  children,
+}: {
+  day: Date;
+  inMonth: boolean;
+  isSel: boolean;
+  onSelect: (d: Date) => void;
+  onCreate?: (d: Date) => void;
+  children: React.ReactNode;
+}) {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heldRef = useRef(false);
+
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onPointerDown={() => {
+        heldRef.current = false;
+        clearTimer();
+        timerRef.current = setTimeout(() => {
+          heldRef.current = true;
+          onCreate?.(day);
+        }, 500);
+      }}
+      onPointerUp={clearTimer}
+      onPointerLeave={clearTimer}
+      onPointerCancel={clearTimer}
+      onClick={() => {
+        if (heldRef.current) {
+          heldRef.current = false;
+          return;
+        }
+        onSelect(day);
+      }}
+      onDoubleClick={() => onCreate?.(day)}
+      className={cn(
+        "group relative flex min-h-0 flex-col gap-1 rounded-lg border border-border/60 bg-card/40 p-1 text-left transition-all duration-200",
+        "hover:border-primary/60 hover:bg-card/80 hover:shadow-sm",
+        !inMonth && "opacity-40",
+        isSel && "border-primary ring-2 ring-primary/30 bg-card",
+      )}
+    >
+      {children}
+    </button>
   );
 }
