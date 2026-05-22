@@ -1,0 +1,211 @@
+import { useRef } from "react";
+import {
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  isToday,
+  format,
+  addDays,
+} from "date-fns";
+import { type MockEvent } from "./constants";
+import { ICON_MAP } from "@/components/events/IconPicker";
+import { getCategoryConfig, getShiftConfig } from "@/lib/shiftConfig";
+import { cn } from "@/lib/utils";
+
+interface Props {
+  cursor: Date;
+  selected: Date;
+  events: MockEvent[];
+  onSelect: (d: Date) => void;
+  onCreate?: (d: Date) => void;
+  onEventClick?: (e: MockEvent) => void;
+}
+
+export function MonthView({
+  cursor,
+  selected,
+  events,
+  onSelect,
+  onCreate,
+  onEventClick,
+}: Props) {
+  const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 1 });
+  const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 1 });
+  const days = eachDayOfInterval({ start, end });
+  const headers = Array.from({ length: 7 }, (_, i) =>
+    format(addDays(start, i), "EEE"),
+  );
+
+  return (
+    <div className="flex h-full flex-col gap-2 p-2 sm:p-3 animate-in fade-in duration-200">
+      <div className="grid grid-cols-7 gap-1 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {headers.map((d) => (
+          <div key={d} className="px-1.5 py-1">
+            {d}
+          </div>
+        ))}
+      </div>
+      <div className="grid flex-1 grid-cols-7 grid-rows-6 gap-0.5">
+        {days.map((day) => {
+          const inMonth = isSameMonth(day, cursor);
+          const dayEvents = events.filter((e) => isSameDay(e.start, day));
+          const shift = dayEvents.find((e) => e.shiftType);
+          const shiftStyle = shift ? getShiftConfig(shift.shiftType) : null;
+          const isSel = isSameDay(day, selected);
+          const today = isToday(day);
+          const iconEvents = dayEvents
+            .filter((e) => e.iconName && (!shift || e.id !== shift.id))
+            .slice(0, 3);
+          const dots = dayEvents.slice(0, 5);
+
+          return (
+            <DayCell
+              key={day.toISOString()}
+              day={day}
+              inMonth={inMonth}
+              isSel={isSel}
+              onSelect={onSelect}
+              onCreate={onCreate}
+            >
+              <div className="flex items-start justify-between gap-1">
+                <span
+                  className={cn(
+                    "flex size-6 items-center justify-center rounded-full p-0.5 text-xs font-semibold",
+                    today
+                      ? "bg-primary text-primary-foreground"
+                      : "text-foreground",
+                  )}
+                >
+                  {format(day, "d")}
+                </span>
+              </div>
+              {shiftStyle && shift && (
+                <button
+                  type="button"
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    onEventClick?.(shift);
+                  }}
+                  aria-label={`Edit ${shift.title}`}
+                  className="flex w-full items-center justify-center gap-0.5 truncate rounded-sm px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm"
+                  style={{ backgroundColor: shiftStyle.colour }}
+                  title={`${shiftStyle.label} shift`}
+                >
+                  <shiftStyle.Icon className="size-2.5" />
+                  <span className="truncate">{shiftStyle.label}</span>
+                </button>
+              )}
+              {iconEvents.length > 0 && (
+                <div className="flex flex-wrap items-center gap-px">
+                  {iconEvents.map((e) => {
+                    const Icon = ICON_MAP[e.iconName as string];
+                    if (!Icon) return null;
+                    return (
+                      <button
+                        key={e.id}
+                        type="button"
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          onEventClick?.(e);
+                        }}
+                        className="text-foreground/80"
+                        title={e.title}
+                        aria-label={`Edit ${e.title}`}
+                      >
+                        <Icon className="size-2.5" />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <div className="mt-auto flex flex-wrap items-center gap-1">
+                {dots.map((e) => (
+                  <span
+                    key={e.id}
+                    role={onEventClick ? "button" : undefined}
+                    onClick={(ev) => {
+                      if (!onEventClick) return;
+                      ev.stopPropagation();
+                      onEventClick(e);
+                    }}
+                    className="size-1.5 rounded-full"
+                    style={{ backgroundColor: getCategoryConfig(e.category).colour }}
+                    title={e.title}
+                  />
+                ))}
+                {dayEvents.length > 5 && (
+                  <span className="text-[10px] text-muted-foreground">
+                    +{dayEvents.length - 5}
+                  </span>
+                )}
+              </div>
+            </DayCell>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DayCell({
+  day,
+  inMonth,
+  isSel,
+  onSelect,
+  onCreate,
+  children,
+}: {
+  day: Date;
+  inMonth: boolean;
+  isSel: boolean;
+  onSelect: (d: Date) => void;
+  onCreate?: (d: Date) => void;
+  children: React.ReactNode;
+}) {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heldRef = useRef(false);
+
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onPointerDown={() => {
+        heldRef.current = false;
+        clearTimer();
+        timerRef.current = setTimeout(() => {
+          heldRef.current = true;
+          onCreate?.(day);
+        }, 500);
+      }}
+      onPointerUp={clearTimer}
+      onPointerLeave={clearTimer}
+      onPointerCancel={clearTimer}
+      onClick={() => {
+        if (heldRef.current) {
+          heldRef.current = false;
+          return;
+        }
+        onSelect(day);
+      }}
+      onDoubleClick={() => onCreate?.(day)}
+      className={cn(
+        "group relative flex min-h-0 flex-col gap-1 rounded-lg border border-border/60 bg-card/40 p-1 text-left transition-all duration-200",
+        "hover:border-primary/60 hover:bg-card/80 hover:shadow-sm",
+        !inMonth && "opacity-40",
+        isSel && "border-primary ring-2 ring-primary/30 bg-card",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
