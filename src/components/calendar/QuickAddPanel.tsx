@@ -38,8 +38,8 @@ export function QuickAddPanel({ onOpenDetailedEvent }: Props) {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-40 h-[34vh] min-h-[300px] rounded-t-2xl border-t border-border bg-card shadow-2xl animate-in slide-in-from-bottom duration-200 flex flex-col">
-        <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-border">
+      <div className="fixed inset-x-0 bottom-0 z-40 h-[28vh] min-h-[220px] max-h-[28vh] rounded-t-2xl border-t border-border bg-card shadow-2xl animate-in slide-in-from-bottom duration-200 flex flex-col">
+        <div className="flex items-center justify-between px-4 py-1.5 border-b border-border" style={{ height: 36 }}>
           <div className="text-xs text-muted-foreground">
             {selected
               ? `Tap days to apply "${selected.label}"`
@@ -65,22 +65,22 @@ export function QuickAddPanel({ onOpenDetailedEvent }: Props) {
           </button>
         </div>
         <Tabs value={tab} onValueChange={setTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="mx-3 mt-2">
+          <TabsList className="mx-3 mt-1 h-8">
             <TabsTrigger value="shifts">Shifts</TabsTrigger>
             <TabsTrigger value="leave">Leave / Off</TabsTrigger>
             <TabsTrigger value="icons">Icons</TabsTrigger>
           </TabsList>
-          <TabsContent value="shifts" className="flex-1 overflow-y-auto px-3 pb-2">
+          <TabsContent value="shifts" className="flex-1 overflow-y-auto px-3 pb-1 max-h-[20vh]">
             <StampGrid items={shiftItems} selected={selected} onPick={setSelected} />
           </TabsContent>
-          <TabsContent value="leave" className="flex-1 overflow-y-auto px-3 pb-2">
+          <TabsContent value="leave" className="flex-1 overflow-y-auto px-3 pb-1 max-h-[20vh]">
             <StampGrid items={LEAVE_STAMPS} selected={selected} onPick={setSelected} />
           </TabsContent>
-          <TabsContent value="icons" className="flex-1 overflow-y-auto px-3 pb-2">
+          <TabsContent value="icons" className="flex-1 overflow-y-auto px-3 pb-1 max-h-[20vh]">
             <StampGrid items={ICON_STAMPS} selected={selected} onPick={setSelected} />
           </TabsContent>
         </Tabs>
-        <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
+        <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-1">
           <Button variant="ghost" size="sm" asChild className="gap-1.5 text-xs">
             <Link to="/shifts">
               <Settings2 className="size-3.5" />

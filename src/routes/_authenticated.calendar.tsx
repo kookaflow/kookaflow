@@ -58,7 +58,7 @@ function CalendarPageInner() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogDefault, setDialogDefault] = useState<Date>(new Date());
   const [weekSummaryOpen, setWeekSummaryOpen] = useState(false);
-  const { selected: stamp, applyStamp } = useStamp();
+  const { selected: stamp, applyStamp, panelOpen } = useStamp();
 
   const events = useMemo(() => rawEvents.map(toMockEvent), [rawEvents]);
 
@@ -108,7 +108,8 @@ function CalendarPageInner() {
         : format(date, "EEEE, MMM d, yyyy");
 
   return (
-    <div className="flex h-screen flex-col bg-background text-foreground">
+    <div className="flex h-[100dvh] flex-col bg-background text-foreground overflow-hidden">
+      {!panelOpen && (
       <PageHeader
         title={heading}
         subtitle={`${events.length} events this period`}
@@ -211,6 +212,7 @@ function CalendarPageInner() {
           </PopoverContent>
         </Popover>
       </PageHeader>
+      )}
 
       {/* Sub header */}
       <div className="flex items-center justify-between border-b border-border px-5 py-2.5">
@@ -234,7 +236,10 @@ function CalendarPageInner() {
       </div>
 
       {/* Body */}
-      <div className="flex flex-1 overflow-hidden">
+      <div
+        className="flex flex-1 overflow-hidden transition-[padding] duration-200"
+        style={{ paddingBottom: panelOpen ? "28vh" : 0 }}
+      >
         <main className="flex-1 overflow-hidden">
           {view === "month" && (
             <MonthView
