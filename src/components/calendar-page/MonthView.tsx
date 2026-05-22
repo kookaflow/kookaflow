@@ -41,15 +41,15 @@ export function MonthView({
   );
 
   return (
-    <div className="flex h-full flex-col gap-2 p-2 sm:p-3 animate-in fade-in duration-200">
-      <div className="grid grid-cols-7 gap-1 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="flex h-full min-h-0 flex-col gap-1 overflow-hidden p-1 sm:p-2 animate-in fade-in duration-200">
+      <div className="grid shrink-0 grid-cols-7 gap-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground" style={{ height: 24 }}>
         {headers.map((d) => (
-          <div key={d} className="px-1.5 py-1">
+          <div key={d} className="px-1 py-0.5">
             {d}
           </div>
         ))}
       </div>
-      <div className="grid flex-1 grid-cols-7 grid-rows-6 gap-0.5">
+      <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-0.5 overflow-hidden">
         {days.map((day) => {
           const inMonth = isSameMonth(day, cursor);
           const dayEvents = events.filter((e) => isSameDay(e.start, day));
