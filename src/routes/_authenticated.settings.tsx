@@ -4,6 +4,7 @@ import { RemindersSettings } from "@/components/settings/RemindersSettings";
 import { SoundNotifications } from "@/components/settings/SoundNotifications";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
 import { ConnectedCalendars } from "@/components/settings/ConnectedCalendars";
+import { DangerZone } from "@/components/settings/DangerZone";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Card } from "@/components/ui/card";
@@ -82,6 +83,7 @@ function SettingsPage() {
         <RemindersSettings />
         <ConnectedCalendars />
         <SoundNotifications />
+        <DangerZone />
       </main>
     </div>
   );
