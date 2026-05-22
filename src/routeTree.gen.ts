@@ -21,6 +21,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
 import { Route as ApiPublicHooksSendWeeklyReminderRouteImport } from './routes/api/public/hooks/send-weekly-reminder'
 import { Route as ApiPublicHooksSendPushWeeklyReminderRouteImport } from './routes/api/public/hooks/send-push-weekly-reminder'
+import { Route as ApiPublicHooksSendPushNotificationRouteImport } from './routes/api/public/hooks/send-push-notification'
 import { Route as ApiPublicHooksSendPushDailyReminderRouteImport } from './routes/api/public/hooks/send-push-daily-reminder'
 import { Route as ApiPublicHooksSendDailyReminderRouteImport } from './routes/api/public/hooks/send-daily-reminder'
 
@@ -85,6 +86,12 @@ const ApiPublicHooksSendPushWeeklyReminderRoute =
     path: '/api/public/hooks/send-push-weekly-reminder',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSendPushNotificationRoute =
+  ApiPublicHooksSendPushNotificationRouteImport.update({
+    id: '/api/public/hooks/send-push-notification',
+    path: '/api/public/hooks/send-push-notification',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSendPushDailyReminderRoute =
   ApiPublicHooksSendPushDailyReminderRouteImport.update({
     id: '/api/public/hooks/send-push-daily-reminder',
@@ -110,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/shifts': typeof AuthenticatedShiftsRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
   '/api/public/hooks/send-push-daily-reminder': typeof ApiPublicHooksSendPushDailyReminderRoute
+  '/api/public/hooks/send-push-notification': typeof ApiPublicHooksSendPushNotificationRoute
   '/api/public/hooks/send-push-weekly-reminder': typeof ApiPublicHooksSendPushWeeklyReminderRoute
   '/api/public/hooks/send-weekly-reminder': typeof ApiPublicHooksSendWeeklyReminderRoute
 }
@@ -125,6 +133,7 @@ export interface FileRoutesByTo {
   '/shifts': typeof AuthenticatedShiftsRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
   '/api/public/hooks/send-push-daily-reminder': typeof ApiPublicHooksSendPushDailyReminderRoute
+  '/api/public/hooks/send-push-notification': typeof ApiPublicHooksSendPushNotificationRoute
   '/api/public/hooks/send-push-weekly-reminder': typeof ApiPublicHooksSendPushWeeklyReminderRoute
   '/api/public/hooks/send-weekly-reminder': typeof ApiPublicHooksSendWeeklyReminderRoute
 }
@@ -142,6 +151,7 @@ export interface FileRoutesById {
   '/_authenticated/shifts': typeof AuthenticatedShiftsRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
   '/api/public/hooks/send-push-daily-reminder': typeof ApiPublicHooksSendPushDailyReminderRoute
+  '/api/public/hooks/send-push-notification': typeof ApiPublicHooksSendPushNotificationRoute
   '/api/public/hooks/send-push-weekly-reminder': typeof ApiPublicHooksSendPushWeeklyReminderRoute
   '/api/public/hooks/send-weekly-reminder': typeof ApiPublicHooksSendWeeklyReminderRoute
 }
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/shifts'
     | '/api/public/hooks/send-daily-reminder'
     | '/api/public/hooks/send-push-daily-reminder'
+    | '/api/public/hooks/send-push-notification'
     | '/api/public/hooks/send-push-weekly-reminder'
     | '/api/public/hooks/send-weekly-reminder'
   fileRoutesByTo: FileRoutesByTo
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/shifts'
     | '/api/public/hooks/send-daily-reminder'
     | '/api/public/hooks/send-push-daily-reminder'
+    | '/api/public/hooks/send-push-notification'
     | '/api/public/hooks/send-push-weekly-reminder'
     | '/api/public/hooks/send-weekly-reminder'
   id:
@@ -190,6 +202,7 @@ export interface FileRouteTypes {
     | '/_authenticated/shifts'
     | '/api/public/hooks/send-daily-reminder'
     | '/api/public/hooks/send-push-daily-reminder'
+    | '/api/public/hooks/send-push-notification'
     | '/api/public/hooks/send-push-weekly-reminder'
     | '/api/public/hooks/send-weekly-reminder'
   fileRoutesById: FileRoutesById
@@ -202,6 +215,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   ApiPublicHooksSendDailyReminderRoute: typeof ApiPublicHooksSendDailyReminderRoute
   ApiPublicHooksSendPushDailyReminderRoute: typeof ApiPublicHooksSendPushDailyReminderRoute
+  ApiPublicHooksSendPushNotificationRoute: typeof ApiPublicHooksSendPushNotificationRoute
   ApiPublicHooksSendPushWeeklyReminderRoute: typeof ApiPublicHooksSendPushWeeklyReminderRoute
   ApiPublicHooksSendWeeklyReminderRoute: typeof ApiPublicHooksSendWeeklyReminderRoute
 }
@@ -292,6 +306,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSendPushWeeklyReminderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/send-push-notification': {
+      id: '/api/public/hooks/send-push-notification'
+      path: '/api/public/hooks/send-push-notification'
+      fullPath: '/api/public/hooks/send-push-notification'
+      preLoaderRoute: typeof ApiPublicHooksSendPushNotificationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/send-push-daily-reminder': {
       id: '/api/public/hooks/send-push-daily-reminder'
       path: '/api/public/hooks/send-push-daily-reminder'
@@ -338,6 +359,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSendDailyReminderRoute: ApiPublicHooksSendDailyReminderRoute,
   ApiPublicHooksSendPushDailyReminderRoute:
     ApiPublicHooksSendPushDailyReminderRoute,
+  ApiPublicHooksSendPushNotificationRoute:
+    ApiPublicHooksSendPushNotificationRoute,
   ApiPublicHooksSendPushWeeklyReminderRoute:
     ApiPublicHooksSendPushWeeklyReminderRoute,
   ApiPublicHooksSendWeeklyReminderRoute: ApiPublicHooksSendWeeklyReminderRoute,
@@ -345,3 +368,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
