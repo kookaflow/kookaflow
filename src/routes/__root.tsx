@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { PreferencesProvider } from "@/providers/PreferencesProvider";
 import { AppNav } from "@/components/layout/AppNav";
 import { SyncStatusProvider } from "@/providers/SyncStatusProvider";
+import { OneSignalProvider } from "@/providers/OneSignalProvider";
 import { SyncBanner } from "@/components/settings/SyncBanner";
 import { SplashScreen } from "@/components/layout/SplashScreen";
 import { Toaster } from "@/components/ui/sonner";
@@ -132,10 +133,12 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <PreferencesProvider>
         <SyncStatusProvider>
-          <SplashScreen />
-          <AppLayout />
-          <Toaster />
-          <AuthListener />
+          <OneSignalProvider>
+            <SplashScreen />
+            <AppLayout />
+            <Toaster />
+            <AuthListener />
+          </OneSignalProvider>
         </SyncStatusProvider>
       </PreferencesProvider>
     </QueryClientProvider>
