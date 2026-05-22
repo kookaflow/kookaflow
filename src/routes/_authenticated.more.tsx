@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { MoreHero } from "@/components/more/MoreHero";
 import { AccountSection } from "@/components/more/AccountSection";
 import { ShiftsLinkRow } from "@/components/more/ShiftsLinkRow";
@@ -36,9 +34,8 @@ export const Route = createFileRoute("/_authenticated/more")({
 function MorePage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <PageHeader title="More" subtitle="Preferences, notifications & support." right={<ThemeToggle />} />
+      <MoreHero />
       <main className="mx-auto max-w-3xl p-4 sm:p-6">
-        <MoreHero />
         <AccountSection />
         <CalendarPreferences />
         <ConnectedCalendars />
