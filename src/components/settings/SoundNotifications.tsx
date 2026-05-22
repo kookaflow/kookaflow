@@ -22,7 +22,7 @@ type Prefs = {
   ambient: AmbientId;
 };
 
-const STORAGE_KEY = "shiftsync.sound-prefs.v1";
+const STORAGE_KEY = "kookaflow.sound-prefs.v1";
 
 const DEFAULT_PREFS: Prefs = {
   masterEnabled: true,

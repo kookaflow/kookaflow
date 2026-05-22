@@ -88,7 +88,7 @@ export function WellnessNudgePanel(_props: { nudges?: unknown } = {}) {
       <div className="flex items-center gap-2">
         <Lightbulb className="size-4 text-primary" />
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          ShiftSync Tip
+          Kookaflow Tip
         </h2>
       </div>
 

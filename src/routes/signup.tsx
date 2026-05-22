@@ -7,7 +7,7 @@ import { AuthField, AuthSubmit } from "@/components/auth/AuthField";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/signup")({
-  head: () => ({ meta: [{ title: "Create account — ShiftSync" }] }),
+  head: () => ({ meta: [{ title: "Create account — Kookaflow" }] }),
   component: SignupPage,
 });
 
@@ -47,7 +47,7 @@ function SignupPage() {
 
   return (
     <AuthShell
-      tagline={<>Your balanced life starts here <span aria-hidden>✨</span></>}
+      tagline={<>Find your flow, whatever your hours <span aria-hidden>✨</span></>}
       subtitle="Join thousands of shift workers managing life better"
     >
       <form onSubmit={submit} className="space-y-4">

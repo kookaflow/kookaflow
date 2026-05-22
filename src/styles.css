@@ -151,9 +151,9 @@
   --auth-accent: #F97316;
 }
 [data-theme="midnight"] {
-  --auth-gradient-from: #162264;
-  --auth-gradient-to: #5D46DC;
-  --auth-accent: #B6BAE3;
+  --auth-gradient-from: #1E2A6E;
+  --auth-gradient-to: #F59E0B;
+  --auth-accent: #FCD9A0;
 }
 [data-theme="lavender"] {
   --auth-gradient-from: #4C1D95;
@@ -198,7 +198,7 @@
   .auth-card-in, .auth-field-in { animation: none; opacity: 1; }
 }
 
-@keyframes shiftsync-toast-progress {
+@keyframes kookaflow-toast-progress {
   from { width: 100%; }
   to { width: 0%; }
 }

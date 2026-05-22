@@ -53,7 +53,7 @@ export async function sendResendEmail(args: {
       "X-Connection-Api-Key": RESEND_API_KEY,
     },
     body: JSON.stringify({
-      from: "ShiftSync <onboarding@resend.dev>",
+      from: "Kookaflow <onboarding@resend.dev>",
       to: [args.to],
       subject: args.subject,
       html: args.html,
@@ -95,15 +95,15 @@ function fmtDate(d: Date, tz: string) {
 }
 
 function shell(title: string, inner: string) {
-  return `<!doctype html><html><body style="margin:0;padding:0;background:#F4F5FB;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#162264;">
+  return `<!doctype html><html><body style="margin:0;padding:0;background:#F4F5FB;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1E2A6E;">
   <div style="max-width:560px;margin:0 auto;padding:24px;">
-    <div style="background:linear-gradient(135deg,#162264 0%,#5D46DC 100%);color:#fff;padding:24px;border-radius:16px 16px 0 0;">
-      <div style="font-size:14px;opacity:.85;letter-spacing:.08em;text-transform:uppercase;">ShiftSync</div>
+    <div style="background:linear-gradient(135deg,#1E2A6E 0%,#F59E0B 100%);color:#fff;padding:24px;border-radius:16px 16px 0 0;">
+      <div style="font-size:14px;opacity:.85;letter-spacing:.08em;text-transform:uppercase;">Kookaflow</div>
       <h1 style="margin:8px 0 0;font-size:22px;font-weight:700;">${title}</h1>
     </div>
     <div style="background:#fff;padding:24px;border-radius:0 0 16px 16px;">
       ${inner}
-      <p style="margin:32px 0 0;font-size:12px;color:#8a8fb0;">You're receiving this because email reminders are enabled in ShiftSync. Manage in Settings → Reminders.</p>
+      <p style="margin:32px 0 0;font-size:12px;color:#8a8fb0;">You're receiving this because email reminders are enabled in Kookaflow. Manage in Settings → Reminders.</p>
     </div>
   </div></body></html>`;
 }
@@ -161,7 +161,7 @@ export function buildDailyEmail(args: {
 }) {
   const { date, tz, events, tipSeed, name } = args;
   const dateLabel = fmtDate(date, tz);
-  const subject = `Your ShiftSync Day Ahead ☀️ — ${dateLabel}`;
+  const subject = `Your Kookaflow Day Ahead ☀️ — ${dateLabel}`;
   const greeting = name ? `Good morning, ${escapeHtml(name)}!` : "Good morning!";
   const tip = pickWellnessTip(tipSeed);
   const { score } = computeBalance(events);
@@ -183,9 +183,9 @@ export function buildDailyEmail(args: {
     ${list}
     <div style="background:#F4F5FB;border-radius:12px;padding:16px;margin:8px 0 16px;">
       <div style="font-size:12px;color:#5b6088;text-transform:uppercase;letter-spacing:.06em;">Life balance score</div>
-      <div style="font-size:28px;font-weight:700;color:#5D46DC;">${score}/100</div>
+      <div style="font-size:28px;font-weight:700;color:#F59E0B;">${score}/100</div>
     </div>
-    <div style="border-left:4px solid #5D46DC;background:#F8F7FF;padding:12px 16px;border-radius:8px;">
+    <div style="border-left:4px solid #F59E0B;background:#FFF8EC;padding:12px 16px;border-radius:8px;">
       <div style="font-size:12px;color:#5b6088;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Wellness tip</div>
       <div style="font-size:14px;">${escapeHtml(tip)}</div>
     </div>
@@ -202,7 +202,7 @@ export function buildWeeklyEmail(args: {
 }) {
   const { weekStart, tz, events, tipSeed, name } = args;
   const dateLabel = fmtDate(weekStart, tz);
-  const subject = `Your ShiftSync Week Ahead 📅 — Week of ${dateLabel}`;
+  const subject = `Your Kookaflow Week Ahead 📅 — Week of ${dateLabel}`;
   const greeting = name ? `Hi ${escapeHtml(name)},` : "Hi there,";
   const { score, totals } = computeBalance(events);
   const workMins = totals["work"] ?? 0;
@@ -237,9 +237,9 @@ export function buildWeeklyEmail(args: {
     </div>
     <div style="background:#F4F5FB;border-radius:12px;padding:16px;margin:0 0 16px;">
       <div style="font-size:12px;color:#5b6088;text-transform:uppercase;letter-spacing:.06em;">Life balance score</div>
-      <div style="font-size:28px;font-weight:700;color:#5D46DC;">${score}/100</div>
+      <div style="font-size:28px;font-weight:700;color:#F59E0B;">${score}/100</div>
     </div>
-    <div style="border-left:4px solid #5D46DC;background:#F8F7FF;padding:12px 16px;border-radius:8px;">
+    <div style="border-left:4px solid #F59E0B;background:#FFF8EC;padding:12px 16px;border-radius:8px;">
       <div style="font-size:12px;color:#5b6088;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Wellness nudge</div>
       <div style="font-size:14px;">${escapeHtml(nudge)}</div>
     </div>

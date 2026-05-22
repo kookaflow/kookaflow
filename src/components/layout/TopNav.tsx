@@ -20,7 +20,7 @@ export function TopNav({ onNewEvent }: Props) {
         <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <CalendarHeart className="size-4" />
         </div>
-        <span className="text-base font-semibold tracking-tight">ShiftSync</span>
+        <span className="text-base font-semibold tracking-tight">Kookaflow</span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <ViewToggle />

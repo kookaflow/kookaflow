@@ -7,7 +7,7 @@ import { AuthField, AuthSubmit } from "@/components/auth/AuthField";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in — ShiftSync" }] }),
+  head: () => ({ meta: [{ title: "Sign in — Kookaflow" }] }),
   component: LoginPage,
 });
 
@@ -47,7 +47,7 @@ function LoginPage() {
   return (
     <AuthShell
       tagline={<>Welcome back <span aria-hidden>👋</span></>}
-      subtitle="Sign in to your ShiftSync account"
+      subtitle="Find your flow, whatever your hours"
     >
       <form onSubmit={submit} className="space-y-4">
         <div className="auth-field-in" style={{ animationDelay: "0ms" }}>
@@ -109,7 +109,7 @@ function LoginPage() {
         </p>
 
         <p className="auth-field-in text-center text-sm text-muted-foreground" style={{ animationDelay: "480ms" }}>
-          New to ShiftSync?{" "}
+          New to Kookaflow?{" "}
           <Link to="/signup" className="font-medium text-primary hover:underline">
             Create an account
           </Link>

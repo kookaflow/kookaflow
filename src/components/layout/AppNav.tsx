@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { CalendarDays, LayoutDashboard, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
-import logo from "@/assets/shiftsync-logo.png";
+import logo from "@/assets/kookaflow-logo.png";
 
 const NAV_ITEMS = [
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
@@ -19,11 +19,11 @@ export function AppNav() {
         <div className="flex items-center gap-2 px-5 py-5">
           <img
             src={logo}
-            alt="ShiftSync"
+            alt="Kookaflow"
             style={{ height: 48, width: "auto" }}
             className="object-contain"
           />
-          <span className="text-lg font-bold tracking-tight">ShiftSync</span>
+          <span className="text-lg font-bold tracking-tight">Kookaflow</span>
         </div>
         <nav className="flex flex-1 flex-col gap-1 px-3">
           {NAV_ITEMS.map((item) => {

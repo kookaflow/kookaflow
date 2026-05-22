@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import logo from "@/assets/shiftsync-logo.png";
+import logo from "@/assets/kookaflow-logo.png";
 
 export function AuthShell({
   tagline,
@@ -38,7 +38,7 @@ export function AuthShell({
         <div className="relative z-10 flex flex-col items-center text-center">
           <img
             src={logo}
-            alt="ShiftSync"
+            alt="Kookaflow"
             style={{ height: 100, width: "auto" }}
             className="mb-4 object-contain"
           />
