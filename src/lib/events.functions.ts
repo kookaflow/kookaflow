@@ -52,6 +52,7 @@ const EventInputSchema = z.object({
   splitSecondEnd: z.string().nullable().optional(),
   travelDurationMinutes: z.number().int().min(0).max(2880).nullable().optional(),
   hourlyRate: z.number().nonnegative().nullable().optional(),
+  unpaidBreakMinutes: z.number().int().min(0).max(720).nullable().optional(),
   recurrencePattern: RecurrencePatternSchema,
   recurrenceDays: z.array(z.string().max(3)).nullable().optional(),
   recurrenceEndDate: z.string().nullable().optional(),
@@ -155,11 +156,15 @@ function computeEarnings(
   endISO: string,
   splitBreakMin: number | null | undefined,
   rate: number | null | undefined,
+  unpaidBreakMin?: number | null | undefined,
 ): number | null {
   if (category !== "work" || rate == null) return null;
   const ms = new Date(endISO).getTime() - new Date(startISO).getTime();
   if (!Number.isFinite(ms) || ms <= 0) return 0;
-  const hours = Math.max(0, ms / 3_600_000 - (splitBreakMin ?? 0) / 60);
+  const hours = Math.max(
+    0,
+    ms / 3_600_000 - (splitBreakMin ?? 0) / 60 - (unpaidBreakMin ?? 0) / 60,
+  );
   return Math.round(hours * rate * 100) / 100;
 }
 
@@ -185,12 +190,14 @@ function inputToInsert(data: z.infer<typeof EventInputSchema>, userId: string) {
     split_shift_second_end: data.splitSecondEnd ?? null,
     travel_duration_minutes: data.travelDurationMinutes ?? null,
     hourly_rate: data.hourlyRate ?? null,
+    unpaid_break_minutes: data.unpaidBreakMinutes ?? null,
     calculated_earnings: computeEarnings(
       data.category,
       data.start,
       data.end,
       data.splitBreakMinutes,
       data.hourlyRate,
+      data.unpaidBreakMinutes,
     ),
     is_recurring: !!data.recurrencePattern,
     recurrence_pattern: data.recurrencePattern ?? null,
