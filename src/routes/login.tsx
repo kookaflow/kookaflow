@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Mail, Lock } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthField, AuthSubmit } from "@/components/auth/AuthField";
+import { LegalFooterLinks } from "@/components/legal/LegalPage";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
@@ -114,6 +115,9 @@ function LoginPage() {
             Create an account
           </Link>
         </p>
+        <div className="auth-field-in pt-2" style={{ animationDelay: "560ms" }}>
+          <LegalFooterLinks />
+        </div>
       </form>
     </AuthShell>
   );
