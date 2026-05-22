@@ -1,5 +1,15 @@
 const ONESIGNAL_API = "https://api.onesignal.com/notifications";
 
+function getOneSignalCreds() {
+  const appId = process.env.ONESIGNAL_APP_ID;
+  if (!appId) throw new Error("ONESIGNAL_APP_ID is not configured");
+  const key =
+    process.env.ONESIGNAL_API_KEY ?? process.env.ONESIGNAL_REST_API_KEY;
+  if (!key)
+    throw new Error("ONESIGNAL_API_KEY is not configured");
+  return { appId, key };
+}
+
 export async function sendOneSignalPush({
   externalUserIds,
   heading,
@@ -11,15 +21,12 @@ export async function sendOneSignalPush({
   content: string;
   url?: string;
 }) {
-  const appId = process.env.ONESIGNAL_APP_ID;
-  if (!appId) throw new Error("ONESIGNAL_APP_ID is not configured");
-  const restKey = process.env.ONESIGNAL_REST_API_KEY;
-  if (!restKey) throw new Error("ONESIGNAL_REST_API_KEY is not configured");
+  const { appId, key } = getOneSignalCreds();
 
   const res = await fetch(ONESIGNAL_API, {
     method: "POST",
     headers: {
-      Authorization: `Key ${restKey}`,
+      Authorization: `Key ${key}`,
       "Content-Type": "application/json",
       Accept: "application/json",
     },
@@ -40,6 +47,63 @@ export async function sendOneSignalPush({
     );
   }
   return data;
+}
+
+/**
+ * Send a push notification to a single user by looking up their stored
+ * OneSignal player ID. Silently skips if the user has no player ID or
+ * has push disabled.
+ */
+export async function sendPushToUser({
+  supabaseAdmin,
+  userId,
+  title,
+  message,
+  url,
+  scheduledFor,
+}: {
+  supabaseAdmin: any;
+  userId: string;
+  title: string;
+  message: string;
+  url?: string;
+  scheduledFor?: string;
+}): Promise<{ skipped: true; reason: string } | { skipped: false; data: unknown }> {
+  const { data: profile, error } = await supabaseAdmin
+    .from("profiles")
+    .select("onesignal_player_id, push_notifications_enabled")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!profile?.onesignal_player_id)
+    return { skipped: true, reason: "no_player_id" };
+  if (!profile.push_notifications_enabled)
+    return { skipped: true, reason: "push_disabled" };
+
+  const { appId, key } = getOneSignalCreds();
+  const res = await fetch("https://onesignal.com/api/v1/notifications", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${key}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      app_id: appId,
+      include_player_ids: [profile.onesignal_player_id],
+      headings: { en: title },
+      contents: { en: message },
+      ...(url ? { url } : {}),
+      ...(scheduledFor ? { send_after: scheduledFor } : {}),
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      `OneSignal API error [${res.status}]: ${JSON.stringify(data)}`,
+    );
+  }
+  return { skipped: false, data };
 }
 
 const DAILY_TIPS = [
