@@ -58,6 +58,7 @@ function CalendarPageInner() {
   const [dialogDefault, setDialogDefault] = useState<Date>(new Date());
   const [weekSummaryOpen, setWeekSummaryOpen] = useState(false);
   const { selected: stamp, applyStamp } = useStamp();
+  const { panelOpen } = useStamp();
 
   const events = useMemo(() => rawEvents.map(toMockEvent), [rawEvents]);
 
@@ -233,7 +234,12 @@ function CalendarPageInner() {
       </div>
 
       {/* Body */}
-      <div className="flex flex-1 overflow-hidden">
+      <div
+        className={cn(
+          "flex flex-1 overflow-hidden transition-[padding] duration-300 ease-out",
+          panelOpen && "pb-[38vh] md:pb-[320px]",
+        )}
+      >
         <main className="flex-1 overflow-hidden">
           {view === "month" && (
             <MonthView
