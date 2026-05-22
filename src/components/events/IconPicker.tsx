@@ -2,7 +2,7 @@ import {
   Sun, Moon, Sunset, Car, Briefcase, Heart, Dumbbell, Users, Home, Coffee,
   Music, Book, Plane, Utensils, Bike, Leaf, Star, Bell, Zap, Thermometer,
   Umbrella, Radio, GitBranch, DollarSign, Baby, Dog, Gamepad2, ShoppingBag,
-  Stethoscope, Bus,
+  Stethoscope, Bus, Clock3, Flag,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,8 @@ export const ICONS: { name: string; Icon: LucideIcon }[] = [
   { name: "ShoppingBag", Icon: ShoppingBag },
   { name: "Stethoscope", Icon: Stethoscope },
   { name: "Bus", Icon: Bus },
+  { name: "Clock3", Icon: Clock3 },
+  { name: "Flag", Icon: Flag },
 ];
 
 export const ICON_MAP: Record<string, LucideIcon> = ICONS.reduce(
