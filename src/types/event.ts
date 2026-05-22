@@ -17,6 +17,8 @@ export type ShiftType =
   | "side_hustle"
   | "sick_leave"
   | "annual_leave"
+  | "travel"
+  | "payday"
   | "custom";
 
 export interface SplitShiftMeta {
