@@ -38,16 +38,6 @@ export function QuickAddPanel({ onOpenDetailedEvent }: Props) {
 
   return (
     <>
-      {/* click-outside catcher (transparent) */}
-      <button
-        type="button"
-        aria-label="Close panel"
-        onClick={() => {
-          setPanelOpen(false);
-          setSelected(null);
-        }}
-        className="fixed inset-x-0 top-0 bottom-[34vh] z-30 cursor-default bg-transparent"
-      />
       <div className="fixed inset-x-0 bottom-0 z-40 h-[34vh] min-h-[300px] rounded-t-2xl border-t border-border bg-card shadow-2xl animate-in slide-in-from-bottom duration-200 flex flex-col">
         <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-border">
           <div className="text-xs text-muted-foreground">
