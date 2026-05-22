@@ -12,7 +12,7 @@ export const deleteAccount = createServerFn({ method: "POST" })
 
     // Delete from every table that holds per-user rows. Order isn't critical
     // because none have FKs to one another, but we batch for clarity.
-    const tables = [
+    const userScopedTables = [
       "events",
       "google_events_cache",
       "google_calendar_connections",
@@ -23,17 +23,22 @@ export const deleteAccount = createServerFn({ method: "POST" })
       "reminder_sends",
       "user_preferences",
       "categories",
-      "profiles",
     ] as const;
 
-    for (const table of tables) {
-      const { error } = await supabaseAdmin
-        .from(table)
+    for (const table of userScopedTables) {
+      const { error } = await (supabaseAdmin.from(table) as any)
         .delete()
-        .eq(table === "profiles" ? "id" : "user_id", userId);
+        .eq("user_id", userId);
       if (error) {
         console.error(`[deleteAccount] failed to clear ${table}:`, error.message);
       }
+    }
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .delete()
+      .eq("id", userId);
+    if (profileError) {
+      console.error(`[deleteAccount] failed to clear profiles:`, profileError.message);
     }
 
     // Finally, delete the auth user itself.
