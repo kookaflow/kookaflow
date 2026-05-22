@@ -10,11 +10,9 @@ import {
   isSameDay,
   differenceInDays,
 } from "date-fns";
-import {
-  CATEGORIES,
-  type CategoryId,
-  type MockEvent,
-} from "@/components/calendar-page/constants";
+import { type MockEvent } from "@/components/calendar-page/constants";
+import type { CategoryId } from "@/types/event";
+import { CATEGORY_LIST } from "@/lib/shiftConfig";
 
 export interface Range {
   start: Date;
@@ -80,7 +78,7 @@ export function weeklyByDay(events: MockEvent[], range: Range): WeekDayBucket[] 
   const days: WeekDayBucket[] = [];
   for (let i = 0; i < 7; i++) {
     const d = addDays(range.start, i);
-    days.push({ day: format(d, "EEE"), date: d, total: 0, ...emptyTotals() });
+    days.push({ day: format(d, "EEE"), date: d, total: 0, ...emptyTotals() } as WeekDayBucket);
   }
   for (const e of events) {
     for (const s of splitEventByDay(e, range.start, range.end)) {
@@ -108,10 +106,10 @@ export function monthlyTotals(events: MockEvent[], range: Range): {
   const t = emptyTotals();
   for (const e of events) t[e.category] += eventHoursInRange(e, range.start, range.end);
   const totalHours = Object.values(t).reduce((a, b) => a + b, 0);
-  const totals = CATEGORIES.map((c) => ({
+  const totals = CATEGORY_LIST.map((c) => ({
     category: c.id,
     label: c.label,
-    color: c.color,
+    color: c.colour,
     hours: +t[c.id].toFixed(1),
     pct: totalHours > 0 ? (t[c.id] / totalHours) * 100 : 0,
   }));
@@ -183,7 +181,7 @@ const ESSENTIALS: CategoryId[] = ["exercise", "social", "family", "wellness"];
 export function balanceScore(events: MockEvent[], range: Range): BalanceScore {
   const totals: Record<string, number> = {};
   let sum = 0;
-  for (const c of CATEGORIES) {
+  for (const c of CATEGORY_LIST) {
     if (c.id === "rest") continue;
     const h = hoursInRangeForCategory(events, c.id, range);
     if (h > 0) {
