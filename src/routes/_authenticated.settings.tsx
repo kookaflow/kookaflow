@@ -5,8 +5,6 @@ import { SoundNotifications } from "@/components/settings/SoundNotifications";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { Button } from "@/components/ui/button";
-import { Briefcase, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -57,14 +55,6 @@ function SettingsPage() {
 
       <main className="mx-auto max-w-3xl p-4 sm:p-6">
         <ThemeSettings />
-        <section className="my-4">
-          <Button asChild variant="outline" className="w-full justify-between">
-            <Link to="/shifts">
-              <span className="flex items-center gap-2"><Briefcase className="size-4" /> Manage Shift Templates</span>
-              <ChevronRight className="size-4" />
-            </Link>
-          </Button>
-        </section>
         <RemindersSettings />
         <SoundNotifications />
       </main>

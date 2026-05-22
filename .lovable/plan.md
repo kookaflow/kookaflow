@@ -1,107 +1,115 @@
-# Custom Shift Templates — Implementation Plan
+# Calendar UX Overhaul — Quick-Add Panel, Shift Templates, Visible Badges
 
-Goal: let users create, save and reuse their own shift types (à la MyShift Planner) that flow into the quick-add panel, the Add Event modal's shift selector, earnings, and the dashboard category totals.
+Three coordinated changes to make ShiftSync's calendar feel like a pro shift-worker tool: a persistent quick-stamp panel, a dedicated shift-management screen with custom templates, and always-visible shift/icon markers on the month grid.
 
-## Current State
+## 1. Quick-Add Bottom Panel
 
-- `shift_templates` table already exists but is minimal: `name, colour, icon_name, default_start, default_end, category (working|leave|non_working), base_type, sort_order`.
-- `/shifts` route exists (`src/routes/_authenticated.shifts.tsx`) with grouped sections and `ShiftEditorSheet` modal.
-- `ShiftTemplatesProvider` already wires CRUD via server fns in `src/lib/shift-templates.functions.ts`.
-- Quick-add panel (`src/components/calendar/QuickAddPanel.tsx`) currently shows only built-in stamps from `src/lib/stamps.ts`.
-- Add Event modal (`src/components/events/EventForm.tsx` + `ShiftFieldsGroup`) has hard-coded shift type chips.
+A persistent floating action button on `/calendar` opens a bottom sheet that lets the user pick a shift / leave type / icon once, then tap multiple days to stamp it. The full Add Event modal stays for detailed personal events.
 
-## A. Database — extend `shift_templates`
+**Behaviour**
+- FAB bottom-right of calendar — `+` with a `Zap` overlay. Toggles the panel.
+- Panel: bottom sheet covering ~33% viewport height, **non-modal** (calendar stays interactive above). Closes via X, FAB toggle, tap outside, or Escape. Built on a fixed-position card, not Radix Dialog (which would block calendar clicks).
+- Three tabs: **Shifts**, **Leave / Off**, **Icons**.
+- Tiles: 3-column grid of coloured rounded tiles (h-16), short label (≤8 chars), Lucide icon. Selected tile gets `ring-2 ring-primary`.
+- Hint strip at top: "Select a shift, then tap days to apply".
+- "Manage shifts" link bottom-left → `/shifts`. "Detailed event" button bottom-right → opens existing `EventDialog`.
 
-New migration adds the missing columns:
+**Stamp / apply logic**
+- New `StampProvider` holds `selectedStamp: { kind: 'shift'|'icon', presetId | iconName } | null`.
+- When `selectedStamp` is set, a day click calls `applyStamp(day)` instead of selecting:
+  - `kind: 'shift'`: find existing shift event on that day.
+    - Same shift → delete (toggle off).
+    - Different shift → update event in place (replace times + type).
+    - None → create event using the preset's defaults (allDay / start / end / category / isPayday / iconName).
+  - `kind: 'icon'`: stamp a marker by creating an all-day `personal` event with `iconName` set. Re-tap same icon → remove.
+- Long-press on a day (≥500 ms) opens the existing `EventDialog`, even if a stamp is selected.
+- React Query optimistic updates so stamping feels instant.
 
-- `show_as text` (≤6 chars, calendar badge label)
-- `is_all_day boolean default false`
-- `is_split_shift boolean default false`
-- `is_24_hour boolean default false`
-- `total_hours numeric(5,2)` (server-computed on insert/update via trigger)
-- `unpaid_break_minutes int default 0`
-- `paid_break_minutes int default 0`
-- `split_start_2 time`, `split_end_2 time`
-- `is_active boolean default true`
-- Length check on `name` (≤20) and `show_as` (≤6)
+**Tab content**
+- Shifts: morning, afternoon, night, oncall, split, side_hustle, sick_leave, annual_leave, travel, payday, all user custom templates, plus "No Shift" (clears the day's shift) and "Rest Day" (all-day `rest`).
+- Leave / Off: annual_leave, sick_leave, public_holiday, half_day (09:00–13:00 work), no_shift, rest_day.
+- Icons: DollarSign, Car, Dumbbell, Heart, Users, Home, Star, Coffee, Music, Book, Plane, Baby, Dog (Baby/Dog added to IconPicker).
 
-Add a trigger `compute_shift_template_hours()` that recalculates `total_hours` from the time fields, split times, `is_24_hour`, and `unpaid_break_minutes` so the value is always authoritative.
+## 2. Shift Management Screen `/shifts`
 
-RLS is already correct (`user_id = auth.uid()` on all four verbs). No changes needed.
+New authenticated route `src/routes/_authenticated.shifts.tsx`.
 
-The existing `category` column currently uses `working|leave|non_working`. We keep that as the *grouping* on the /shifts screen and add a new `life_category text` column constrained to the 8 app categories (`work|rest|wellness|exercise|social|family|personal|travel`) so dashboard totals can attribute hours correctly. Default `work`.
+**Layout**
+- Header: title "Shifts", search input, `+ New` button.
+- Sections WORKING / LEAVE / NON-WORKING / CUSTOM. Built-in shifts are read-only; tapping opens an editor that lets the user override default times (saved as a `shift_templates` row with `base_type` set).
+- Each row: coloured tile chip, name, default start–end, duration ("8h 0m").
+- Swipe-left on custom rows → Delete. Desktop: trailing menu (Edit / Delete).
 
-## B. Server / Provider layer
+**Add / edit custom shift (drawer)**
+- Fields: name (≤12 chars), 16-colour grid, default start, default end (overnight allowed), auto-calculated duration display, optional icon picker.
+- Save upserts into `shift_templates` and refreshes the quick-add Shifts tab.
 
-- Extend `ShiftTemplateDTO`, Zod schema, and `rowToDTO` in `src/lib/shift-templates.functions.ts` with the new fields.
-- Update `ShiftTemplatesProvider`'s `toInput` mapping accordingly.
-- Add a helper `templateToStamp(template)` in `src/lib/stamps.ts` that adapts a `ShiftTemplateDTO` into the `StampDef` shape the quick-add panel and stamper already consume.
+## 3. Always-Visible Shift Badge + Icon Markers on Calendar
 
-## C. /shifts screen polish
+Update `src/components/calendar-page/MonthView.tsx` day cell rendering:
+- Shift chip label is always visible (drop `hidden sm:inline`), sits as a full-width pill below the date number.
+- Below the pill: row of up to 3 12px icon markers (events with `iconName` only). Overflow → `+N`.
+- Other non-shift events keep the category-coloured dots at the bottom, capped at 5.
+- Add long-press handler (`onPointerDown` + timer) to open the full `EventDialog`.
 
-Already grouped; refine to match spec:
+## Database
 
-- Add a top "MY CUSTOM SHIFTS" group above WORKING / LEAVE / NON-WORKING.
-- Each row shows: coloured icon tile, bold name, subtitle `SHOWAS · HH:mm–HH:mm · Xh Ym`, chevron.
-- Tap row → opens editor; swipe-left on custom rows → confirm-delete (mobile gesture via `framer-motion` drag or a long-press menu — we'll use a trailing delete button revealed on swipe, plus the existing trash button as a fallback).
-- `+` button in header opens the editor for a new template.
-- Entrypoints: existing back-to-calendar link, plus a new "Manage Shift Templates" row in Settings and a gear icon inside the quick-add panel header.
+New migration:
 
-## D. Create / Edit modal — rewrite `ShiftEditorSheet`
+```sql
+create table public.shift_templates (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  name text not null check (char_length(name) <= 12),
+  colour text not null,
+  icon_name text,
+  default_start time,
+  default_end time,
+  category text not null check (category in ('working','leave','non_working')),
+  base_type text,            -- null = fully custom; set when overriding a built-in
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.shift_templates enable row level security;
+-- standard own-row select/insert/update/delete policies; set_updated_at trigger
+```
 
-Single sheet/dialog with fields in this order, each wired to local state with live validation:
+Also extend `events.shift_type` CHECK to include `'side_hustle'` (carried from the earlier investigation) so stamping Side Hustle persists. No other `events` schema changes.
 
-1. Shift name (max 20, counter)
-2. Show-as (max 6, counter, helper text, live badge preview)
-3. Colour — reuse the 16-swatch picker
-4. Icon — reuse `IconPicker` grid (30 Lucide icons)
-5. Type — category selector reusing the same icon-based dropdown built for the Add Event modal
-6. All-day toggle
-7. Start/End time (hidden when all-day or 24h)
-8. Is split shift toggle → reveals second start/end
-9. Is 24-hour toggle → forces 24h, hides times
-10. Unpaid break (minutes)
-11. Paid break (minutes)
-12. Live summary block: Shift duration / Paid time / Unpaid break, recomputed via a `useShiftMath` hook.
+## Component / file architecture
 
-Persistent badge preview pinned near the top so colour/icon/show-as changes are visible while editing lower fields. Submit button: full-width gradient "Save Shift Template"; Cancel link below.
+New:
+- `src/providers/StampProvider.tsx`
+- `src/providers/ShiftTemplatesProvider.tsx`
+- `src/lib/shift-templates.functions.ts` — list / create / update / delete server fns
+- `src/components/calendar/QuickAddFab.tsx`
+- `src/components/calendar/QuickAddPanel.tsx`
+- `src/components/calendar/QuickAddTabs/{ShiftsTab,LeaveTab,IconsTab}.tsx`
+- `src/components/calendar/StampTile.tsx`
+- `src/components/shifts/{ShiftListSection,ShiftEditorSheet,ColourGrid}.tsx`
+- `src/routes/_authenticated.shifts.tsx`
 
-## E. Integration points
+Edited:
+- `src/routes/_authenticated.calendar.tsx` — mount `StampProvider`, `QuickAddFab`, `QuickAddPanel`; gate day clicks on stamp state.
+- `src/components/calendar-page/MonthView.tsx` — new badge + icon markers + long-press.
+- `src/components/calendar-page/constants.ts` — add `rest_day`, `public_holiday`, `half_day`, `no_shift` styles.
+- `src/components/events/IconPicker.tsx` — add `Baby`, `Dog`.
+- `src/routes/_authenticated.tsx` — provider wiring.
 
-1. **Quick-add panel (`QuickAddPanel.tsx`)**
-   - Pull `useShiftTemplates()`.
-   - On the Shifts tab, render user templates first (via `templateToStamp`), then existing `SHIFT_STAMPS`.
-   - Add a small gear icon in the panel header linking to `/shifts`.
-   - Tapping a template tile selects it for stamping just like a built-in stamp.
+## Implementation order
 
-2. **Stamping (`StampProvider`)**
-   - When the selected stamp originates from a template, build the event draft from template fields: times, category (`life_category`), icon, colour, split fields, all-day, `paid_break_minutes` → ignored in duration but stored in notes/metadata if needed.
+1. Migration: `shift_templates` + add `side_hustle` to `events.shift_type` CHECK.
+2. Server fns + `ShiftTemplatesProvider`.
+3. `/shifts` route, sections, editor sheet, colour grid.
+4. `StampProvider` + `applyStamp` mutations (headless).
+5. `QuickAddFab` + `QuickAddPanel` + three tabs.
+6. Wire stamp into `MonthView` day clicks; add long-press to open full modal.
+7. Redesign month cell: always-visible shift pill + icon markers.
+8. Manual QA: stamp single & many days, toggle off, replace, icon stamping, custom template CRUD, long-press → full modal.
 
-3. **Add Event modal (`EventForm` / `ShiftFieldsGroup`)**
-   - Above the built-in shift-type chips, render a "Your shifts" row of custom templates.
-   - Selecting one pre-fills: title (name), start/end (today + template times), category, icon, colour, split fields, is-all-day.
+## Open questions
 
-4. **Earnings**
-   - Add `paidHoursForEvent(event, template?)` helper. For template-backed events: `paid_hours = total_hours − unpaid_break_minutes/60`. Multiply by `user_preferences.hourly_rate`.
-   - Persist `unpaid_break_minutes` on the event row when created from a template so earnings remain accurate after the template changes (new nullable column on `events`: `unpaid_break_minutes int`).
-
-5. **Dashboard**
-   - Category metrics already key off `event.category`. Ensuring stamping writes the template's `life_category` is enough; no metric code changes.
-
-## F. Implementation order
-
-1. Migration: extend `shift_templates` (+ `events.unpaid_break_minutes`) and add hours trigger.
-2. Update DTO / server fns / provider.
-3. Rebuild `ShiftEditorSheet` with new fields + live preview + summary.
-4. Polish `/shifts` screen (MY CUSTOM group, swipe-delete, gear entrypoints).
-5. Wire templates into `QuickAddPanel` + `StampProvider` (stamping path).
-6. Wire templates into `EventForm` shift selector (manual create path).
-7. Update earnings helper + dashboard verification.
-8. Add Settings "Manage Shift Templates" link.
-
-## Technical notes
-
-- All new code stays inside RLS-protected server fns; no admin client.
-- `total_hours` is derived server-side via trigger so the client can't desync it.
-- `templateToStamp` keeps the existing stamping pipeline untouched — only the source list grows.
-- Icon/colour pickers and category selector are reused, not duplicated.
+- Settings entry point for `/shifts`: prompt says "Do not edit /settings UI" but also "accessible from Settings". Plan defaults to exposing only from the quick-add panel (no settings edits). Confirm if a single settings nav row is acceptable.
+- Icon stamps stored as real `events` (all-day, `personal`, with `iconName`) so they show on the calendar and persist — vs. a separate lightweight `day_markers` table. Plan goes with the simpler reuse.
+- "Public Holiday" tile stamps a personal all-day event titled "Public Holiday" (does not write to the read-only `public_holidays` table).

@@ -21,10 +21,6 @@ import type {
 } from "@/types/event";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useShiftTemplates } from "@/providers/ShiftTemplatesProvider";
-import { getIcon } from "./IconPicker";
-import { Sparkles } from "lucide-react";
-import type { ShiftTemplateDTO } from "@/lib/shift-templates.functions";
 
 interface Props {
   initial?: CalendarEvent;
@@ -75,8 +71,6 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
   const [recurrenceDays, setRecurrenceDays] = useState<string[]>(
     initial?.recurrenceDays ?? [],
   );
-  const [unpaidBreakMinutes, setUnpaidBreakMinutes] = useState<number | null>(null);
-  const { templates } = useShiftTemplates();
 
   const cat = getCategory(category);
   const invalidRange = new Date(end) < new Date(start);
@@ -109,40 +103,6 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
     }
   };
 
-  const applyTemplate = (t: ShiftTemplateDTO) => {
-    setTitle(t.name);
-    setCategory(t.lifeCategory);
-    setIconName(t.iconName ?? undefined);
-    if (!iconGradient) setIconGradient("ocean");
-    const allDayFromTpl = t.isAllDay || t.is24Hour || !t.defaultStart || !t.defaultEnd;
-    setAllDay(allDayFromTpl);
-    if (!allDayFromTpl && t.defaultStart && t.defaultEnd) {
-      const base = new Date(start);
-      const ns = setTimeOnDate(base, t.defaultStart.slice(0, 5));
-      const overnight = t.defaultEnd <= t.defaultStart;
-      const ne = setTimeOnDate(base, t.defaultEnd.slice(0, 5), overnight ? 1 : 0);
-      setStart(toInputDateTime(ns.toISOString()));
-      setEnd(toInputDateTime(ne.toISOString()));
-    }
-    if (t.isSplitShift && t.defaultStart && t.defaultEnd && t.splitStart2 && t.splitEnd2) {
-      setShift({
-        shiftType: "split",
-        role: "",
-        location: "",
-        split: {
-          firstStart: t.defaultStart.slice(0, 5),
-          firstEnd: t.defaultEnd.slice(0, 5),
-          breakMinutes: t.unpaidBreakMinutes,
-          secondStart: t.splitStart2.slice(0, 5),
-          secondEnd: t.splitEnd2.slice(0, 5),
-        },
-      });
-    } else {
-      setShift((s) => ({ ...s, shiftType: "custom", customLabel: t.name }));
-    }
-    setUnpaidBreakMinutes(t.unpaidBreakMinutes || null);
-  };
-
   const submit = () => {
     if (!title.trim()) return;
     if (invalidRange) return;
@@ -161,38 +121,12 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
       recurrenceDays: recurrencePattern === "custom" ? recurrenceDays : null,
       recurrenceEndDate: null,
     };
-    const withBreak = unpaidBreakMinutes
-      ? ({ ...draft, unpaidBreakMinutes } as EventDraft & { unpaidBreakMinutes: number })
-      : draft;
-    onSubmit(withBreak);
+    onSubmit(draft);
   };
 
   return (
     <div className="space-y-4">
       <QuickAddPresets onPick={applyPreset} />
-
-      {templates.length > 0 && (
-        <div className="space-y-1.5">
-          <Label className="text-xs uppercase tracking-wider text-muted-foreground">Your shifts</Label>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {templates.map((t) => {
-              const Icon = getIcon(t.iconName) ?? Sparkles;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => applyTemplate(t)}
-                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium hover:border-foreground/30 transition-colors"
-                  style={{ color: t.colour }}
-                >
-                  <Icon size={14} />
-                  <span className="text-foreground">{t.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       <div className="space-y-1.5">
         <Label>Title</Label>
@@ -205,7 +139,7 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
           <SelectTrigger>
             <SelectValue>
               <span className="flex items-center gap-2">
-                <cat.icon size={16} className={cat.textClass} />
+                <span className={`size-3 rounded-full ${cat.dotClass}`} />
                 {cat.label}
               </span>
             </SelectValue>
@@ -214,7 +148,7 @@ export function EventForm({ initial, defaultStart, onSubmit, onDelete, onCancel 
             {CATEGORIES.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 <span className="flex items-center gap-2">
-                  <c.icon size={16} className={c.textClass} />
+                  <span className={`size-3 rounded-full ${c.dotClass}`} />
                   {c.label}
                 </span>
               </SelectItem>

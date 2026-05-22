@@ -78,29 +78,9 @@ function buildDraftFromStamp(stamp: StampDef, day: Date): EventDraft {
       secondEnd: "20:00",
     };
   }
-  // Template-based split shift
-  if (stamp.template?.isSplitShift && stamp.template.splitStart2 && stamp.template.splitEnd2 && stamp.startTime && stamp.endTime) {
-    draft.shift = {
-      shiftType: "split",
-      role: "",
-      location: "",
-      split: {
-        firstStart: stamp.startTime,
-        firstEnd: stamp.endTime,
-        breakMinutes: stamp.template.unpaidBreakMinutes,
-        secondStart: stamp.template.splitStart2.slice(0, 5),
-        secondEnd: stamp.template.splitEnd2.slice(0, 5),
-      },
-    };
-  }
   if (stamp.category === "travel") {
     // satisfies validate_event trigger
     (draft as EventDraft & { travelDurationMinutes?: number }).travelDurationMinutes = 60;
-  }
-  // Persist unpaid break for earnings when stamping from a template (non-split path).
-  if (stamp.template && !stamp.template.isSplitShift && stamp.template.unpaidBreakMinutes) {
-    (draft as EventDraft & { unpaidBreakMinutes?: number }).unpaidBreakMinutes =
-      stamp.template.unpaidBreakMinutes;
   }
   return draft;
 }

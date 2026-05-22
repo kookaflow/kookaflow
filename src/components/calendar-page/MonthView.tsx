@@ -13,7 +13,6 @@ import {
 import { CATEGORY_MAP, SHIFT_STYLES, type MockEvent } from "./constants";
 import { ICON_MAP } from "@/components/events/IconPicker";
 import { cn } from "@/lib/utils";
-import { useStamp } from "@/providers/StampProvider";
 
 interface Props {
   cursor: Date;
@@ -32,7 +31,6 @@ export function MonthView({
   onCreate,
   onEventClick,
 }: Props) {
-  const { selected: stamp } = useStamp();
   const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 1 });
   const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start, end });
@@ -41,15 +39,15 @@ export function MonthView({
   );
 
   return (
-    <div className="flex h-full flex-col gap-1 p-2 sm:p-4 animate-in fade-in duration-200">
-      <div className="grid grid-cols-7 gap-1 px-1 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="flex h-full flex-col gap-2 p-3 sm:p-5 animate-in fade-in duration-200">
+      <div className="grid grid-cols-7 gap-1 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {headers.map((d) => (
-          <div key={d} className="px-1 py-0.5">
+          <div key={d} className="px-1.5 py-1">
             {d}
           </div>
         ))}
       </div>
-      <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-1">
+      <div className="grid flex-1 grid-cols-7 grid-rows-6 gap-1">
         {days.map((day) => {
           const inMonth = isSameMonth(day, cursor);
           const dayEvents = events.filter((e) => isSameDay(e.start, day));
@@ -69,17 +67,16 @@ export function MonthView({
               onClick={() => onSelect(day)}
               onDoubleClick={() => onCreate?.(day)}
               className={cn(
-                "group relative flex min-h-[44px] flex-col gap-1 rounded-lg border border-border/60 bg-card/40 p-1 text-left transition-all duration-200 overflow-hidden",
+                "group relative flex min-h-[80px] flex-col gap-2 rounded-xl border border-border/60 bg-card/40 p-2 text-left transition-all duration-200",
                 "hover:border-primary/60 hover:bg-card/80 hover:shadow-sm hover:-translate-y-0.5",
                 !inMonth && "opacity-40",
                 isSel && "border-primary ring-2 ring-primary/30 bg-card",
-                stamp && "cursor-copy border-dashed border-primary/50 hover:border-primary",
               )}
             >
-              <div className="flex items-start justify-between gap-1 leading-none">
+              <div className="flex items-start justify-between gap-1">
                 <span
                   className={cn(
-                    "flex size-5 items-center justify-center rounded-full text-[11px] font-semibold sm:size-6 sm:text-xs",
+                    "flex size-7 items-center justify-center rounded-full text-xs font-semibold",
                     today
                       ? "bg-primary text-primary-foreground"
                       : "text-foreground",
@@ -90,16 +87,16 @@ export function MonthView({
               </div>
               {shiftStyle && (
                 <span
-                  className="flex h-4 w-full items-center justify-center gap-0.5 truncate rounded px-1 text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm sm:text-[10px]"
+                  className="flex w-full items-center justify-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm"
                   style={{ backgroundColor: shiftStyle.color }}
                   title={`${shiftStyle.label} shift`}
                 >
-                  <shiftStyle.icon className="size-2.5" />
+                  <shiftStyle.icon className="size-3" />
                   <span className="truncate">{shiftStyle.label}</span>
                 </span>
               )}
               {iconEvents.length > 0 && (
-                <div className="flex flex-wrap items-center gap-0.5">
+                <div className="flex flex-wrap items-center gap-1">
                   {iconEvents.map((e) => {
                     const Icon = ICON_MAP[e.iconName as string];
                     if (!Icon) return null;
@@ -109,13 +106,13 @@ export function MonthView({
                         className="text-foreground/80"
                         title={e.title}
                       >
-                        <Icon className="size-2.5" />
+                        <Icon className="size-3" />
                       </span>
                     );
                   })}
                 </div>
               )}
-              <div className="mt-auto flex flex-wrap items-center gap-0.5">
+              <div className="mt-auto flex flex-wrap items-center gap-1">
                 {dots.map((e) => (
                   <span
                     key={e.id}

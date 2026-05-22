@@ -77,7 +77,6 @@ export type Database = {
           start_time: string
           title: string
           travel_duration_minutes: number | null
-          unpaid_break_minutes: number | null
           updated_at: string
           user_id: string
         }
@@ -110,7 +109,6 @@ export type Database = {
           start_time: string
           title: string
           travel_duration_minutes?: number | null
-          unpaid_break_minutes?: number | null
           updated_at?: string
           user_id: string
         }
@@ -143,7 +141,6 @@ export type Database = {
           start_time?: string
           title?: string
           travel_duration_minutes?: number | null
-          unpaid_break_minutes?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -281,19 +278,8 @@ export type Database = {
           default_start: string | null
           icon_name: string | null
           id: string
-          is_24_hour: boolean
-          is_active: boolean
-          is_all_day: boolean
-          is_split_shift: boolean
-          life_category: string
           name: string
-          paid_break_minutes: number
-          show_as: string | null
           sort_order: number
-          split_end_2: string | null
-          split_start_2: string | null
-          total_hours: number | null
-          unpaid_break_minutes: number
           updated_at: string
           user_id: string
         }
@@ -306,19 +292,8 @@ export type Database = {
           default_start?: string | null
           icon_name?: string | null
           id?: string
-          is_24_hour?: boolean
-          is_active?: boolean
-          is_all_day?: boolean
-          is_split_shift?: boolean
-          life_category?: string
           name: string
-          paid_break_minutes?: number
-          show_as?: string | null
           sort_order?: number
-          split_end_2?: string | null
-          split_start_2?: string | null
-          total_hours?: number | null
-          unpaid_break_minutes?: number
           updated_at?: string
           user_id: string
         }
@@ -331,19 +306,8 @@ export type Database = {
           default_start?: string | null
           icon_name?: string | null
           id?: string
-          is_24_hour?: boolean
-          is_active?: boolean
-          is_all_day?: boolean
-          is_split_shift?: boolean
-          life_category?: string
           name?: string
-          paid_break_minutes?: number
-          show_as?: string | null
           sort_order?: number
-          split_end_2?: string | null
-          split_start_2?: string | null
-          total_hours?: number | null
-          unpaid_break_minutes?: number
           updated_at?: string
           user_id?: string
         }
