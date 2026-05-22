@@ -14,6 +14,8 @@ export interface MockEvent {
   iconName?: IconName;
   recurrence?: Recurrence;
   isPayday?: boolean;
+  source?: "shiftsync" | "google";
+  externalUrl?: string;
 }
 
 export type Recurrence =

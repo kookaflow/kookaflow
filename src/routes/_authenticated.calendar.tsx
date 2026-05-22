@@ -30,6 +30,9 @@ import type { MockEvent, IconName } from "@/components/calendar-page/constants";
 import type { ShiftType as MockShiftType } from "@/types/event";
 import { useEvents } from "@/providers/EventsProvider";
 import type { CalendarEvent } from "@/types/event";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { listGoogleEvents } from "@/lib/google-calendar.functions";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { StampProvider, useStamp } from "@/providers/StampProvider";
@@ -54,13 +57,32 @@ function CalendarPageInner() {
   const [view, setView] = useState<ViewMode>("month");
   const [date, setDate] = useState<Date>(new Date());
   const { events: rawEvents } = useEvents();
+  const fetchGoogle = useServerFn(listGoogleEvents);
+  const { data: googleEvents = [] } = useQuery({
+    queryKey: ["google-events"],
+    queryFn: () => fetchGoogle({ data: {} }),
+    staleTime: 60_000,
+  });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogDefault, setDialogDefault] = useState<Date>(new Date());
   const [weekSummaryOpen, setWeekSummaryOpen] = useState(false);
   const { selected: stamp, applyStamp, panelOpen } = useStamp();
 
-  const events = useMemo(() => rawEvents.map(toMockEvent), [rawEvents]);
+  const events = useMemo(() => {
+    const local = rawEvents.map(toMockEvent);
+    const google: MockEvent[] = googleEvents.map((g) => ({
+      id: `google:${g.id}`,
+      title: g.summary ?? "(no title)",
+      category: "personal" as const,
+      start: new Date(g.start),
+      end: new Date(g.end),
+      location: g.location ?? undefined,
+      source: "google" as const,
+      externalUrl: g.htmlLink ?? undefined,
+    }));
+    return [...local, ...google];
+  }, [rawEvents, googleEvents]);
 
   const handleDaySelect = (d: Date) => {
     if (stamp) {
@@ -82,6 +104,10 @@ function CalendarPageInner() {
     setDialogOpen(true);
   };
   const openEdit = (e: MockEvent) => {
+    if (e.source === "google") {
+      if (e.externalUrl) window.open(e.externalUrl, "_blank", "noopener");
+      return;
+    }
     setEditingId(e.id);
     setDialogOpen(true);
   };
