@@ -52,7 +52,7 @@ const FAQS: Array<{ q: string; a: string }> = [
 function SupportPage() {
   return (
     <LegalPage title="How can we help?" subtitle="We're here to support your flow.">
-      <p className="not-prose">
+      <p>
         <a
           href="mailto:support@kookaflow.com"
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-foreground shadow-sm transition hover:bg-accent"
@@ -63,7 +63,7 @@ function SupportPage() {
       </p>
 
       <h2>Frequently asked questions</h2>
-      <div className="not-prose">
+      <div>
         <Accordion type="single" collapsible className="w-full">
           {FAQS.map((f, i) => (
             <AccordionItem key={i} value={`item-${i}`}>
