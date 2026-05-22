@@ -220,7 +220,7 @@ function CalendarPageInner() {
           <button
             type="button"
             onClick={goPrev}
-            className="px-1.5 py-1.5 text-white transition-colors hover:bg-white/20"
+            className="flex h-11 w-11 items-center justify-center text-white transition-colors hover:bg-white/20"
             aria-label="Previous"
           >
             <ChevronLeft className="size-4" />
@@ -228,7 +228,7 @@ function CalendarPageInner() {
           <button
             type="button"
             onClick={goNext}
-            className="border-l border-white/30 px-1.5 py-1.5 text-white transition-colors hover:bg-white/20"
+            className="flex h-11 w-11 items-center justify-center border-l border-white/30 text-white transition-colors hover:bg-white/20"
             aria-label="Next"
           >
             <ChevronRight className="size-4" />

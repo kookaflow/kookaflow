@@ -62,7 +62,7 @@ export function AppNav() {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition-colors",
+                "flex flex-1 flex-col items-center justify-center gap-1 py-2 min-h-12 text-[10px] font-medium transition-colors",
                 active ? "text-primary" : "text-muted-foreground",
               )}
             >
