@@ -23,6 +23,14 @@ export interface StampDef {
   overnight?: boolean;
   iconName?: string;
   isPayday?: boolean;
+  template?: {
+    id: string;
+    isSplitShift: boolean;
+    splitStart2: string | null;
+    splitEnd2: string | null;
+    unpaidBreakMinutes: number;
+    paidBreakMinutes: number;
+  };
 }
 
 export const SHIFT_STAMPS: StampDef[] = [
