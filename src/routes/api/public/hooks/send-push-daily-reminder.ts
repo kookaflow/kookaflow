@@ -9,18 +9,13 @@ import {
 } from "@/lib/reminders/email.server";
 import {
   appUrl,
-  computeBalanceScore,
-  DAILY_TIPS,
-  isValidE164,
   pickTip,
-  sendTwilioSms,
+  sendOneSignalPush,
   shortShiftLabel,
-} from "@/lib/reminders/sms.server";
-
-void computeBalanceScore;
+} from "@/lib/reminders/push.server";
 
 export const Route = createFileRoute(
-  "/api/public/hooks/send-sms-daily-reminder",
+  "/api/public/hooks/send-push-daily-reminder",
 )({
   server: {
     handlers: {
@@ -36,7 +31,7 @@ export const Route = createFileRoute(
         const { data: prefs, error } = await supabase
           .from("user_preferences")
           .select(
-            "user_id, phone, daily_reminder_time, daily_reminder_channel, daily_reminder_enabled",
+            "user_id, daily_reminder_time, daily_reminder_channel, daily_reminder_enabled",
           )
           .eq("daily_reminder_enabled", true);
         if (error) {
@@ -46,16 +41,9 @@ export const Route = createFileRoute(
         const results: Array<{ user_id: string; status: string }> = [];
 
         for (const p of prefs ?? []) {
-          if (
-            !p.daily_reminder_channel ||
-            (p.daily_reminder_channel !== "sms" &&
-              p.daily_reminder_channel !== "both")
-          ) {
+          const ch = p.daily_reminder_channel;
+          if (!ch || (ch !== "push" && ch !== "both")) {
             results.push({ user_id: p.user_id, status: "channel_skip" });
-            continue;
-          }
-          if (!isValidE164(p.phone)) {
-            results.push({ user_id: p.user_id, status: "no_phone" });
             continue;
           }
           if (!p.daily_reminder_time) {
@@ -80,7 +68,7 @@ export const Route = createFileRoute(
             .from("reminder_sends")
             .insert({
               user_id: p.user_id,
-              kind: "sms_daily",
+              kind: "push_daily",
               sent_for_date: sentFor,
             });
           if (insErr) {
@@ -101,21 +89,23 @@ export const Route = createFileRoute(
             .order("start_time", { ascending: true });
 
           const evs = (events ?? []) as EventRow[];
-          const tip = pickTip(
-            DAILY_TIPS,
-            zoned.year * 366 + zoned.month * 31 + zoned.day,
-          );
-          const body = `ShiftSync: Today you have ${evs.length} events. Shift: ${shortShiftLabel(evs)}. Tip: ${tip}. View: ${appUrl()}`;
+          const tip = pickTip(zoned.year * 366 + zoned.month * 31 + zoned.day);
+          const content = `${evs.length} events today. Shift: ${shortShiftLabel(evs)}. Tip: ${tip}.`;
 
           try {
-            await sendTwilioSms({ to: p.phone, body });
+            await sendOneSignalPush({
+              externalUserIds: [p.user_id],
+              heading: "ShiftSync — Today",
+              content,
+              url: appUrl(),
+            });
             results.push({ user_id: p.user_id, status: "sent" });
           } catch (e: any) {
             await supabase
               .from("reminder_sends")
               .delete()
               .eq("user_id", p.user_id)
-              .eq("kind", "sms_daily")
+              .eq("kind", "push_daily")
               .eq("sent_for_date", sentFor);
             results.push({
               user_id: p.user_id,

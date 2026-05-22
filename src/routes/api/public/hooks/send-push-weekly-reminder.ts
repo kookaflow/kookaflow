@@ -10,12 +10,11 @@ import {
 import {
   appUrl,
   computeBalanceScore,
-  isValidE164,
-  sendTwilioSms,
-} from "@/lib/reminders/sms.server";
+  sendOneSignalPush,
+} from "@/lib/reminders/push.server";
 
 export const Route = createFileRoute(
-  "/api/public/hooks/send-sms-weekly-reminder",
+  "/api/public/hooks/send-push-weekly-reminder",
 )({
   server: {
     handlers: {
@@ -31,7 +30,7 @@ export const Route = createFileRoute(
         const { data: prefs, error } = await supabase
           .from("user_preferences")
           .select(
-            "user_id, phone, weekly_reminder_time, weekly_reminder_day, weekly_reminder_channel, weekly_reminder_enabled",
+            "user_id, weekly_reminder_time, weekly_reminder_day, weekly_reminder_channel, weekly_reminder_enabled",
           )
           .eq("weekly_reminder_enabled", true);
         if (error) {
@@ -41,16 +40,9 @@ export const Route = createFileRoute(
         const results: Array<{ user_id: string; status: string }> = [];
 
         for (const p of prefs ?? []) {
-          if (
-            !p.weekly_reminder_channel ||
-            (p.weekly_reminder_channel !== "sms" &&
-              p.weekly_reminder_channel !== "both")
-          ) {
+          const ch = p.weekly_reminder_channel;
+          if (!ch || (ch !== "push" && ch !== "both")) {
             results.push({ user_id: p.user_id, status: "channel_skip" });
-            continue;
-          }
-          if (!isValidE164(p.phone)) {
-            results.push({ user_id: p.user_id, status: "no_phone" });
             continue;
           }
           if (!p.weekly_reminder_time || !p.weekly_reminder_day) {
@@ -79,7 +71,7 @@ export const Route = createFileRoute(
             .from("reminder_sends")
             .insert({
               user_id: p.user_id,
-              kind: "sms_weekly",
+              kind: "push_weekly",
               sent_for_date: sentFor,
             });
           if (insErr) {
@@ -102,17 +94,22 @@ export const Route = createFileRoute(
           const evs = (events ?? []) as EventRow[];
           const shifts = evs.filter((e) => e.category === "work").length;
           const score = computeBalanceScore(evs);
-          const body = `ShiftSync Week Ahead: ${shifts} shifts this week. Balance score: ${score}/100. Stay well! ${appUrl()}`;
+          const content = `${shifts} shifts this week. Balance: ${score}/100. Stay well!`;
 
           try {
-            await sendTwilioSms({ to: p.phone, body });
+            await sendOneSignalPush({
+              externalUserIds: [p.user_id],
+              heading: "ShiftSync — Week Ahead",
+              content,
+              url: appUrl(),
+            });
             results.push({ user_id: p.user_id, status: "sent" });
           } catch (e: any) {
             await supabase
               .from("reminder_sends")
               .delete()
               .eq("user_id", p.user_id)
-              .eq("kind", "sms_weekly")
+              .eq("kind", "push_weekly")
               .eq("sent_for_date", sentFor);
             results.push({
               user_id: p.user_id,

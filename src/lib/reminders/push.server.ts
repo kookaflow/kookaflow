@@ -1,50 +1,45 @@
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
+const ONESIGNAL_API = "https://api.onesignal.com/notifications";
 
-export async function sendTwilioSms({
-  to,
-  body,
-  from,
+export async function sendOneSignalPush({
+  externalUserIds,
+  heading,
+  content,
+  url,
 }: {
-  to: string;
-  body: string;
-  from?: string;
+  externalUserIds: string[];
+  heading: string;
+  content: string;
+  url?: string;
 }) {
-  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-  const TWILIO_API_KEY = process.env.TWILIO_API_KEY;
-  if (!TWILIO_API_KEY) throw new Error("TWILIO_API_KEY is not configured");
+  const appId = process.env.ONESIGNAL_APP_ID;
+  if (!appId) throw new Error("ONESIGNAL_APP_ID is not configured");
+  const restKey = process.env.ONESIGNAL_REST_API_KEY;
+  if (!restKey) throw new Error("ONESIGNAL_REST_API_KEY is not configured");
 
-  const fromNumber = from ?? process.env.TWILIO_FROM_NUMBER;
-  if (!fromNumber) throw new Error("TWILIO_FROM_NUMBER is not configured");
-
-  const trimmed = body.length > 160 ? body.slice(0, 157) + "..." : body;
-
-  const res = await fetch(`${GATEWAY_URL}/Messages.json`, {
+  const res = await fetch(ONESIGNAL_API, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "X-Connection-Api-Key": TWILIO_API_KEY,
-      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Key ${restKey}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-    body: new URLSearchParams({
-      To: to,
-      From: fromNumber,
-      Body: trimmed,
+    body: JSON.stringify({
+      app_id: appId,
+      include_aliases: { external_id: externalUserIds },
+      target_channel: "push",
+      headings: { en: heading },
+      contents: { en: content },
+      ...(url ? { url } : {}),
     }),
   });
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(
-      `Twilio API error [${res.status}]: ${JSON.stringify(data)}`,
+      `OneSignal API error [${res.status}]: ${JSON.stringify(data)}`,
     );
   }
   return data;
-}
-
-export function isValidE164(phone: string | null | undefined): phone is string {
-  if (!phone) return false;
-  return /^\+[1-9]\d{6,14}$/.test(phone.trim());
 }
 
 const DAILY_TIPS = [
@@ -58,18 +53,9 @@ const DAILY_TIPS = [
   "Walk between tasks",
 ];
 
-const WEEKLY_TIPS = [
-  "Plan one rest day",
-  "Book social time",
-  "Schedule exercise",
-  "Prep meals ahead",
-];
-
-export function pickTip(arr: string[], seed: number) {
-  return arr[((seed % arr.length) + arr.length) % arr.length];
+export function pickTip(seed: number) {
+  return DAILY_TIPS[((seed % DAILY_TIPS.length) + DAILY_TIPS.length) % DAILY_TIPS.length];
 }
-
-export { DAILY_TIPS, WEEKLY_TIPS };
 
 export function appUrl() {
   return (
@@ -78,7 +64,9 @@ export function appUrl() {
   );
 }
 
-export function shortShiftLabel(events: Array<{ shift_type?: string | null; category?: string | null; title?: string | null }>): string {
+export function shortShiftLabel(
+  events: Array<{ shift_type?: string | null; category?: string | null; title?: string | null }>,
+): string {
   const shift = events.find((e) => e.category === "work");
   if (!shift) return "No shift";
   if (shift.shift_type) {
@@ -116,7 +104,6 @@ export function computeBalanceScore(
   }
   const total = workHours + lifeHours;
   if (total === 0) return 50;
-  // Ideal: ~40% work, ~60% life. Score peaks when lifeHours/total ≈ 0.6
   const lifeRatio = lifeHours / total;
   const score = Math.round(100 - Math.abs(lifeRatio - 0.6) * 150);
   return Math.max(0, Math.min(100, score));
