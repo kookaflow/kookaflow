@@ -157,6 +157,105 @@ export type Database = {
           },
         ]
       }
+      google_calendar_connections: {
+        Row: {
+          access_token: string
+          created_at: string
+          google_calendar_id: string
+          google_email: string | null
+          last_sync_error: string | null
+          last_synced_at: string | null
+          refresh_token: string
+          scope: string | null
+          sync_token: string | null
+          token_expires_at: string
+          two_way_sync_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          google_calendar_id?: string
+          google_email?: string | null
+          last_sync_error?: string | null
+          last_synced_at?: string | null
+          refresh_token: string
+          scope?: string | null
+          sync_token?: string | null
+          token_expires_at: string
+          two_way_sync_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          google_calendar_id?: string
+          google_email?: string | null
+          last_sync_error?: string | null
+          last_synced_at?: string | null
+          refresh_token?: string
+          scope?: string | null
+          sync_token?: string | null
+          token_expires_at?: string
+          two_way_sync_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      google_events_cache: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_time: string
+          google_calendar_id: string
+          google_event_id: string
+          html_link: string | null
+          id: string
+          is_all_day: boolean
+          location: string | null
+          start_time: string
+          status: string | null
+          summary: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_time: string
+          google_calendar_id?: string
+          google_event_id: string
+          html_link?: string | null
+          id?: string
+          is_all_day?: boolean
+          location?: string | null
+          start_time: string
+          status?: string | null
+          summary?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_time?: string
+          google_calendar_id?: string
+          google_event_id?: string
+          html_link?: string | null
+          id?: string
+          is_all_day?: boolean
+          location?: string | null
+          start_time?: string
+          status?: string | null
+          summary?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       nudge_dismissals: {
         Row: {
           dismissed_at: string
