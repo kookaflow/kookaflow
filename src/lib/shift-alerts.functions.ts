@@ -67,7 +67,7 @@ export const scheduleShiftAlert = createServerFn({ method: "POST" })
 
     const { data: prefs } = await supabase
       .from("user_preferences")
-      .select("reminder_minutes_before, timezone:user_id")
+      .select("reminder_minutes_before")
       .eq("user_id", userId)
       .maybeSingle();
     const minutesBefore = prefs?.reminder_minutes_before ?? 10;
