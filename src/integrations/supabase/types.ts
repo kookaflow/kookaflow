@@ -188,6 +188,11 @@ export type Database = {
           id: string
           job_role: string | null
           onboarded_at: string | null
+          onesignal_player_id: string | null
+          push_daily_reminder: boolean
+          push_notifications_enabled: boolean
+          push_shift_alerts: boolean
+          push_weekly_reminder: boolean
           shift_pattern: string | null
           timezone: string
           updated_at: string
@@ -198,6 +203,11 @@ export type Database = {
           id: string
           job_role?: string | null
           onboarded_at?: string | null
+          onesignal_player_id?: string | null
+          push_daily_reminder?: boolean
+          push_notifications_enabled?: boolean
+          push_shift_alerts?: boolean
+          push_weekly_reminder?: boolean
           shift_pattern?: string | null
           timezone?: string
           updated_at?: string
@@ -208,6 +218,11 @@ export type Database = {
           id?: string
           job_role?: string | null
           onboarded_at?: string | null
+          onesignal_player_id?: string | null
+          push_daily_reminder?: boolean
+          push_notifications_enabled?: boolean
+          push_shift_alerts?: boolean
+          push_weekly_reminder?: boolean
           shift_pattern?: string | null
           timezone?: string
           updated_at?: string
