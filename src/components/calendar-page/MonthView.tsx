@@ -13,6 +13,7 @@ import {
 import { CATEGORY_MAP, SHIFT_STYLES, type MockEvent } from "./constants";
 import { ICON_MAP } from "@/components/events/IconPicker";
 import { cn } from "@/lib/utils";
+import { useStamp } from "@/providers/StampProvider";
 
 interface Props {
   cursor: Date;
@@ -31,6 +32,7 @@ export function MonthView({
   onCreate,
   onEventClick,
 }: Props) {
+  const { selected: stamp } = useStamp();
   const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 1 });
   const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start, end });
@@ -71,6 +73,7 @@ export function MonthView({
                 "hover:border-primary/60 hover:bg-card/80 hover:shadow-sm hover:-translate-y-0.5",
                 !inMonth && "opacity-40",
                 isSel && "border-primary ring-2 ring-primary/30 bg-card",
+                stamp && "cursor-copy border-dashed border-primary/50 hover:border-primary",
               )}
             >
               <div className="flex items-start justify-between gap-1">
