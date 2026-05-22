@@ -92,7 +92,7 @@ function buildDraftFromStamp(stamp: StampDef, day: Date): EventDraft {
 export function StampProvider({ children }: { children: React.ReactNode }) {
   const [selected, setSelected] = useState<StampDef | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
-  const { events, createEvent, updateEvent, deleteEvent } = useEvents();
+  const { events, createEvent, deleteEvent } = useEvents();
 
   const applyStamp = useCallback(
     async (day: Date) => {
@@ -146,7 +146,7 @@ export function StampProvider({ children }: { children: React.ReactNode }) {
         toast(msg);
       }
     },
-    [selected, events, createEvent, updateEvent, deleteEvent],
+    [selected, events, createEvent, deleteEvent],
   );
 
   const value = useMemo(
