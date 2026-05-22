@@ -17,6 +17,8 @@ export type ShiftType =
   | "side_hustle"
   | "sick_leave"
   | "annual_leave"
+  | "travel"
+  | "payday"
   | "custom";
 
 export interface SplitShiftMeta {
@@ -61,6 +63,7 @@ export interface CalendarEvent {
   notes?: string;
   shift?: ShiftMeta;
   isPayday?: boolean;
+  travelDurationMinutes?: number | null;
   recurrencePattern?: RecurrencePattern | null;
   recurrenceDays?: string[] | null;
   recurrenceEndDate?: string | null;

@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
-import { getCategory } from "@/lib/categories";
-import { getEventIcon } from "@/lib/event-icon";
+import { getEventColour, getEventIconComponent } from "@/lib/shiftConfig";
 import type { CalendarEvent } from "@/types/event";
 import { format } from "date-fns";
 
@@ -12,8 +11,8 @@ interface Props {
 }
 
 export function EventChip({ event, onClick, showTime = true, className }: Props) {
-  const c = getCategory(event.category);
-  const { Icon } = getEventIcon(event);
+  const bg = getEventColour(event);
+  const Icon = getEventIconComponent(event);
   return (
     <button
       type="button"
@@ -21,10 +20,9 @@ export function EventChip({ event, onClick, showTime = true, className }: Props)
         e.stopPropagation();
         onClick?.(e);
       }}
+      style={{ backgroundColor: bg, color: "#fff" }}
       className={cn(
         "flex w-full items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium transition-opacity hover:opacity-90",
-        c.bgClass,
-        c.fgClass,
         className,
       )}
       title={event.title}

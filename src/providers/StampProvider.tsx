@@ -35,7 +35,7 @@ function endOfDayDate(day: Date): Date {
 
 function buildDraftFromStamp(stamp: StampDef, day: Date): EventDraft {
   if (stamp.allDay || !stamp.startTime || !stamp.endTime) {
-    return {
+    const allDayDraft: EventDraft = {
       title: stamp.label,
       category: stamp.category ?? "personal",
       start: startOfDayDate(day).toISOString(),
@@ -52,6 +52,10 @@ function buildDraftFromStamp(stamp: StampDef, day: Date): EventDraft {
           }
         : undefined,
     };
+    if (allDayDraft.category === "travel" || stamp.shiftType === "travel") {
+      allDayDraft.travelDurationMinutes = 60;
+    }
+    return allDayDraft;
   }
   const start = setTimeOnDay(day, stamp.startTime);
   let end = setTimeOnDay(day, stamp.endTime);
@@ -80,7 +84,7 @@ function buildDraftFromStamp(stamp: StampDef, day: Date): EventDraft {
   }
   if (stamp.category === "travel") {
     // satisfies validate_event trigger
-    (draft as EventDraft & { travelDurationMinutes?: number }).travelDurationMinutes = 60;
+    draft.travelDurationMinutes = 60;
   }
   return draft;
 }
@@ -88,7 +92,7 @@ function buildDraftFromStamp(stamp: StampDef, day: Date): EventDraft {
 export function StampProvider({ children }: { children: React.ReactNode }) {
   const [selected, setSelected] = useState<StampDef | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
-  const { events, createEvent, updateEvent, deleteEvent } = useEvents();
+  const { events, createEvent, deleteEvent } = useEvents();
 
   const applyStamp = useCallback(
     async (day: Date) => {
@@ -122,26 +126,18 @@ export function StampProvider({ children }: { children: React.ReactNode }) {
           });
           return;
         }
-        // shift or rest
-        const existingShift = dayEvents.find(
-          (e) =>
-            e.shift ||
-            e.category === "rest" ||
-            e.category === "travel" ||
-            (e.allDay && e.category === "work"),
-        );
+        // shift / rest / leave / travel / payday
+        // Toggle off ONLY when stamping the exact same type on the same day.
+        // Otherwise always create a new event — never overwrite a different existing one.
         const draft = buildDraftFromStamp(selected, day);
-        const sameType =
-          existingShift &&
-          ((existingShift.shift?.shiftType ?? null) === (selected.shiftType ?? null)) &&
-          existingShift.category === draft.category &&
-          (existingShift.isPayday ?? false) === (draft.isPayday ?? false);
-        if (existingShift && sameType) {
-          await deleteEvent(existingShift.id);
-          return;
-        }
-        if (existingShift) {
-          await updateEvent(existingShift.id, draft);
+        const existingSame = dayEvents.find(
+          (e) =>
+            e.category === draft.category &&
+            (e.shift?.shiftType ?? null) === (draft.shift?.shiftType ?? null) &&
+            (e.isPayday ?? false) === (draft.isPayday ?? false),
+        );
+        if (existingSame) {
+          await deleteEvent(existingSame.id);
           return;
         }
         await createEvent(draft);
@@ -150,7 +146,7 @@ export function StampProvider({ children }: { children: React.ReactNode }) {
         toast(msg);
       }
     },
-    [selected, events, createEvent, updateEvent, deleteEvent],
+    [selected, events, createEvent, deleteEvent],
   );
 
   const value = useMemo(

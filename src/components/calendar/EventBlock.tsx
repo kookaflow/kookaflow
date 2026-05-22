@@ -1,6 +1,4 @@
-import { cn } from "@/lib/utils";
-import { getCategory } from "@/lib/categories";
-import { getEventIcon } from "@/lib/event-icon";
+import { getEventColour, getEventIconComponent } from "@/lib/shiftConfig";
 import type { CalendarEvent } from "@/types/event";
 import { format, differenceInMinutes, startOfDay } from "date-fns";
 
@@ -12,8 +10,8 @@ interface Props {
 }
 
 export function EventBlock({ event, day, hourHeight, onClick }: Props) {
-  const c = getCategory(event.category);
-  const { Icon } = getEventIcon(event);
+  const bg = getEventColour(event);
+  const Icon = getEventIconComponent(event);
   const dayStart = startOfDay(day);
   const es = new Date(event.start);
   const ee = new Date(event.end);
@@ -29,12 +27,8 @@ export function EventBlock({ event, day, hourHeight, onClick }: Props) {
         e.stopPropagation();
         onClick?.();
       }}
-      style={{ top, height }}
-      className={cn(
-        "absolute left-1 right-1 flex flex-col items-start gap-0.5 overflow-hidden rounded-md px-2 py-1 text-left text-xs shadow-sm transition hover:scale-[1.01]",
-        c.bgClass,
-        c.fgClass,
-      )}
+      style={{ top, height, backgroundColor: bg, color: "#fff" }}
+      className="absolute left-1 right-1 flex flex-col items-start gap-0.5 overflow-hidden rounded-md px-2 py-1 text-left text-xs shadow-sm transition hover:scale-[1.01]"
     >
       <span className="flex items-center gap-1 font-semibold">
         <Icon className="size-3" />
