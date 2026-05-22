@@ -49,6 +49,8 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { StampProvider, useStamp } from "@/providers/StampProvider";
 import { QuickAddFab } from "@/components/calendar/QuickAddFab";
 import { QuickAddPanel } from "@/components/calendar/QuickAddPanel";
+import { WellnessNudgeBanner } from "@/components/calendar/WellnessNudgeBanner";
+import type { CategoryId } from "@/types/event";
 
 type ViewMode = "month" | "week" | "day";
 
@@ -90,6 +92,7 @@ function CalendarPageInner() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogDefault, setDialogDefault] = useState<Date>(new Date());
+  const [dialogCategory, setDialogCategory] = useState<CategoryId | undefined>(undefined);
   const [weekSummaryOpen, setWeekSummaryOpen] = useState(false);
   const [googleDetail, setGoogleDetail] = useState<MockEvent | null>(null);
   const { selected: stamp, applyStamp, panelOpen } = useStamp();
@@ -126,6 +129,13 @@ function CalendarPageInner() {
   const openCreate = (d?: Date) => {
     setEditingId(null);
     setDialogDefault(d ?? new Date());
+    setDialogCategory(undefined);
+    setDialogOpen(true);
+  };
+  const openCreateWithCategory = (category: CategoryId) => {
+    setEditingId(null);
+    setDialogDefault(new Date());
+    setDialogCategory(category);
     setDialogOpen(true);
   };
   const openEdit = (e: MockEvent) => {
@@ -134,6 +144,7 @@ function CalendarPageInner() {
       return;
     }
     setEditingId(e.id);
+    setDialogCategory(undefined);
     setDialogOpen(true);
   };
   const goNext = () => {
@@ -266,6 +277,12 @@ function CalendarPageInner() {
         </div>
       </div>
 
+      <WellnessNudgeBanner
+        events={events}
+        anchor={date}
+        onAction={openCreateWithCategory}
+      />
+
       {/* Body */}
       <div
         className="flex flex-1 overflow-hidden transition-[padding] duration-200"
@@ -311,6 +328,7 @@ function CalendarPageInner() {
         onOpenChange={setDialogOpen}
         eventId={editingId}
         defaultStart={dialogDefault}
+        defaultCategory={dialogCategory}
       />
 
       <WeekSummaryDialog
