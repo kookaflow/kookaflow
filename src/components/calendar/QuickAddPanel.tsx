@@ -24,17 +24,26 @@ export function QuickAddPanel({ onOpenDetailedEvent }: Props) {
     id: `tpl_${t.id}`,
     kind: "shift",
     label: t.name,
-    shortLabel: t.name.slice(0, 8),
+    shortLabel: t.showAs ?? t.name.slice(0, 6),
     colour: t.colour,
     Icon: getIcon(t.iconName) ?? Sparkles,
-    category: t.category === "leave" ? "work" : t.category === "non_working" ? "rest" : "work",
-    allDay: !t.defaultStart || !t.defaultEnd,
+    category: t.lifeCategory,
+    allDay: t.isAllDay || t.is24Hour || !t.defaultStart || !t.defaultEnd,
     startTime: t.defaultStart ?? undefined,
     endTime: t.defaultEnd ?? undefined,
     iconName: t.iconName ?? undefined,
+    template: {
+      id: t.id,
+      isSplitShift: t.isSplitShift,
+      splitStart2: t.splitStart2,
+      splitEnd2: t.splitEnd2,
+      unpaidBreakMinutes: t.unpaidBreakMinutes,
+      paidBreakMinutes: t.paidBreakMinutes,
+    },
   }));
 
-  const shiftItems = [...SHIFT_STAMPS, ...customStamps];
+  // Custom templates first, then built-in shifts
+  const shiftItems = [...customStamps, ...SHIFT_STAMPS];
 
   return (
     <>
