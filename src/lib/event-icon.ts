@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { CalendarEvent, GradientId } from "@/types/event";
-import { getCategory } from "@/lib/categories";
+import { getCategoryConfig } from "@/lib/shiftConfig";
 import { getIcon } from "@/components/events/IconPicker";
 import { getGradient, type GradientDef } from "@/lib/gradients";
 
@@ -15,8 +15,8 @@ export function getEventIcon(event: CalendarEvent): EventIcon {
   if (custom) {
     return { Icon: custom, gradient: getGradient(event.iconGradient), custom: true };
   }
-  const cat = getCategory(event.category);
-  return { Icon: cat.icon, gradient: getGradient(defaultGradientForCategory(event.category)), custom: false };
+  const cat = getCategoryConfig(event.category);
+  return { Icon: cat.Icon, gradient: getGradient(defaultGradientForCategory(event.category)), custom: false };
 }
 
 function defaultGradientForCategory(id: string): GradientId {

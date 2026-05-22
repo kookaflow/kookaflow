@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Briefcase, MapPin, X } from "lucide-react";
 import { useEvents } from "@/providers/EventsProvider";
-import { getCategory } from "@/lib/categories";
+import { getEventColour } from "@/lib/shiftConfig";
 import type { CalendarEvent } from "@/types/event";
 
 const SOUND_PREFS_KEY = "shiftsync.sound-prefs.v1";
@@ -143,9 +143,7 @@ interface DailySummaryProps {
 }
 
 function DailySummaryToast({ id, count, firstShift, onOpen }: DailySummaryProps) {
-  const accent = firstShift
-    ? getCategory(firstShift.category).cssVar
-    : "var(--cat-personal)";
+  const accent = firstShift ? getEventColour(firstShift) : "#6B7280";
   return (
     <button
       type="button"

@@ -1,4 +1,4 @@
-import { CATEGORIES } from "@/lib/categories";
+import { CATEGORY_LIST } from "@/lib/shiftConfig";
 import { format } from "date-fns";
 import { dayRange } from "@/lib/date";
 import { getCategoryBreakdown } from "@/lib/selectors";
@@ -21,10 +21,10 @@ export function WeeklyCategoryChart({ days, events }: Props) {
       {dayData.map(({ date, breakdown }) => (
         <div key={date.toISOString()} className="flex flex-1 flex-col items-center gap-1">
           <div className="flex h-32 w-full flex-col-reverse overflow-hidden rounded-md bg-muted/40">
-            {CATEGORIES.map((c) => {
+            {CATEGORY_LIST.map((c) => {
               const h = breakdown.totals[c.id];
               if (h <= 0) return null;
-              return <div key={c.id} className={c.bgClass} style={{ height: `${(h / max) * 100}%` }} />;
+              return <div key={c.id} style={{ height: `${(h / max) * 100}%`, backgroundColor: c.colour }} />;
             })}
           </div>
           <span className="text-[10px] text-muted-foreground">{format(date, "EEE")}</span>

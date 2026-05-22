@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { getCategory } from "@/lib/categories";
+import { getCategoryConfig } from "@/lib/shiftConfig";
 import type { CalendarEvent } from "@/types/event";
 
 interface Props {
@@ -14,8 +14,8 @@ export function TodayEventsList({ events, onSelect }: Props) {
   return (
     <ul className="flex flex-col gap-1.5">
       {events.map((e) => {
-        const c = getCategory(e.category);
-        const Icon = c.icon;
+        const c = getCategoryConfig(e.category);
+        const Icon = c.Icon;
         return (
           <li key={e.id}>
             <button
@@ -23,7 +23,10 @@ export function TodayEventsList({ events, onSelect }: Props) {
               onClick={() => onSelect(e.id)}
               className="flex w-full items-center gap-2 rounded-md border border-border/60 bg-card p-2 text-left transition hover:border-primary/60 hover:bg-accent/30"
             >
-              <span className={`flex size-7 shrink-0 items-center justify-center rounded-md ${c.bgClass} ${c.fgClass}`}>
+              <span
+                className="flex size-7 shrink-0 items-center justify-center rounded-md text-white"
+                style={{ backgroundColor: c.colour }}
+              >
                 <Icon className="size-3.5" />
               </span>
               <span className="min-w-0 flex-1">
