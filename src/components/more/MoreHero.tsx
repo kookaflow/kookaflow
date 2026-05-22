@@ -1,15 +1,19 @@
 import logo from "@/assets/kookaflow-logo.png";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export function MoreHero() {
   return (
     <div
-      className="relative -mt-8 mb-6 flex flex-col items-center justify-center overflow-hidden rounded-b-3xl text-center text-white shadow-lg"
+      className="relative mb-6 flex flex-col items-center justify-center overflow-hidden rounded-b-3xl text-center text-white shadow-lg"
       style={{
         height: 160,
         background:
-          "linear-gradient(135deg, #0F172A 0%, #1E3A5F 45%, #F59E0B 100%)",
+          "linear-gradient(135deg, #1E2A6E 0%, #F59E0B 100%)",
       }}
     >
+      <div className="absolute top-3 right-3 z-20">
+        <ThemeToggle />
+      </div>
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-20"
@@ -21,10 +25,17 @@ export function MoreHero() {
       <img
         src={logo}
         alt="Kookaflow"
-        style={{ height: 60, width: "auto" }}
+        style={{ height: 52, width: "auto" }}
         className="relative z-10 object-contain drop-shadow"
       />
-      <p className="relative z-10 mt-2 px-4 text-sm font-medium text-white/95">
+      <p
+        className="relative z-10 mt-2 px-4 text-white/95"
+        style={{
+          fontSize: 14,
+          fontWeight: 400,
+          letterSpacing: "0.3px",
+        }}
+      >
         Find your flow, whatever your hours
       </p>
     </div>
