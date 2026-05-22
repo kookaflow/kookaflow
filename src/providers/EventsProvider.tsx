@@ -94,6 +94,7 @@ function draftToInput(draft: EventDraft) {
     notes: draft.notes ?? null,
     iconName: draft.iconName ?? null,
     iconColor: draft.iconColor ?? draft.iconGradient ?? null,
+    travelDurationMinutes: draft.travelDurationMinutes ?? null,
     splitFirstStart: shift?.split?.firstStart ?? null,
     splitFirstEnd: shift?.split?.firstEnd ?? null,
     splitBreakMinutes: shift?.split?.breakMinutes ?? null,
