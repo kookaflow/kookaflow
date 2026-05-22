@@ -74,6 +74,9 @@ function dtoToCalendarEvent(d: EventDTO): CalendarEvent {
 function draftToInput(draft: EventDraft) {
   const isWork = draft.category === "work";
   const shift = isWork ? draft.shift : undefined;
+  const travelDurationMinutes =
+    (draft as EventDraft & { travelDurationMinutes?: number }).travelDurationMinutes ??
+    (draft.category === "travel" ? 60 : null);
   // "custom" is not in the DB enum — persist as null shift_type, label goes in shift_role.
   const shiftTypeForDb =
     shift?.shiftType === "custom" ? null : (shift?.shiftType ?? null);
@@ -99,6 +102,7 @@ function draftToInput(draft: EventDraft) {
     splitBreakMinutes: shift?.split?.breakMinutes ?? null,
     splitSecondStart: shift?.split?.secondStart ?? null,
     splitSecondEnd: shift?.split?.secondEnd ?? null,
+    travelDurationMinutes,
     recurrencePattern: draft.recurrencePattern ?? null,
     recurrenceDays: draft.recurrenceDays ?? null,
     recurrenceEndDate: draft.recurrenceEndDate ?? null,
