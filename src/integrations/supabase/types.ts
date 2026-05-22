@@ -539,10 +539,13 @@ export type Database = {
           reminder_minutes_before: number
           reminders: Json
           shift_alert_sound: string
+          show_public_holidays: boolean
+          show_week_numbers: boolean
           sound_enabled: boolean
           sounds: Json
           theme: string
           theme_mode: string
+          time_format: string
           updated_at: string
           user_id: string
           week_starts_on: number
@@ -566,10 +569,13 @@ export type Database = {
           reminder_minutes_before?: number
           reminders?: Json
           shift_alert_sound?: string
+          show_public_holidays?: boolean
+          show_week_numbers?: boolean
           sound_enabled?: boolean
           sounds?: Json
           theme?: string
           theme_mode?: string
+          time_format?: string
           updated_at?: string
           user_id: string
           week_starts_on?: number
@@ -593,10 +599,13 @@ export type Database = {
           reminder_minutes_before?: number
           reminders?: Json
           shift_alert_sound?: string
+          show_public_holidays?: boolean
+          show_week_numbers?: boolean
           sound_enabled?: boolean
           sounds?: Json
           theme?: string
           theme_mode?: string
+          time_format?: string
           updated_at?: string
           user_id?: string
           week_starts_on?: number
