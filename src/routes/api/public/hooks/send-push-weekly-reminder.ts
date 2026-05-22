@@ -52,7 +52,7 @@ export const Route = createFileRoute(
 
           const { data: profile } = await supabase
             .from("profiles")
-            .select("timezone, push_weekly_reminder, push_notifications_enabled")
+            .select("timezone, full_name, push_weekly_reminder, push_notifications_enabled")
             .eq("id", p.user_id)
             .maybeSingle();
           if (!profile?.push_notifications_enabled || !profile?.push_weekly_reminder) {
@@ -98,14 +98,15 @@ export const Route = createFileRoute(
           const evs = (events ?? []) as EventRow[];
           const shifts = evs.filter((e) => e.category === "work").length;
           const score = computeBalanceScore(evs);
-          const content = `${shifts} shifts this week. Balance: ${score}/100. Stay well!`;
+          const firstName = (profile?.full_name ?? "").trim().split(/\s+/)[0] || "there";
+          const content = `📊 This week: ${shifts} shifts scheduled. Balance score: ${score}/100. Have a great week, ${firstName}! 🦅`;
 
           try {
             await sendOneSignalPush({
               externalUserIds: [p.user_id],
-              heading: "Kookaflow — Week Ahead",
+              heading: "Your Kookaflow Week Ahead 🦅",
               content,
-              url: appUrl(),
+              url: `${appUrl()}/dashboard`,
             });
             results.push({ user_id: p.user_id, status: "sent" });
           } catch (e: any) {
