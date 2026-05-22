@@ -15,12 +15,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  CATEGORIES,
-  CATEGORY_MAP,
-  SHIFT_STYLES,
-  type MockEvent,
-} from "./constants";
+import { type MockEvent } from "./constants";
+import { CATEGORY_LIST, getShiftConfig } from "@/lib/shiftConfig";
 import { Sparkles, TrendingUp, Moon, Lightbulb } from "lucide-react";
 
 interface Props {
@@ -57,11 +53,11 @@ export function WeekSummaryDialog({
       if (mins <= 0) continue;
       totals[e.category] = (totals[e.category] || 0) + mins / 60;
     }
-    return CATEGORIES.map((c) => ({
+    return CATEGORY_LIST.map((c) => ({
       id: c.id,
       name: c.label,
       value: +(totals[c.id] || 0).toFixed(1),
-      color: c.color,
+      color: c.colour,
     }));
   }, [weekEvents]);
 
@@ -125,9 +121,7 @@ export function WeekSummaryDialog({
               </h3>
               <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                 {dayTotals.map((d) => {
-                  const shiftStyle = d.shift?.shiftType
-                    ? SHIFT_STYLES[d.shift.shiftType]
-                    : null;
+                  const shiftStyle = getShiftConfig(d.shift?.shiftType);
                   return (
                     <li
                       key={+d.date}
@@ -144,9 +138,9 @@ export function WeekSummaryDialog({
                       {shiftStyle ? (
                         <span
                           className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
-                          style={{ backgroundColor: shiftStyle.color }}
+                          style={{ backgroundColor: shiftStyle.colour }}
                         >
-                          <shiftStyle.icon className="size-3" />
+                          <shiftStyle.Icon className="size-3" />
                           {shiftStyle.label}
                         </span>
                       ) : (
