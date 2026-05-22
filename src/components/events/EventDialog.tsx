@@ -1,16 +1,17 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EventForm } from "./EventForm";
 import { useEvents } from "@/providers/EventsProvider";
-import type { EventDraft } from "@/types/event";
+import type { CategoryId, EventDraft } from "@/types/event";
 
 interface Props {
   open: boolean;
   onOpenChange: (b: boolean) => void;
   eventId: string | null;
   defaultStart?: Date;
+  defaultCategory?: CategoryId;
 }
 
-export function EventDialog({ open, onOpenChange, eventId, defaultStart }: Props) {
+export function EventDialog({ open, onOpenChange, eventId, defaultStart, defaultCategory }: Props) {
   const { getEvent, createEvent, updateEvent, deleteEvent } = useEvents();
   const initial = eventId ? getEvent(eventId) : undefined;
 
@@ -36,6 +37,7 @@ export function EventDialog({ open, onOpenChange, eventId, defaultStart }: Props
         <EventForm
           initial={initial}
           defaultStart={defaultStart}
+          defaultCategory={defaultCategory}
           onSubmit={handleSubmit}
           onDelete={handleDelete}
           onCancel={() => onOpenChange(false)}
