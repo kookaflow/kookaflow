@@ -22,9 +22,8 @@ function hexAlpha(hex: string, alpha: number): string {
 }
 
 export function WellnessNudgeBanner({ events, anchor, onAction }: Props) {
-  const nudge = useCalendarNudges(events, anchor);
   const [dismissedTick, setDismissedTick] = useState(0);
-  void dismissedTick;
+  const nudge = useCalendarNudges(events, anchor, dismissedTick);
 
   if (!nudge) return null;
 
