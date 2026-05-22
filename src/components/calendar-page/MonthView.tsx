@@ -131,7 +131,8 @@ export function MonthView({
                     ev.stopPropagation();
                     onEventClick?.(e);
                   }}
-                  className="flex w-full items-center gap-1 truncate rounded-sm bg-muted/70 px-1 py-px text-[9px] font-medium text-muted-foreground hover:bg-muted"
+                  className="flex w-full items-center gap-1 truncate rounded-sm px-1 py-px text-[9px] font-medium text-white hover:brightness-110"
+                  style={{ backgroundColor: "#94A3B8" }}
                   title={`${e.title} (Google Calendar)`}
                 >
                   <svg viewBox="0 0 24 24" className="size-2.5 shrink-0" fill="currentColor" aria-hidden="true">

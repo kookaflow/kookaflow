@@ -19,6 +19,8 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
+import { Route as AuthGoogleStartRouteImport } from './routes/auth.google.start'
+import { Route as AuthGoogleCallbackRouteImport } from './routes/auth.google.callback'
 import { Route as ApiPublicHooksSendWeeklyReminderRouteImport } from './routes/api/public/hooks/send-weekly-reminder'
 import { Route as ApiPublicHooksSendPushWeeklyReminderRouteImport } from './routes/api/public/hooks/send-push-weekly-reminder'
 import { Route as ApiPublicHooksSendPushNotificationRouteImport } from './routes/api/public/hooks/send-push-notification'
@@ -26,8 +28,6 @@ import { Route as ApiPublicHooksSendPushDailyReminderRouteImport } from './route
 import { Route as ApiPublicHooksSendDailyReminderRouteImport } from './routes/api/public/hooks/send-daily-reminder'
 import { Route as ApiPublicHooksDispatchShiftAlertsRouteImport } from './routes/api/public/hooks/dispatch-shift-alerts'
 import { Route as ApiPublicGoogleSyncAllRouteImport } from './routes/api/public/google/sync-all'
-import { Route as ApiPublicGoogleOauthStartRouteImport } from './routes/api/public/google/oauth-start'
-import { Route as ApiPublicGoogleOauthCallbackRouteImport } from './routes/api/public/google/oauth-callback'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -78,6 +78,16 @@ const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthGoogleStartRoute = AuthGoogleStartRouteImport.update({
+  id: '/auth/google/start',
+  path: '/auth/google/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
+  id: '/auth/google/callback',
+  path: '/auth/google/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksSendWeeklyReminderRoute =
   ApiPublicHooksSendWeeklyReminderRouteImport.update({
     id: '/api/public/hooks/send-weekly-reminder',
@@ -119,18 +129,6 @@ const ApiPublicGoogleSyncAllRoute = ApiPublicGoogleSyncAllRouteImport.update({
   path: '/api/public/google/sync-all',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicGoogleOauthStartRoute =
-  ApiPublicGoogleOauthStartRouteImport.update({
-    id: '/api/public/google/oauth-start',
-    path: '/api/public/google/oauth-start',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicGoogleOauthCallbackRoute =
-  ApiPublicGoogleOauthCallbackRouteImport.update({
-    id: '/api/public/google/oauth-callback',
-    path: '/api/public/google/oauth-callback',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -142,8 +140,8 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shifts': typeof AuthenticatedShiftsRoute
-  '/api/public/google/oauth-callback': typeof ApiPublicGoogleOauthCallbackRoute
-  '/api/public/google/oauth-start': typeof ApiPublicGoogleOauthStartRoute
+  '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/auth/google/start': typeof AuthGoogleStartRoute
   '/api/public/google/sync-all': typeof ApiPublicGoogleSyncAllRoute
   '/api/public/hooks/dispatch-shift-alerts': typeof ApiPublicHooksDispatchShiftAlertsRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
@@ -162,8 +160,8 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shifts': typeof AuthenticatedShiftsRoute
-  '/api/public/google/oauth-callback': typeof ApiPublicGoogleOauthCallbackRoute
-  '/api/public/google/oauth-start': typeof ApiPublicGoogleOauthStartRoute
+  '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/auth/google/start': typeof AuthGoogleStartRoute
   '/api/public/google/sync-all': typeof ApiPublicGoogleSyncAllRoute
   '/api/public/hooks/dispatch-shift-alerts': typeof ApiPublicHooksDispatchShiftAlertsRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
@@ -184,8 +182,8 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/shifts': typeof AuthenticatedShiftsRoute
-  '/api/public/google/oauth-callback': typeof ApiPublicGoogleOauthCallbackRoute
-  '/api/public/google/oauth-start': typeof ApiPublicGoogleOauthStartRoute
+  '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/auth/google/start': typeof AuthGoogleStartRoute
   '/api/public/google/sync-all': typeof ApiPublicGoogleSyncAllRoute
   '/api/public/hooks/dispatch-shift-alerts': typeof ApiPublicHooksDispatchShiftAlertsRoute
   '/api/public/hooks/send-daily-reminder': typeof ApiPublicHooksSendDailyReminderRoute
@@ -206,8 +204,8 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/shifts'
-    | '/api/public/google/oauth-callback'
-    | '/api/public/google/oauth-start'
+    | '/auth/google/callback'
+    | '/auth/google/start'
     | '/api/public/google/sync-all'
     | '/api/public/hooks/dispatch-shift-alerts'
     | '/api/public/hooks/send-daily-reminder'
@@ -226,8 +224,8 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/shifts'
-    | '/api/public/google/oauth-callback'
-    | '/api/public/google/oauth-start'
+    | '/auth/google/callback'
+    | '/auth/google/start'
     | '/api/public/google/sync-all'
     | '/api/public/hooks/dispatch-shift-alerts'
     | '/api/public/hooks/send-daily-reminder'
@@ -247,8 +245,8 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/_authenticated/settings'
     | '/_authenticated/shifts'
-    | '/api/public/google/oauth-callback'
-    | '/api/public/google/oauth-start'
+    | '/auth/google/callback'
+    | '/auth/google/start'
     | '/api/public/google/sync-all'
     | '/api/public/hooks/dispatch-shift-alerts'
     | '/api/public/hooks/send-daily-reminder'
@@ -264,8 +262,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
-  ApiPublicGoogleOauthCallbackRoute: typeof ApiPublicGoogleOauthCallbackRoute
-  ApiPublicGoogleOauthStartRoute: typeof ApiPublicGoogleOauthStartRoute
+  AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute
+  AuthGoogleStartRoute: typeof AuthGoogleStartRoute
   ApiPublicGoogleSyncAllRoute: typeof ApiPublicGoogleSyncAllRoute
   ApiPublicHooksDispatchShiftAlertsRoute: typeof ApiPublicHooksDispatchShiftAlertsRoute
   ApiPublicHooksSendDailyReminderRoute: typeof ApiPublicHooksSendDailyReminderRoute
@@ -347,6 +345,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCalendarRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/auth/google/start': {
+      id: '/auth/google/start'
+      path: '/auth/google/start'
+      fullPath: '/auth/google/start'
+      preLoaderRoute: typeof AuthGoogleStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/google/callback': {
+      id: '/auth/google/callback'
+      path: '/auth/google/callback'
+      fullPath: '/auth/google/callback'
+      preLoaderRoute: typeof AuthGoogleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/send-weekly-reminder': {
       id: '/api/public/hooks/send-weekly-reminder'
       path: '/api/public/hooks/send-weekly-reminder'
@@ -396,20 +408,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicGoogleSyncAllRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/google/oauth-start': {
-      id: '/api/public/google/oauth-start'
-      path: '/api/public/google/oauth-start'
-      fullPath: '/api/public/google/oauth-start'
-      preLoaderRoute: typeof ApiPublicGoogleOauthStartRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/google/oauth-callback': {
-      id: '/api/public/google/oauth-callback'
-      path: '/api/public/google/oauth-callback'
-      fullPath: '/api/public/google/oauth-callback'
-      preLoaderRoute: typeof ApiPublicGoogleOauthCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -439,8 +437,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
-  ApiPublicGoogleOauthCallbackRoute: ApiPublicGoogleOauthCallbackRoute,
-  ApiPublicGoogleOauthStartRoute: ApiPublicGoogleOauthStartRoute,
+  AuthGoogleCallbackRoute: AuthGoogleCallbackRoute,
+  AuthGoogleStartRoute: AuthGoogleStartRoute,
   ApiPublicGoogleSyncAllRoute: ApiPublicGoogleSyncAllRoute,
   ApiPublicHooksDispatchShiftAlertsRoute:
     ApiPublicHooksDispatchShiftAlertsRoute,
@@ -456,13 +454,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -5,7 +5,7 @@ import {
   signState,
 } from "@/lib/google-calendar.server";
 
-export const Route = createFileRoute("/api/public/google/oauth-start")({
+export const Route = createFileRoute("/auth/google/start")({
   server: {
     handlers: {
       GET: async ({ request }) => {
@@ -20,7 +20,6 @@ export const Route = createFileRoute("/api/public/google/oauth-start")({
           });
         }
 
-        // Validate the user's access token against Supabase Auth REST API.
         const supabaseUrl = process.env.SUPABASE_URL!;
         const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
         const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
@@ -35,11 +34,10 @@ export const Route = createFileRoute("/api/public/google/oauth-start")({
           });
         }
         const user = (await userRes.json()) as { id?: string };
-        if (!user.id) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        if (!user.id) return new Response("Unauthorized", { status: 401 });
 
-        const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+        const clientId =
+          process.env.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_OAUTH_CLIENT_ID;
         if (!clientId) {
           return new Response("Google OAuth not configured", { status: 500 });
         }

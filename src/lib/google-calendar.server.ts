@@ -5,7 +5,7 @@ const SIGNING_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY || "dev-only-fallback-key";
 
 export const GOOGLE_SCOPES = [
-  "https://www.googleapis.com/auth/calendar",
+  "https://www.googleapis.com/auth/calendar.readonly",
   "https://www.googleapis.com/auth/userinfo.email",
   "openid",
 ].join(" ");
@@ -43,7 +43,7 @@ export function verifyState(state: string): string | null {
 
 export function getRedirectUri(request: Request): string {
   const url = new URL(request.url);
-  return `${url.origin}/api/public/google/oauth-callback`;
+  return `${url.origin}/auth/google/callback`;
 }
 
 export async function exchangeCodeForTokens(
@@ -56,8 +56,10 @@ export async function exchangeCodeForTokens(
   scope: string;
   id_token?: string;
 }> {
-  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const clientId =
+    process.env.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const clientSecret =
+    process.env.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_OAUTH_CLIENT_SECRET;
   if (!clientId || !clientSecret)
     throw new Error("Google OAuth credentials not configured");
 
@@ -82,8 +84,10 @@ export async function exchangeCodeForTokens(
 export async function refreshAccessToken(
   refreshToken: string,
 ): Promise<{ access_token: string; expires_in: number }> {
-  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const clientId =
+    process.env.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const clientSecret =
+    process.env.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_OAUTH_CLIENT_SECRET;
   if (!clientId || !clientSecret)
     throw new Error("Google OAuth credentials not configured");
 

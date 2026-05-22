@@ -20,7 +20,7 @@ function htmlResponse(title: string, body: string, status = 200) {
   );
 }
 
-export const Route = createFileRoute("/api/public/google/oauth-callback")({
+export const Route = createFileRoute("/auth/google/callback")({
   server: {
     handlers: {
       GET: async ({ request }) => {
@@ -73,7 +73,6 @@ export const Route = createFileRoute("/api/public/google/oauth-callback")({
             { onConflict: "user_id" },
           );
 
-          // Kick off an initial sync (best-effort)
           syncUserCalendar(userId).catch((e) =>
             console.warn("initial google sync failed", e),
           );
