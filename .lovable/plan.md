@@ -1,57 +1,107 @@
-# Quick-Add Panel: stamping is broken by the click-outside catcher
+# Custom Shift Templates — Implementation Plan
 
-## What I found (no changes made)
+Goal: let users create, save and reuse their own shift types (à la MyShift Planner) that flow into the quick-add panel, the Add Event modal's shift selector, earnings, and the dashboard category totals.
 
-### 1. The panel IS wired into the calendar page
-- `src/routes/_authenticated.calendar.tsx` wraps the page in `<StampProvider>` and renders both `<QuickAddFab />` and `<QuickAddPanel />` at the bottom.
-- `MonthView`'s `onSelect={handleDaySelect}` correctly branches: if a stamp is selected, it calls `applyStamp(d)` instead of just changing the focused date.
-- `StampProvider.applyStamp` does call `createEvent` / `updateEvent` / `deleteEvent` on Supabase via `useEvents()`. The save path itself is intact.
+## Current State
 
-### 2. State sharing is correct
-- Shared via React context: `StampProvider` exposes `selected`, `setSelected`, `panelOpen`, `setPanelOpen`, and `applyStamp`.
-- `QuickAddPanel` writes `selected` when a tile is tapped (`onPick={setSelected}`).
-- `CalendarPageInner` reads `selected` and calls `applyStamp(d)` from the same context. So the two components ARE connected.
+- `shift_templates` table already exists but is minimal: `name, colour, icon_name, default_start, default_end, category (working|leave|non_working), base_type, sort_order`.
+- `/shifts` route exists (`src/routes/_authenticated.shifts.tsx`) with grouped sections and `ShiftEditorSheet` modal.
+- `ShiftTemplatesProvider` already wires CRUD via server fns in `src/lib/shift-templates.functions.ts`.
+- Quick-add panel (`src/components/calendar/QuickAddPanel.tsx`) currently shows only built-in stamps from `src/lib/stamps.ts`.
+- Add Event modal (`src/components/events/EventForm.tsx` + `ShiftFieldsGroup`) has hard-coded shift type chips.
 
-### 3. The actual bug — invisible overlay swallows every calendar tap
-In `src/components/calendar/QuickAddPanel.tsx`, when the panel is open it renders a transparent click-catcher:
+## A. Database — extend `shift_templates`
 
-```tsx
-<button
-  onClick={() => { setPanelOpen(false); setSelected(null); }}
-  className="fixed inset-x-0 top-0 bottom-[34vh] z-30 cursor-default bg-transparent"
-/>
-```
+New migration adds the missing columns:
 
-This `<button>` is `position: fixed`, covers the entire viewport above the panel, and sits at `z-30`. The calendar grid has no explicit z-index, so it renders below it. Result:
+- `show_as text` (≤6 chars, calendar badge label)
+- `is_all_day boolean default false`
+- `is_split_shift boolean default false`
+- `is_24_hour boolean default false`
+- `total_hours numeric(5,2)` (server-computed on insert/update via trigger)
+- `unpaid_break_minutes int default 0`
+- `paid_break_minutes int default 0`
+- `split_start_2 time`, `split_end_2 time`
+- `is_active boolean default true`
+- Length check on `name` (≤20) and `show_as` (≤6)
 
-- User taps a shift tile → `selected` is set correctly.
-- User taps a date on the calendar → the click hits the invisible catcher first, which **closes the panel and clears `selected`**. `MonthView`'s day button never receives the click, so `applyStamp` never runs and nothing is saved.
+Add a trigger `compute_shift_template_hours()` that recalculates `total_hours` from the time fields, split times, `is_24_hour`, and `unpaid_break_minutes` so the value is always authoritative.
 
-That's why "nothing happens" — the event is silently consumed before it can reach the day cell. No console errors are produced (logs are clean) because the handler succeeds at what it's coded to do; it just isn't what the user expects.
+RLS is already correct (`user_id = auth.uid()` on all four verbs). No changes needed.
 
-### 4. Secondary observations (not the primary bug, but worth noting)
-- The same catcher would also block `TimeGrid` taps in week/day view.
-- Once the catcher is removed/fixed, the existing `handleDaySelect` → `applyStamp` flow should work end-to-end. The `applyStamp` logic itself handles shifts, leave, icons, splits, and travel correctly.
-- `MonthView` day buttons have `hover:-translate-y-0.5` — fine, but worth verifying tap target still works on mobile after the fix.
+The existing `category` column currently uses `working|leave|non_working`. We keep that as the *grouping* on the /shifts screen and add a new `life_category text` column constrained to the 8 app categories (`work|rest|wellness|exercise|social|family|personal|travel`) so dashboard totals can attribute hours correctly. Default `work`.
 
-## Fix plan (for approval, no code yet)
+## B. Server / Provider layer
 
-1. Remove the full-viewport click-catcher in `QuickAddPanel.tsx`. Replace its "tap outside to close" behavior with one of:
-   - A small `Esc` key handler + an explicit close button (already present), OR
-   - A catcher that only covers the area **above** the calendar header (i.e. don't overlay the calendar grid), OR
-   - Simplest: just drop the catcher entirely — the panel already has an `X` button and the FAB toggles it.
-   
-   Recommended: drop the catcher. Stamping mode is meant to stay active across many taps, so auto-close-on-outside-tap actively fights the UX.
+- Extend `ShiftTemplateDTO`, Zod schema, and `rowToDTO` in `src/lib/shift-templates.functions.ts` with the new fields.
+- Update `ShiftTemplatesProvider`'s `toInput` mapping accordingly.
+- Add a helper `templateToStamp(template)` in `src/lib/stamps.ts` that adapts a `ShiftTemplateDTO` into the `StampDef` shape the quick-add panel and stamper already consume.
 
-2. Add a subtle visual cue on the calendar when a stamp is active (e.g. cursor change or border tint on day cells) so the user knows tapping a date will stamp.
+## C. /shifts screen polish
 
-3. Verify in both `MonthView` and `TimeGrid` that day taps reach `handleDaySelect` while the panel is open.
+Already grouped; refine to match spec:
 
-4. Smoke-test: open panel → pick "Morning" → tap three dates → confirm three events appear and persist after reload.
+- Add a top "MY CUSTOM SHIFTS" group above WORKING / LEAVE / NON-WORKING.
+- Each row shows: coloured icon tile, bold name, subtitle `SHOWAS · HH:mm–HH:mm · Xh Ym`, chevron.
+- Tap row → opens editor; swipe-left on custom rows → confirm-delete (mobile gesture via `framer-motion` drag or a long-press menu — we'll use a trailing delete button revealed on swipe, plus the existing trash button as a fallback).
+- `+` button in header opens the editor for a new template.
+- Entrypoints: existing back-to-calendar link, plus a new "Manage Shift Templates" row in Settings and a gear icon inside the quick-add panel header.
 
-## Files that would change
+## D. Create / Edit modal — rewrite `ShiftEditorSheet`
 
-- `src/components/calendar/QuickAddPanel.tsx` (remove catcher)
-- Optionally `src/components/calendar-page/MonthView.tsx` (active-stamp visual hint)
+Single sheet/dialog with fields in this order, each wired to local state with live validation:
 
-No DB, no schema, no auth changes.
+1. Shift name (max 20, counter)
+2. Show-as (max 6, counter, helper text, live badge preview)
+3. Colour — reuse the 16-swatch picker
+4. Icon — reuse `IconPicker` grid (30 Lucide icons)
+5. Type — category selector reusing the same icon-based dropdown built for the Add Event modal
+6. All-day toggle
+7. Start/End time (hidden when all-day or 24h)
+8. Is split shift toggle → reveals second start/end
+9. Is 24-hour toggle → forces 24h, hides times
+10. Unpaid break (minutes)
+11. Paid break (minutes)
+12. Live summary block: Shift duration / Paid time / Unpaid break, recomputed via a `useShiftMath` hook.
+
+Persistent badge preview pinned near the top so colour/icon/show-as changes are visible while editing lower fields. Submit button: full-width gradient "Save Shift Template"; Cancel link below.
+
+## E. Integration points
+
+1. **Quick-add panel (`QuickAddPanel.tsx`)**
+   - Pull `useShiftTemplates()`.
+   - On the Shifts tab, render user templates first (via `templateToStamp`), then existing `SHIFT_STAMPS`.
+   - Add a small gear icon in the panel header linking to `/shifts`.
+   - Tapping a template tile selects it for stamping just like a built-in stamp.
+
+2. **Stamping (`StampProvider`)**
+   - When the selected stamp originates from a template, build the event draft from template fields: times, category (`life_category`), icon, colour, split fields, all-day, `paid_break_minutes` → ignored in duration but stored in notes/metadata if needed.
+
+3. **Add Event modal (`EventForm` / `ShiftFieldsGroup`)**
+   - Above the built-in shift-type chips, render a "Your shifts" row of custom templates.
+   - Selecting one pre-fills: title (name), start/end (today + template times), category, icon, colour, split fields, is-all-day.
+
+4. **Earnings**
+   - Add `paidHoursForEvent(event, template?)` helper. For template-backed events: `paid_hours = total_hours − unpaid_break_minutes/60`. Multiply by `user_preferences.hourly_rate`.
+   - Persist `unpaid_break_minutes` on the event row when created from a template so earnings remain accurate after the template changes (new nullable column on `events`: `unpaid_break_minutes int`).
+
+5. **Dashboard**
+   - Category metrics already key off `event.category`. Ensuring stamping writes the template's `life_category` is enough; no metric code changes.
+
+## F. Implementation order
+
+1. Migration: extend `shift_templates` (+ `events.unpaid_break_minutes`) and add hours trigger.
+2. Update DTO / server fns / provider.
+3. Rebuild `ShiftEditorSheet` with new fields + live preview + summary.
+4. Polish `/shifts` screen (MY CUSTOM group, swipe-delete, gear entrypoints).
+5. Wire templates into `QuickAddPanel` + `StampProvider` (stamping path).
+6. Wire templates into `EventForm` shift selector (manual create path).
+7. Update earnings helper + dashboard verification.
+8. Add Settings "Manage Shift Templates" link.
+
+## Technical notes
+
+- All new code stays inside RLS-protected server fns; no admin client.
+- `total_hours` is derived server-side via trigger so the client can't desync it.
+- `templateToStamp` keeps the existing stamping pipeline untouched — only the source list grows.
+- Icon/colour pickers and category selector are reused, not duplicated.
