@@ -52,9 +52,13 @@ export const Route = createFileRoute(
 
           const { data: profile } = await supabase
             .from("profiles")
-            .select("timezone")
+            .select("timezone, push_weekly_reminder, push_notifications_enabled")
             .eq("id", p.user_id)
             .maybeSingle();
+          if (!profile?.push_notifications_enabled || !profile?.push_weekly_reminder) {
+            results.push({ user_id: p.user_id, status: "push_pref_off" });
+            continue;
+          }
           const tz = profile?.timezone || "UTC";
           const zoned = getZonedNow(tz);
           if (zoned.weekday !== p.weekly_reminder_day) {
