@@ -8,7 +8,7 @@ export function MoreHero() {
       style={{
         height: 160,
         background:
-          "linear-gradient(135deg, #1E2A6E 0%, #F59E0B 100%)",
+          "radial-gradient(ellipse at 80% 20%, #ffc338 0%, #fb862a 25%, #7e294d 60%, #251074 100%)",
       }}
     >
       <div className="absolute top-3 right-3 z-20">

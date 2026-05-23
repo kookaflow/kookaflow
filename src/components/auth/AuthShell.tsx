@@ -15,7 +15,7 @@ export function AuthShell({
       className="relative flex min-h-screen flex-col overflow-hidden"
       style={{
         background:
-          "linear-gradient(160deg, var(--auth-gradient-from) 0%, var(--auth-gradient-to) 100%)",
+          "radial-gradient(ellipse at 80% 20%, #ffc338 0%, #fb862a 25%, #7e294d 60%, #251074 100%)",
       }}
     >
       {/* Header (~40vh) */}
