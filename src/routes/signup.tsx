@@ -48,8 +48,8 @@ function SignupPage() {
 
   return (
     <AuthShell
-      tagline={<>Find your flow, whatever your hours <span aria-hidden>✨</span></>}
-      subtitle="Join thousands of shift workers managing life better"
+      tagline="Find your flow, whatever your hours"
+      subtitle="Create your account to get started"
     >
       <form onSubmit={submit} className="space-y-4">
         <div className="auth-field-in" style={{ animationDelay: "0ms" }}>
