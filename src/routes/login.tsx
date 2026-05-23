@@ -47,8 +47,8 @@ function LoginPage() {
 
   return (
     <AuthShell
-      tagline={<>Welcome back <span aria-hidden>👋</span></>}
-      subtitle="Find your flow, whatever your hours"
+      tagline="Find your flow, whatever your hours"
+      subtitle="Welcome back — sign in to continue"
     >
       <form onSubmit={submit} className="space-y-4">
         <div className="auth-field-in" style={{ animationDelay: "0ms" }}>
