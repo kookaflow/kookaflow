@@ -19,6 +19,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as EulaRouteImport } from './routes/eula'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProSuccessRouteImport } from './routes/pro.success'
 import { Route as AuthenticatedShiftsRouteImport } from './routes/_authenticated.shifts'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
@@ -83,6 +84,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProSuccessRoute = ProSuccessRouteImport.update({
+  id: '/pro/success',
+  path: '/pro/success',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedShiftsRoute = AuthenticatedShiftsRouteImport.update({
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shifts': typeof AuthenticatedShiftsRoute
+  '/pro/success': typeof ProSuccessRoute
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
   '/auth/google/start': typeof AuthGoogleStartRoute
   '/api/public/google/sync-all': typeof ApiPublicGoogleSyncAllRoute
@@ -215,6 +222,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shifts': typeof AuthenticatedShiftsRoute
+  '/pro/success': typeof ProSuccessRoute
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
   '/auth/google/start': typeof AuthGoogleStartRoute
   '/api/public/google/sync-all': typeof ApiPublicGoogleSyncAllRoute
@@ -244,6 +252,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/shifts': typeof AuthenticatedShiftsRoute
+  '/pro/success': typeof ProSuccessRoute
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
   '/auth/google/start': typeof AuthGoogleStartRoute
   '/api/public/google/sync-all': typeof ApiPublicGoogleSyncAllRoute
@@ -273,6 +282,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/shifts'
+    | '/pro/success'
     | '/auth/google/callback'
     | '/auth/google/start'
     | '/api/public/google/sync-all'
@@ -300,6 +310,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/shifts'
+    | '/pro/success'
     | '/auth/google/callback'
     | '/auth/google/start'
     | '/api/public/google/sync-all'
@@ -328,6 +339,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/_authenticated/settings'
     | '/_authenticated/shifts'
+    | '/pro/success'
     | '/auth/google/callback'
     | '/auth/google/start'
     | '/api/public/google/sync-all'
@@ -351,6 +363,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
+  ProSuccessRoute: typeof ProSuccessRoute
   AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute
   AuthGoogleStartRoute: typeof AuthGoogleStartRoute
   ApiPublicGoogleSyncAllRoute: typeof ApiPublicGoogleSyncAllRoute
@@ -433,6 +446,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pro/success': {
+      id: '/pro/success'
+      path: '/pro/success'
+      fullPath: '/pro/success'
+      preLoaderRoute: typeof ProSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/shifts': {
@@ -583,6 +603,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
+  ProSuccessRoute: ProSuccessRoute,
   AuthGoogleCallbackRoute: AuthGoogleCallbackRoute,
   AuthGoogleStartRoute: AuthGoogleStartRoute,
   ApiPublicGoogleSyncAllRoute: ApiPublicGoogleSyncAllRoute,
