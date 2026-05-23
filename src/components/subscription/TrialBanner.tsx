@@ -28,13 +28,13 @@ export function TrialBanner() {
   return (
     <>
       <div
-        className={`flex items-center justify-between gap-3 border-b px-4 py-2 text-sm ${
-          expired
-            ? "border-destructive/40 bg-destructive/10 text-destructive-foreground"
-            : "border-border bg-primary/10 text-foreground"
-        }`}
-        role="status"
-      >
+      className={`flex items-center justify-between gap-3 border-b px-4 py-2 text-sm ${
+        expired
+          ? "border-red-700 bg-[#DC2626] text-white"
+          : "border-border bg-primary/10 text-foreground"
+      }`}
+      role="status"
+    >
         <div className="flex min-w-0 items-center gap-2">
           {expired ? <Clock className="h-4 w-4 shrink-0" /> : <Sparkles className="h-4 w-4 shrink-0 text-primary" />}
           <span className="truncate">
@@ -46,10 +46,15 @@ export function TrialBanner() {
           </span>
         </div>
         <div className="flex items-center gap-1">
-          <Button size="sm" variant={expired ? "destructive" : "default"} onClick={() => setPaywallOpen(true)}>
+          <Button
+            size="sm"
+            variant={expired ? "outline" : "default"}
+            className={expired ? "border-white bg-white text-[#DC2626] hover:bg-white/90 hover:text-[#DC2626]" : ""}
+            onClick={() => setPaywallOpen(true)}
+          >
             Upgrade
           </Button>
-          <Button asChild size="sm" variant="ghost">
+          <Button asChild size="sm" variant="ghost" className={expired ? "text-white underline hover:bg-white/10 hover:text-white" : ""}>
             <Link to="/pricing">Compare plans</Link>
           </Button>
           {!expired && (
