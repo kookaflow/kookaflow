@@ -8,6 +8,15 @@ import {
   verifyState,
 } from "@/lib/google-calendar.server";
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function htmlResponse(title: string, body: string, status = 200) {
   return new Response(
     `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
@@ -32,7 +41,7 @@ export const Route = createFileRoute("/auth/google/callback")({
         if (error) {
           return htmlResponse(
             "Connection cancelled",
-            `<h1>Connection cancelled</h1><p>${error}</p>`,
+            `<h1>Connection cancelled</h1><p>${escapeHtml(error)}</p>`,
             400,
           );
         }
@@ -79,13 +88,13 @@ export const Route = createFileRoute("/auth/google/callback")({
 
           return htmlResponse(
             "Connected!",
-            `<h1>Google Calendar connected</h1><p>${email ?? ""}</p><p>Returning to Settings…</p>`,
+            `<h1>Google Calendar connected</h1><p>${escapeHtml(email ?? "")}</p><p>Returning to Settings…</p>`,
           );
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
           return htmlResponse(
             "Connection failed",
-            `<h1>Connection failed</h1><p>${msg}</p>`,
+            `<h1>Connection failed</h1><p>${escapeHtml(msg)}</p>`,
             500,
           );
         }
