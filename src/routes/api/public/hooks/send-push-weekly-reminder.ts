@@ -19,10 +19,8 @@ export const Route = createFileRoute(
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey");
-        const expected =
-          process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY;
-        if (!expected || apikey !== expected) {
+        const cronSecret = process.env.CRON_SECRET;
+        if (!cronSecret || request.headers.get("x-cron-secret") !== cronSecret) {
           return new Response("Unauthorized", { status: 401 });
         }
 

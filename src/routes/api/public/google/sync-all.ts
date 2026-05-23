@@ -5,7 +5,11 @@ import { syncUserCalendar } from "@/lib/google-calendar.server";
 export const Route = createFileRoute("/api/public/google/sync-all")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const cronSecret = process.env.CRON_SECRET;
+        if (!cronSecret || request.headers.get("x-cron-secret") !== cronSecret) {
+          return new Response("Unauthorized", { status: 401 });
+        }
         const { data: conns } = await supabaseAdmin
           .from("google_calendar_connections")
           .select("user_id");
