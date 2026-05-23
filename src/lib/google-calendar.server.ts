@@ -1,8 +1,17 @@
 import crypto from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const SIGNING_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || "dev-only-fallback-key";
+function getSigningKey(): string {
+  const key =
+    process.env.GOOGLE_OAUTH_STATE_SECRET ??
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) {
+    throw new Error(
+      "OAuth state signing secret is not configured (set GOOGLE_OAUTH_STATE_SECRET or SUPABASE_SERVICE_ROLE_KEY)",
+    );
+  }
+  return key;
+}
 
 export const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
@@ -14,7 +23,7 @@ export const GOOGLE_SCOPES = [
 export function signState(userId: string): string {
   const payload = `${userId}.${Date.now()}`;
   const sig = crypto
-    .createHmac("sha256", SIGNING_KEY)
+    .createHmac("sha256", getSigningKey())
     .update(payload)
     .digest("hex");
   return Buffer.from(`${payload}.${sig}`).toString("base64url");
@@ -26,7 +35,7 @@ export function verifyState(state: string): string | null {
     const [userId, ts, sig] = decoded.split(".");
     if (!userId || !ts || !sig) return null;
     const expected = crypto
-      .createHmac("sha256", SIGNING_KEY)
+      .createHmac("sha256", getSigningKey())
       .update(`${userId}.${ts}`)
       .digest("hex");
     if (
