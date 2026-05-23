@@ -6,7 +6,32 @@ import {
   syncUserCalendar,
   pushEventToGoogle as pushEventToGoogleServer,
   deleteEventFromGoogle as deleteEventFromGoogleServer,
+  GOOGLE_SCOPES,
+  signState,
 } from "./google-calendar.server";
+
+/**
+ * Server-side subscription gate. Throws if the user does not have pro-level access.
+ * Mirrors the client-side `hasProAccess` derivation in useSubscription.
+ */
+async function requireProAccess(userId: string): Promise<void> {
+  const { data: profile } = await supabaseAdmin
+    .from("profiles")
+    .select("subscription_tier, subscription_status, trial_ends_at")
+    .eq("id", userId)
+    .maybeSingle();
+  const tier = profile?.subscription_tier ?? "trial";
+  const status = profile?.subscription_status ?? null;
+  const trialEndsAt = profile?.trial_ends_at ? new Date(profile.trial_ends_at).getTime() : 0;
+  const now = Date.now();
+  const trialActive = tier === "trial" && trialEndsAt > now;
+  const proActive =
+    (tier === "pro" && (status === "active" || status === "trialling")) ||
+    tier === "lifetime";
+  if (!trialActive && !proActive) {
+    throw new Error("Subscription required: this feature requires Pro or an active trial");
+  }
+}
 
 export interface GoogleConnectionStatus {
   connected: boolean;
@@ -63,6 +88,7 @@ export const setTwoWaySync = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ enabled: z.boolean() }).parse(input))
   .handler(async ({ context, data }) => {
     const { userId } = context;
+    await requireProAccess(userId);
     await supabaseAdmin
       .from("google_calendar_connections")
       .update({ two_way_sync_enabled: data.enabled })
@@ -74,6 +100,7 @@ export const triggerGoogleSync = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId } = context;
+    await requireProAccess(userId);
     try {
       const result = await syncUserCalendar(userId);
       return { ok: true, ...result };
@@ -140,6 +167,7 @@ export const pushShiftToGoogle = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ eventId: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     const { userId } = context;
+    await requireProAccess(userId);
     try {
       await pushEventToGoogleServer(userId, data.eventId);
       return { ok: true };
@@ -156,10 +184,45 @@ export const deleteShiftFromGoogle = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { userId } = context;
+    await requireProAccess(userId);
     try {
       await deleteEventFromGoogleServer(userId, data.googleEventId);
       return { ok: true };
     } catch {
       return { ok: false };
     }
+  });
+
+/**
+ * Build a Google OAuth authorize URL for the signed-in user.
+ * Returns the URL so the client can navigate to it via window.location.href.
+ * This replaces the prior pattern of passing the user's access_token in the URL
+ * to /auth/google/start, which leaked tokens into logs/history/Referer.
+ */
+export const getGoogleAuthUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    await requireProAccess(userId);
+    const clientId =
+      process.env.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_OAUTH_CLIENT_ID;
+    if (!clientId) {
+      throw new Error("Google OAuth not configured");
+    }
+    // Build redirect_uri from the request host so it matches deployment env.
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const req = getRequest();
+    const origin = new URL(req.url).origin;
+    const redirectUri = `${origin}/auth/google/callback`;
+    const state = signState(userId);
+    const authorize = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    authorize.searchParams.set("client_id", clientId);
+    authorize.searchParams.set("redirect_uri", redirectUri);
+    authorize.searchParams.set("response_type", "code");
+    authorize.searchParams.set("scope", GOOGLE_SCOPES);
+    authorize.searchParams.set("access_type", "offline");
+    authorize.searchParams.set("prompt", "consent");
+    authorize.searchParams.set("include_granted_scopes", "true");
+    authorize.searchParams.set("state", state);
+    return { url: authorize.toString() };
   });
