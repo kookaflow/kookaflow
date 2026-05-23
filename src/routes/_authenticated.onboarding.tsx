@@ -76,7 +76,7 @@ function OnboardingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <div
-        className="flex flex-col items-center gap-3 px-6 py-10 text-center text-white"
+        className="relative flex flex-col items-center gap-3 px-6 pb-16 pt-10 text-center text-white"
         style={{ background: "var(--brand-gradient)" }}
       >
         <img src={logo} alt="Kookaflow" style={{ height: 80, width: "auto" }} className="object-contain" />
@@ -91,6 +91,17 @@ function OnboardingPage() {
             />
           ))}
         </div>
+        <svg
+          aria-hidden
+          viewBox="0 0 1440 80"
+          preserveAspectRatio="none"
+          className="absolute -bottom-px left-0 h-[60px] w-full text-background"
+        >
+          <path
+            d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z"
+            fill="currentColor"
+          />
+        </svg>
       </div>
 
       <div className="flex flex-1 items-start justify-center px-4 py-8">
