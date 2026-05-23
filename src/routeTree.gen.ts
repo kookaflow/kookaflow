@@ -14,6 +14,7 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as EulaRouteImport } from './routes/eula'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
@@ -58,6 +59,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -170,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/eula': typeof EulaRoute
   '/login': typeof LoginRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -196,6 +203,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/eula': typeof EulaRoute
   '/login': typeof LoginRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -224,6 +232,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/eula': typeof EulaRoute
   '/login': typeof LoginRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -252,6 +261,7 @@ export interface FileRouteTypes {
     | '/'
     | '/eula'
     | '/login'
+    | '/pricing'
     | '/privacy'
     | '/reset-password'
     | '/signup'
@@ -278,6 +288,7 @@ export interface FileRouteTypes {
     | '/'
     | '/eula'
     | '/login'
+    | '/pricing'
     | '/privacy'
     | '/reset-password'
     | '/signup'
@@ -305,6 +316,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/eula'
     | '/login'
+    | '/pricing'
     | '/privacy'
     | '/reset-password'
     | '/signup'
@@ -333,6 +345,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   EulaRoute: typeof EulaRoute
   LoginRoute: typeof LoginRoute
+  PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
@@ -385,6 +398,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -557,6 +577,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   EulaRoute: EulaRoute,
   LoginRoute: LoginRoute,
+  PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
@@ -580,3 +601,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
