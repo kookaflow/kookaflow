@@ -28,13 +28,13 @@ export function TrialBanner() {
   return (
     <>
       <div
-      className={`flex items-center justify-between gap-3 border-b px-4 py-2 text-sm ${
-        expired
-          ? "border-red-700 bg-[#DC2626] text-white"
-          : "border-border bg-primary/10 text-foreground"
-      }`}
-      role="status"
-    >
+        className={`flex items-center justify-between gap-3 border-b px-4 py-2 text-sm ${
+          expired
+            ? "border-red-700 bg-[#DC2626] text-white"
+            : "border-border bg-primary/10 text-foreground"
+        }`}
+        role="status"
+      >
         <div className="flex min-w-0 items-center gap-2">
           {expired ? <Clock className="h-4 w-4 shrink-0" /> : <Sparkles className="h-4 w-4 shrink-0 text-primary" />}
           <span className="truncate">
