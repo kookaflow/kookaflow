@@ -42,23 +42,31 @@ export function AuthShell({
             style={{ height: 100, width: "auto" }}
             className="mb-4 object-contain"
           />
-          <h1 className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl">
+          <h1
+            className="font-bold leading-tight tracking-tight text-white"
+            style={{ fontSize: 24, fontWeight: 700, textShadow: "0 2px 8px rgba(0,0,0,0.3)" }}
+          >
             {tagline}
           </h1>
           {subtitle && (
-            <p className="mt-2 max-w-xs text-sm text-white/80">{subtitle}</p>
+            <p
+              className="mt-2 max-w-xs"
+              style={{ fontSize: 14, fontWeight: 400, color: "rgba(255,255,255,0.85)" }}
+            >
+              {subtitle}
+            </p>
           )}
         </div>
 
-        {/* Curved wave separator */}
+        {/* Smooth symmetrical wave separator */}
         <svg
           aria-hidden
-          viewBox="0 0 390 60"
+          viewBox="0 0 1440 80"
           preserveAspectRatio="none"
-          className="absolute -bottom-px left-0 h-[60px] w-full text-card"
+          className="absolute -bottom-px left-0 h-[80px] w-full text-card"
         >
           <path
-            d="M0,40 C90,80 180,0 270,30 C330,50 360,40 390,30 L390,60 L0,60 Z"
+            d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z"
             fill="currentColor"
           />
         </svg>
