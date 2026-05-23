@@ -23,6 +23,8 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { BalanceScale } from "@/components/shared/empty-illustrations";
 import { useNavigate } from "@tanstack/react-router";
+import { FeatureLock } from "@/components/subscription/FeatureLock";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -39,6 +41,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function DashboardPage() {
   const events = useEventsStore();
   const navigate = useNavigate();
+  const sub = useSubscription();
 
   const now = new Date();
   const week = useMemo(() => currentWeekRange(now), [events]);
@@ -60,6 +63,24 @@ function DashboardPage() {
   const hour = now.getHours();
   const tod = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
   const greeting = `Good ${tod}`;
+
+  // Basic and expired users cannot access the life-balance dashboard.
+  // Trial / Pro / Lifetime users get full access.
+  if (!sub.loading && sub.signedIn && !sub.hasProAccess) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <PageHeader title="Dashboard" subtitle="Life-balance insights" right={<ThemeToggle />} />
+        <main className="mx-auto max-w-3xl p-4 sm:p-6">
+          <FeatureLock
+            feature="Life-balance dashboard"
+            description="Get weekly hour breakdowns, balance scores, and wellness nudges. Available on Pro and during your 14-day trial."
+          >
+            <div />
+          </FeatureLock>
+        </main>
+      </div>
+    );
+  }
 
   if (events.length === 0) {
     return (
