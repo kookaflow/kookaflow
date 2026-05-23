@@ -38,6 +38,17 @@ export function MoreHero() {
       >
         Find your flow, whatever your hours
       </p>
+      <svg
+        aria-hidden
+        viewBox="0 0 1440 80"
+        preserveAspectRatio="none"
+        className="absolute -bottom-px left-0 h-[40px] w-full text-background"
+      >
+        <path
+          d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z"
+          fill="currentColor"
+        />
+      </svg>
     </div>
   );
 }
