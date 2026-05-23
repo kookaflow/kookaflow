@@ -101,10 +101,10 @@
   --brand-purple: #6B35CC;
   --brand-highlight: #FCD9A0;
   --brand-background-dark: #101A4F;
-  --brand-gradient: linear-gradient(135deg, #1E2A6E 0%, #2B3A8F 45%, #F59E0B 100%);
-  --brand-gradient-from: #1E2A6E;
-  --brand-gradient-mid: #2B3A8F;
-  --brand-gradient-to: #F59E0B;
+  --brand-gradient: radial-gradient(ellipse at 80% 20%, #ffc338 0%, #fb862a 25%, #7e294d 60%, #251074 100%);
+  --brand-gradient-from: #251074;
+  --brand-gradient-mid: #7e294d;
+  --brand-gradient-to: #ffc338;
   --brand-primary: #F59E0B;
   --brand-secondary: #1E2A6E;
 }
@@ -142,10 +142,10 @@
   --brand-purple: #6B35CC;
   --brand-highlight: #FCD9A0;
   --brand-background-dark: #101A4F;
-  --brand-gradient: linear-gradient(135deg, #1E2A6E 0%, #2B3A8F 45%, #F59E0B 100%);
-  --brand-gradient-from: #1E2A6E;
-  --brand-gradient-mid: #2B3A8F;
-  --brand-gradient-to: #F59E0B;
+  --brand-gradient: radial-gradient(ellipse at 80% 20%, #ffc338 0%, #fb862a 25%, #7e294d 60%, #251074 100%);
+  --brand-gradient-from: #251074;
+  --brand-gradient-mid: #7e294d;
+  --brand-gradient-to: #ffc338;
   --brand-primary: #F59E0B;
   --brand-secondary: #1E2A6E;
 }

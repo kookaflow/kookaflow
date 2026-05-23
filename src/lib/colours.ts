@@ -15,4 +15,4 @@ export const BRAND_HIGHLIGHT = "#FCD9A0";
 export const BRAND_BACKGROUND_DARK = "#101A4F";
 
 export const BRAND_GRADIENT =
-  "linear-gradient(135deg, #1E2A6E 0%, #2B3A8F 45%, #F59E0B 100%)";
+  "radial-gradient(ellipse at 80% 20%, #ffc338 0%, #fb862a 25%, #7e294d 60%, #251074 100%)";
