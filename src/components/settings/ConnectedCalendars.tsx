@@ -13,8 +13,8 @@ import {
   getGoogleConnectionStatus,
   disconnectGoogleCalendar,
   triggerGoogleSync,
+  getGoogleAuthUrl,
 } from "@/lib/google-calendar.functions";
-import { supabase } from "@/integrations/supabase/client";
 import { CalendarCheck2, RefreshCw, Unplug, AlertTriangle, Coffee } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -47,6 +47,7 @@ export function ConnectedCalendars() {
   const fetchStatus = useServerFn(getGoogleConnectionStatus);
   const disconnect = useServerFn(disconnectGoogleCalendar);
   const triggerSync = useServerFn(triggerGoogleSync);
+  const fetchAuthUrl = useServerFn(getGoogleAuthUrl);
   const [connecting, setConnecting] = useState(false);
 
   const { data: status, isLoading } = useQuery({
@@ -106,17 +107,12 @@ export function ConnectedCalendars() {
   const handleConnect = async () => {
     setConnecting(true);
     try {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (!token) {
-        toast.error("Please sign in first");
-        setConnecting(false);
-        return;
-      }
-      window.location.href = `/auth/google/start?access_token=${encodeURIComponent(token)}`;
-    } catch {
+      const { url } = await fetchAuthUrl();
+      window.location.href = url;
+    } catch (e) {
       setConnecting(false);
-      toast.error("Could not start Google connection");
+      const msg = e instanceof Error ? e.message : "Could not start Google connection";
+      toast.error(msg);
     }
   };
 
