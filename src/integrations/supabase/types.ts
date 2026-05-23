@@ -293,7 +293,14 @@ export type Database = {
           push_shift_alerts: boolean
           push_weekly_reminder: boolean
           shift_pattern: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_end_date: string | null
+          subscription_status: string | null
+          subscription_tier: string
           timezone: string
+          trial_ends_at: string
+          trial_starts_at: string
           updated_at: string
         }
         Insert: {
@@ -308,7 +315,14 @@ export type Database = {
           push_shift_alerts?: boolean
           push_weekly_reminder?: boolean
           shift_pattern?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_end_date?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string
           timezone?: string
+          trial_ends_at?: string
+          trial_starts_at?: string
           updated_at?: string
         }
         Update: {
@@ -323,7 +337,14 @@ export type Database = {
           push_shift_alerts?: boolean
           push_weekly_reminder?: boolean
           shift_pattern?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_end_date?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string
           timezone?: string
+          trial_ends_at?: string
+          trial_starts_at?: string
           updated_at?: string
         }
         Relationships: []
