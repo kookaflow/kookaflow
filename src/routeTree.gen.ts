@@ -14,10 +14,12 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as EulaRouteImport } from './routes/eula'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProSuccessRouteImport } from './routes/pro.success'
 import { Route as AuthenticatedShiftsRouteImport } from './routes/_authenticated.shifts'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
@@ -60,6 +62,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -77,6 +84,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProSuccessRoute = ProSuccessRouteImport.update({
+  id: '/pro/success',
+  path: '/pro/success',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedShiftsRoute = AuthenticatedShiftsRouteImport.update({
@@ -170,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/eula': typeof EulaRoute
   '/login': typeof LoginRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -181,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shifts': typeof AuthenticatedShiftsRoute
+  '/pro/success': typeof ProSuccessRoute
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
   '/auth/google/start': typeof AuthGoogleStartRoute
   '/api/public/google/sync-all': typeof ApiPublicGoogleSyncAllRoute
@@ -196,6 +210,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/eula': typeof EulaRoute
   '/login': typeof LoginRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -207,6 +222,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shifts': typeof AuthenticatedShiftsRoute
+  '/pro/success': typeof ProSuccessRoute
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
   '/auth/google/start': typeof AuthGoogleStartRoute
   '/api/public/google/sync-all': typeof ApiPublicGoogleSyncAllRoute
@@ -224,6 +240,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/eula': typeof EulaRoute
   '/login': typeof LoginRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -235,6 +252,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/shifts': typeof AuthenticatedShiftsRoute
+  '/pro/success': typeof ProSuccessRoute
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
   '/auth/google/start': typeof AuthGoogleStartRoute
   '/api/public/google/sync-all': typeof ApiPublicGoogleSyncAllRoute
@@ -252,6 +270,7 @@ export interface FileRouteTypes {
     | '/'
     | '/eula'
     | '/login'
+    | '/pricing'
     | '/privacy'
     | '/reset-password'
     | '/signup'
@@ -263,6 +282,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/shifts'
+    | '/pro/success'
     | '/auth/google/callback'
     | '/auth/google/start'
     | '/api/public/google/sync-all'
@@ -278,6 +298,7 @@ export interface FileRouteTypes {
     | '/'
     | '/eula'
     | '/login'
+    | '/pricing'
     | '/privacy'
     | '/reset-password'
     | '/signup'
@@ -289,6 +310,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/shifts'
+    | '/pro/success'
     | '/auth/google/callback'
     | '/auth/google/start'
     | '/api/public/google/sync-all'
@@ -305,6 +327,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/eula'
     | '/login'
+    | '/pricing'
     | '/privacy'
     | '/reset-password'
     | '/signup'
@@ -316,6 +339,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/_authenticated/settings'
     | '/_authenticated/shifts'
+    | '/pro/success'
     | '/auth/google/callback'
     | '/auth/google/start'
     | '/api/public/google/sync-all'
@@ -333,11 +357,13 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   EulaRoute: typeof EulaRoute
   LoginRoute: typeof LoginRoute
+  PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
+  ProSuccessRoute: typeof ProSuccessRoute
   AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute
   AuthGoogleStartRoute: typeof AuthGoogleStartRoute
   ApiPublicGoogleSyncAllRoute: typeof ApiPublicGoogleSyncAllRoute
@@ -387,6 +413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -413,6 +446,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pro/success': {
+      id: '/pro/success'
+      path: '/pro/success'
+      fullPath: '/pro/success'
+      preLoaderRoute: typeof ProSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/shifts': {
@@ -557,11 +597,13 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   EulaRoute: EulaRoute,
   LoginRoute: LoginRoute,
+  PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
+  ProSuccessRoute: ProSuccessRoute,
   AuthGoogleCallbackRoute: AuthGoogleCallbackRoute,
   AuthGoogleStartRoute: AuthGoogleStartRoute,
   ApiPublicGoogleSyncAllRoute: ApiPublicGoogleSyncAllRoute,
