@@ -28,35 +28,49 @@ export function TrialBanner() {
   return (
     <>
       <div
-        className={`flex items-center justify-between gap-3 border-b px-4 py-2 text-sm ${
+        className={`flex items-center justify-between gap-2 border-b px-3 py-2 ${
           expired
-            ? "border-red-700 bg-[#DC2626] text-white"
-            : "border-border bg-primary/10 text-foreground"
+            ? "border-red-700 bg-[#DC2626] text-white font-semibold"
+            : "border-border bg-primary/10 text-foreground text-sm"
         }`}
+        style={expired ? { fontSize: 13 } : undefined}
         role="status"
       >
         <div className="flex min-w-0 items-center gap-2">
           {expired ? <Clock className="h-4 w-4 shrink-0" /> : <Sparkles className="h-4 w-4 shrink-0 text-primary" />}
-          <span className="truncate">
-            {expired
-              ? "Your free trial has ended — upgrade to keep using Kookaflow."
-              : sub.trialDaysRemaining <= 1
+          {expired ? (
+            <div className="min-w-0 leading-tight">
+              <div className="truncate">Your free trial has ended</div>
+              <div className="truncate text-[11px] font-normal opacity-90">
+                Upgrade to keep access
+              </div>
+            </div>
+          ) : (
+            <span className="truncate">
+              {sub.trialDaysRemaining <= 1
                 ? "Last day of your free trial."
                 : `${sub.trialDaysRemaining} days left in your free trial.`}
-          </span>
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1">
           <Button
             size="sm"
             variant={expired ? "outline" : "default"}
-            className={expired ? "border-white bg-white text-[#DC2626] hover:bg-white/90 hover:text-[#DC2626]" : ""}
+            className={
+              expired
+                ? "border-white bg-white font-bold text-[#DC2626] hover:bg-white/90 hover:text-[#DC2626] rounded-full px-4 py-1.5 h-auto"
+                : ""
+            }
             onClick={() => setPaywallOpen(true)}
           >
             Upgrade
           </Button>
-          <Button asChild size="sm" variant="ghost" className={expired ? "text-white underline hover:bg-white/10 hover:text-white" : ""}>
-            <Link to="/pricing">Compare plans</Link>
-          </Button>
+          {!expired && (
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/pricing">Compare plans</Link>
+            </Button>
+          )}
           {!expired && (
             <Button size="icon" variant="ghost" onClick={() => setDismissed(true)} aria-label="Dismiss">
               <X className="h-4 w-4" />

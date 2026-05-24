@@ -46,6 +46,7 @@ import {
 import { format as fmt } from "date-fns";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import logo from "@/assets/kookaflow-logo.png";
 import { StampProvider, useStamp } from "@/providers/StampProvider";
 import { QuickAddFab } from "@/components/calendar/QuickAddFab";
 import { QuickAddPanel } from "@/components/calendar/QuickAddPanel";
@@ -173,7 +174,25 @@ function CalendarPageInner() {
 
   return (
     <div className="flex h-[100dvh] flex-col bg-background text-foreground overflow-hidden">
+      {/* Compact mobile header (under md) */}
       {!panelOpen && (
+        <header
+          className="md:hidden flex items-center justify-between gap-2 px-3 text-white shrink-0"
+          style={{
+            height: 44,
+            background:
+              "radial-gradient(ellipse at 80% 20%, #ffc338 0%, #fb862a 25%, #7e294d 60%, #251074 100%)",
+          }}
+        >
+          <img src={logo} alt="Kookaflow" style={{ height: 32, width: "auto" }} className="object-contain" />
+          <span className="text-sm font-bold truncate">{format(date, "MMM yyyy")}</span>
+          <ThemeToggle />
+        </header>
+      )}
+
+      {/* Desktop hero header */}
+      {!panelOpen && (
+      <div className="hidden md:block">
       <PageHeader
         title={heading}
         subtitle={`${events.length} events this period`}
@@ -256,10 +275,51 @@ function CalendarPageInner() {
           </PopoverContent>
         </Popover>
       </PageHeader>
+      </div>
       )}
 
-      {/* Sub header */}
-      <div className="flex items-center justify-between border-b border-border px-5 py-2.5">
+      {/* Mobile compact controls row */}
+      <div className="md:hidden flex items-center justify-between gap-2 border-b border-border px-2 shrink-0" style={{ height: 44 }}>
+        <div className="flex items-center gap-0.5 rounded-full border border-border bg-muted/40 p-0.5">
+          {(["month", "week", "day"] as ViewMode[]).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              className={cn(
+                "rounded-full px-2.5 py-1 text-[12px] font-medium capitalize transition-colors",
+                view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+              )}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={goPrev}
+            aria-label="Previous"
+            className="flex size-8 items-center justify-center rounded-md border border-border hover:bg-muted"
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+          <Button variant="outline" size="sm" onClick={() => setDate(new Date())} className="h-8 px-3 text-xs">
+            Today
+          </Button>
+          <button
+            type="button"
+            onClick={goNext}
+            aria-label="Next"
+            className="flex size-8 items-center justify-center rounded-md border border-border hover:bg-muted"
+          >
+            <ChevronRight className="size-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop sub header */}
+      <div className="hidden md:flex items-center justify-between border-b border-border px-5 py-2.5">
         <h1 className="text-base font-semibold">{heading}</h1>
         <div className="flex items-center gap-3">
           {view === "week" && (
