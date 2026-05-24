@@ -25,7 +25,7 @@ export interface PlanConfig {
 export function getPlanConfig(plan: PlanKey): PlanConfig {
   switch (plan) {
     case "basic":
-      return { priceId: requireEnv("STRIPE_BASIC_PRICE_ID"), mode: "payment", tier: "basic" };
+      return { priceId: requireEnv("STRIPE_BASIC_PRICE_ID"), mode: "subscription", tier: "basic" };
     case "pro_monthly":
       return { priceId: requireEnv("STRIPE_PRO_MONTHLY_PRICE_ID"), mode: "subscription", tier: "pro" };
     case "pro_yearly":

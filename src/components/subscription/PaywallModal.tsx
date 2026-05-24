@@ -51,9 +51,9 @@ const PLANS: Array<{
   {
     key: "basic",
     name: "Basic",
-    price: "$9.99",
-    cadence: "AUD one-time",
-    description: "Core calendar + shift tracking only.",
+    price: "$2.99",
+    cadence: "AUD / month",
+    description: "Core calendar + shift tracking only. Cancel anytime.",
   },
 ];
 

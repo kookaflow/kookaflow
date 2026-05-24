@@ -35,8 +35,8 @@ const TIERS: Tier[] = [
   {
     key: "basic",
     name: "Basic",
-    price: "$9.99",
-    cadence: "AUD one-time",
+    price: "$2.99",
+    cadence: "AUD / month",
     features: [
       "Calendar & shift tracking",
       "Shift templates",
