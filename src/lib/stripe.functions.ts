@@ -89,7 +89,7 @@ export const createCustomerPortalSession = createServerFn({ method: "POST" })
 
     const session = await stripe.billingPortal.sessions.create({
       customer: profile.stripe_customer_id,
-      return_url: `${getOrigin()}/settings`,
+      return_url: "https://kookaflow.com/more",
     });
 
     return { url: session.url };
