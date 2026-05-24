@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Clock, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -67,7 +68,7 @@ export function TrialBanner() {
           </Button>
           {!expired && (
             <Button asChild size="sm" variant="ghost">
-              <a href="/pricing">Compare plans</a>
+              <Link to="/pricing">Compare plans</Link>
             </Button>
           )}
           {!expired && (
