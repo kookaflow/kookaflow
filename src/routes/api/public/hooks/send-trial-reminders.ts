@@ -171,7 +171,7 @@ function buildTrialEmail(args: {
        <p style="margin:0 0 12px;">Your 14-day Kookaflow Pro trial has ended. Your calendar and shifts are still here — but Pro features are paused for now.</p>
        <p style="margin:0 0 12px;">Reactivate anytime:</p>
        <ul style="margin:0 0 12px 18px;color:#1E2A6E;">
-         <li>Basic — $9.99 one-time (core calendar &amp; shifts)</li>
+         <li>Basic — $2.99 / month (core calendar &amp; shifts)</li>
          <li>Pro Monthly — $4.99 / month</li>
          <li>Pro Yearly — $29.99 / year (save 50%)</li>
          <li>Lifetime Pro — $59.99 one-time</li>
