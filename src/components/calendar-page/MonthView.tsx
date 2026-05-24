@@ -92,11 +92,11 @@ export function MonthView({
                     onEventClick?.(shift);
                   }}
                   aria-label={`Edit ${shift.title}`}
-                  className="flex w-full items-center justify-center gap-0.5 truncate rounded-sm px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm"
+                  className="flex w-full items-center justify-center gap-0.5 truncate rounded-sm px-1 py-0.5 text-[10px] sm:text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm min-h-[16px]"
                   style={{ backgroundColor: shiftStyle.colour }}
                   title={`${shiftStyle.label} shift`}
                 >
-                  <shiftStyle.Icon className="size-2.5" />
+                  <shiftStyle.Icon className="size-3 sm:size-2.5" />
                   <span className="truncate">{shiftStyle.label}</span>
                 </button>
               )}
