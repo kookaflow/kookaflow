@@ -13,9 +13,13 @@ export function QuickAddFab() {
       }}
       aria-label="Quick add"
       className={cn(
-        "fixed bottom-5 right-5 z-40 flex size-14 items-center justify-center rounded-full text-white shadow-xl transition-transform hover:scale-105",
+        "fixed z-50 flex size-14 items-center justify-center rounded-full text-white shadow-xl transition-transform hover:scale-105",
         "bg-gradient-to-br from-primary to-primary/80",
       )}
+      style={{
+        bottom: "max(20px, env(safe-area-inset-bottom))",
+        right: "max(16px, env(safe-area-inset-right))",
+      }}
     >
       {panelOpen ? (
         <X className="size-6" />

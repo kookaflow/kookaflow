@@ -84,7 +84,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Kookaflow — Find your flow, whatever your hours" },
       { name: "description", content: "Kookaflow helps shift workers plan shifts and balance rest, wellness, family, and social time." },
       { name: "author", content: "Kookaflow" },
