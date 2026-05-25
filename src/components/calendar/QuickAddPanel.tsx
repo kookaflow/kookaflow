@@ -5,10 +5,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useStamp } from "@/providers/StampProvider";
-import { useShiftTemplates } from "@/providers/ShiftTemplatesProvider";
 import { SHIFT_STAMPS, LEAVE_STAMPS, ICON_STAMPS, type StampDef } from "@/lib/stamps";
-import { getIcon } from "@/components/events/IconPicker";
-import { Sparkles } from "lucide-react";
+import { useAllShiftTypes } from "@/hooks/useAllShiftTypes";
 
 interface Props {
   onOpenDetailedEvent: () => void;
@@ -16,22 +14,22 @@ interface Props {
 
 export function QuickAddPanel({ onOpenDetailedEvent }: Props) {
   const { panelOpen, setPanelOpen, selected, setSelected } = useStamp();
-  const { templates } = useShiftTemplates();
+  const { custom } = useAllShiftTypes();
   const [tab, setTab] = useState("shifts");
   if (!panelOpen) return null;
 
-  const customStamps: StampDef[] = templates.map((t) => ({
-    id: `tpl_${t.id}`,
+  const customStamps: StampDef[] = custom.map((t) => ({
+    id: t.id,
     kind: "shift",
-    label: t.name,
-    shortLabel: t.name.slice(0, 8),
+    label: t.label,
+    shortLabel: t.shortLabel,
     colour: t.colour,
-    Icon: getIcon(t.iconName) ?? Sparkles,
-    category: t.category === "leave" ? "work" : t.category === "non_working" ? "rest" : "work",
-    allDay: !t.defaultStart || !t.defaultEnd,
+    Icon: t.Icon,
+    category: t.category,
+    allDay: t.isAllDay,
     startTime: t.defaultStart ?? undefined,
     endTime: t.defaultEnd ?? undefined,
-    iconName: t.iconName ?? undefined,
+    iconName: t.iconName,
   }));
 
   const shiftItems = [...SHIFT_STAMPS, ...customStamps];

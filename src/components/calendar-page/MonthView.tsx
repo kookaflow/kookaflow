@@ -53,15 +53,26 @@ export function MonthView({
         {days.map((day) => {
           const inMonth = isSameMonth(day, cursor);
           const dayEvents = events.filter((e) => isSameDay(e.start, day));
-          const shift = dayEvents.find((e) => e.shiftType);
-          const shiftStyle = shift ? getShiftConfig(shift.shiftType) : null;
+          // Prefer system shift, otherwise treat a custom-shift event
+          // (work category with a saved iconColor — created from a
+          // shift_templates row) as the day's badge.
+          const shift =
+            dayEvents.find((e) => e.shiftType) ??
+            dayEvents.find(
+              (e) => e.category === "work" && !!e.iconColor && e.source !== "google",
+            );
+          const shiftStyle = shift?.shiftType ? getShiftConfig(shift.shiftType) : null;
+          const customShiftIcon =
+            shift && !shiftStyle && shift.iconName ? ICON_MAP[shift.iconName] : null;
           const isSel = isSameDay(day, selected);
           const today = isToday(day);
           const iconEvents = dayEvents
             .filter((e) => e.iconName && (!shift || e.id !== shift.id))
             .slice(0, 3);
           const googleEvents = dayEvents.filter((e) => e.source === "google");
-          const dots = dayEvents.filter((e) => e.source !== "google").slice(0, 5);
+          const dots = dayEvents
+            .filter((e) => e.source !== "google" && (!shift || e.id !== shift.id))
+            .slice(0, 5);
 
           return (
             <DayCell
@@ -84,7 +95,7 @@ export function MonthView({
                   {format(day, "d")}
                 </span>
               </div>
-              {shiftStyle && shift && (
+              {shift && (
                 <button
                   type="button"
                   onClick={(ev) => {
@@ -93,11 +104,20 @@ export function MonthView({
                   }}
                   aria-label={`Edit ${shift.title}`}
                   className="flex w-full items-center justify-center gap-0.5 truncate rounded-sm px-1 py-0.5 text-[10px] sm:text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm min-h-[16px]"
-                  style={{ backgroundColor: shiftStyle.colour }}
-                  title={`${shiftStyle.label} shift`}
+                  style={{ backgroundColor: shiftStyle?.colour ?? shift.iconColor }}
+                  title={`${shiftStyle?.label ?? shift.title} shift`}
                 >
-                  <shiftStyle.Icon className="size-3 sm:size-2.5" />
-                  <span className="truncate">{shiftStyle.label}</span>
+                  {shiftStyle ? (
+                    <shiftStyle.Icon className="size-3 sm:size-2.5" />
+                  ) : customShiftIcon ? (
+                    (() => {
+                      const Ic = customShiftIcon;
+                      return <Ic className="size-3 sm:size-2.5" />;
+                    })()
+                  ) : null}
+                  <span className="truncate">
+                    {shiftStyle ? shiftStyle.label : shift.title.slice(0, 8)}
+                  </span>
                 </button>
               )}
               {iconEvents.length > 0 && (

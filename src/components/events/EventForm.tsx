@@ -20,6 +20,7 @@ import type {
 } from "@/types/event";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { ShiftOption } from "@/hooks/useAllShiftTypes";
 
 interface Props {
   initial?: CalendarEvent;
@@ -62,6 +63,8 @@ export function EventForm({ initial, defaultStart, defaultCategory, onSubmit, on
   const [allDay, setAllDay] = useState(initial?.allDay ?? false);
   const [iconName, setIconName] = useState<string | undefined>(initial?.iconName);
   const [iconGradient, setIconGradient] = useState<GradientId | undefined>(initial?.iconGradient);
+  const [iconColor, setIconColor] = useState<string | undefined>(initial?.iconColor);
+  const [customTemplateId, setCustomTemplateId] = useState<string | null>(null);
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [shift, setShift] = useState<ShiftMeta>(initial?.shift ?? blankShift());
   const [isPayday, setIsPayday] = useState(initial?.isPayday ?? false);
@@ -113,7 +116,8 @@ export function EventForm({ initial, defaultStart, defaultCategory, onSubmit, on
       end: fromInputDateTime(end),
       allDay,
       iconName: iconName || undefined,
-      iconGradient: iconName ? (iconGradient ?? "ocean") : undefined,
+      iconGradient: iconName && !iconColor ? (iconGradient ?? "ocean") : undefined,
+      iconColor: iconColor || undefined,
       notes: notes || undefined,
       shift: category === "work" ? shift : undefined,
       isPayday: category === "work" ? isPayday : false,
@@ -122,6 +126,24 @@ export function EventForm({ initial, defaultStart, defaultCategory, onSubmit, on
       recurrenceEndDate: null,
     };
     onSubmit(draft);
+  };
+
+  const applyCustomTemplate = (t: ShiftOption) => {
+    if (!title.trim()) setTitle(t.label);
+    setCategory(t.category);
+    setAllDay(t.isAllDay);
+    setIconName(t.iconName);
+    setIconColor(t.colour);
+    setCustomTemplateId(t.templateId ?? null);
+    // Custom template → no system shiftType; keep shiftRole = template label
+    setShift({ shiftType: "custom", role: "", location: "", customLabel: t.label });
+    if (!t.isAllDay && t.defaultStart && t.defaultEnd) {
+      const base = new Date(start);
+      const ns = setTimeOnDate(base, t.defaultStart);
+      const ne = setTimeOnDate(base, t.defaultEnd, 0);
+      setStart(toInputDateTime(ns.toISOString()));
+      setEnd(toInputDateTime(ne.toISOString()));
+    }
   };
 
   return (
@@ -212,7 +234,19 @@ export function EventForm({ initial, defaultStart, defaultCategory, onSubmit, on
 
       {category === "work" && (
         <>
-          <ShiftFieldsGroup value={shift} onChange={setShift} />
+          <ShiftFieldsGroup
+            value={shift}
+            onChange={(s) => {
+              setShift(s);
+              // Picking any system shift type clears the custom template marker.
+              if (s.shiftType !== "custom") {
+                setCustomTemplateId(null);
+                setIconColor(undefined);
+              }
+            }}
+            onPickTemplate={applyCustomTemplate}
+            selectedTemplateId={customTemplateId}
+          />
           <div className="flex items-center justify-between rounded-md border border-border p-2.5">
             <Label htmlFor="payday" className="flex cursor-pointer items-center gap-2 text-sm font-normal">
               <span>💰</span> Payday

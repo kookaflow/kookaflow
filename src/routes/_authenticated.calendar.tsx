@@ -474,6 +474,7 @@ function toMockEvent(e: CalendarEvent): MockEvent {
     location: e.shift?.location,
     notes: e.notes,
     iconName: e.iconName as IconName | undefined,
+    iconColor: e.iconColor,
     recurrence: e.recurrencePattern
       ? e.recurrencePattern === "custom"
         ? { kind: "custom", days: (e.recurrenceDays ?? []).map(weekdayKeyToIndex).filter((n): n is number => n != null) }
