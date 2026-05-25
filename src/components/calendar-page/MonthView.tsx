@@ -63,16 +63,16 @@ export function MonthView({
           const shiftIds = new Set(shifts.map((s) => s.id));
           const isSel = isSameDay(day, selected);
           const today = isToday(day);
-          const iconEvents = dayEvents
-            .filter((e) => e.iconName && !shiftIds.has(e.id))
-            .slice(0, 3);
           const googleEvents = dayEvents.filter((e) => e.source === "google");
-          const dots = dayEvents
-            .filter((e) => e.source !== "google" && !shiftIds.has(e.id))
-            .slice(0, 5);
+          const otherEvents = dayEvents.filter(
+            (e) => e.source !== "google" && !shiftIds.has(e.id),
+          );
           const MAX_SHIFTS = 3;
           const shiftsToShow = shifts.slice(0, MAX_SHIFTS);
           const extraShifts = shifts.length - shiftsToShow.length;
+          const MAX_OTHERS = 3;
+          const othersToShow = otherEvents.slice(0, MAX_OTHERS);
+          const extraOthers = otherEvents.length - othersToShow.length;
 
           return (
             <DayCell
@@ -127,28 +127,33 @@ export function MonthView({
                   +{extraShifts} more
                 </span>
               )}
-              {iconEvents.length > 0 && (
-                <div className="flex flex-wrap items-center gap-px">
-                  {iconEvents.map((e) => {
-                    const Icon = ICON_MAP[e.iconName as string];
-                    if (!Icon) return null;
-                    return (
-                      <button
-                        key={e.id}
-                        type="button"
-                        onClick={(ev) => {
-                          ev.stopPropagation();
-                          onEventClick?.(e);
-                        }}
-                        className="text-foreground/80"
-                        title={e.title}
-                        aria-label={`Edit ${e.title}`}
-                      >
-                        <Icon className="size-2.5" />
-                      </button>
-                    );
-                  })}
-                </div>
+              {othersToShow.map((e) => {
+                const cat = getCategoryConfig(e.category);
+                const CustomIcon = e.iconName ? ICON_MAP[e.iconName] : null;
+                const Icon = CustomIcon ?? cat.Icon;
+                const bg = e.iconColor ?? cat.colour;
+                return (
+                  <button
+                    key={e.id}
+                    type="button"
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      onEventClick?.(e);
+                    }}
+                    aria-label={`Edit ${e.title}`}
+                    className="flex w-full items-center gap-0.5 truncate rounded-sm px-1 py-0.5 text-[10px] sm:text-[9px] font-medium text-white shadow-sm min-h-[16px]"
+                    style={{ backgroundColor: bg }}
+                    title={e.title}
+                  >
+                    {Icon && <Icon className="size-3 sm:size-2.5 shrink-0" />}
+                    <span className="truncate">{e.title}</span>
+                  </button>
+                );
+              })}
+              {extraOthers > 0 && (
+                <span className="text-[9px] font-medium text-muted-foreground">
+                  +{extraOthers} more
+                </span>
               )}
               {googleEvents.slice(0, 2).map((e) => (
                 <button
@@ -173,27 +178,6 @@ export function MonthView({
                   +{googleEvents.length - 2} Google
                 </span>
               )}
-              <div className="mt-auto flex flex-wrap items-center gap-1">
-                {dots.map((e) => (
-                  <span
-                    key={e.id}
-                    role={onEventClick ? "button" : undefined}
-                    onClick={(ev) => {
-                      if (!onEventClick) return;
-                      ev.stopPropagation();
-                      onEventClick(e);
-                    }}
-                    className="size-1.5 rounded-full"
-                    style={{ backgroundColor: getCategoryConfig(e.category).colour }}
-                    title={e.title}
-                  />
-                ))}
-                {dayEvents.length > 5 && (
-                  <span className="text-[10px] text-muted-foreground">
-                    +{dayEvents.length - 5}
-                  </span>
-                )}
-              </div>
             </DayCell>
           );
         })}
