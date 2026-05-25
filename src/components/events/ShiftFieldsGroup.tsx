@@ -8,10 +8,19 @@ import {
 import type { ShiftMeta, ShiftType } from "@/types/event";
 import { SplitShiftFields, DEFAULT_SPLIT } from "./SplitShiftFields";
 import { getCategoryConfig } from "@/lib/shiftConfig";
+import { useAllShiftTypes, type ShiftOption } from "@/hooks/useAllShiftTypes";
 
 interface Props {
   value: ShiftMeta;
   onChange: (next: ShiftMeta) => void;
+  /**
+   * Fired when the user picks a custom shift template. The parent form
+   * applies template defaults (title, times, icon, colour) on top of its
+   * own state. ShiftFieldsGroup only owns the system shiftType selection.
+   */
+  onPickTemplate?: (template: ShiftOption) => void;
+  /** Marker so the "Other" custom-name input only shows for true custom. */
+  selectedTemplateId?: string | null;
 }
 
 const TYPES: { value: ShiftType; label: string; Icon: LucideIcon; color: string }[] = [
@@ -26,10 +35,11 @@ const TYPES: { value: ShiftType; label: string; Icon: LucideIcon; color: string 
   { value: "custom", label: "Other", Icon: MoreHorizontal, color: "#64748B" },
 ];
 
-export function ShiftFieldsGroup({ value, onChange }: Props) {
+export function ShiftFieldsGroup({ value, onChange, onPickTemplate, selectedTemplateId }: Props) {
   const isSplit = value.shiftType === "split";
   const isCustom = value.shiftType === "custom";
   const workColour = getCategoryConfig("work").colour;
+  const { custom: customTemplates } = useAllShiftTypes();
   return (
     <div
       className="space-y-3 rounded-lg border p-3"
@@ -49,7 +59,7 @@ export function ShiftFieldsGroup({ value, onChange }: Props) {
               <button
                 key={t.value}
                 type="button"
-                onClick={() => onChange({ ...value, shiftType: t.value })}
+                onClick={() => onChange({ ...value, shiftType: t.value, customLabel: undefined })}
                 aria-pressed={selected}
                 className={cn(
                   "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left text-sm transition-all",
@@ -72,6 +82,44 @@ export function ShiftFieldsGroup({ value, onChange }: Props) {
           })}
         </div>
       </div>
+
+      {customTemplates.length > 0 && onPickTemplate && (
+        <div className="space-y-1.5 border-t border-border/60 pt-3">
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+            My Custom Shifts
+          </Label>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {customTemplates.map((t) => {
+              const TIcon = t.Icon;
+              const selected = selectedTemplateId === t.templateId;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => onPickTemplate(t)}
+                  aria-pressed={selected}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left text-sm transition-all",
+                    "hover:border-foreground/30 active:scale-[0.98]",
+                    selected
+                      ? "border-transparent bg-background shadow-sm ring-2"
+                      : "border-border bg-background/50",
+                  )}
+                  style={selected ? { boxShadow: `0 0 0 2px ${t.colour}` } : undefined}
+                >
+                  <span
+                    className="flex size-7 shrink-0 items-center justify-center rounded-md text-white"
+                    style={{ backgroundColor: t.colour }}
+                  >
+                    <TIcon className="size-4" strokeWidth={2.25} />
+                  </span>
+                  <span className="truncate text-xs font-medium">{t.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div
         className={cn(
