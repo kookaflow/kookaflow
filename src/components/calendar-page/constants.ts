@@ -12,6 +12,7 @@ export interface MockEvent {
   location?: string;
   notes?: string;
   iconName?: IconName;
+  iconColor?: string;
   recurrence?: Recurrence;
   isPayday?: boolean;
   source?: "shiftsync" | "google";
