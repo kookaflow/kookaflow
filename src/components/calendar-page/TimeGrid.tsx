@@ -1,7 +1,8 @@
 import { format, isSameDay, isToday, startOfDay, differenceInMinutes } from "date-fns";
 import { useEffect, useRef } from "react";
 import { type MockEvent } from "./constants";
-import { getCategoryConfig } from "@/lib/shiftConfig";
+import { getCategoryConfig, getShiftConfig } from "@/lib/shiftConfig";
+import { ICON_MAP } from "@/components/events/IconPicker";
 import { cn } from "@/lib/utils";
 
 const HOUR_HEIGHT = 56;
@@ -147,8 +148,21 @@ export function TimeGrid({
                   );
                   const isGoogle = e.source === "google";
                   const cat = getCategoryConfig(e.category);
-                  const Icon = cat.Icon;
-                  const bg = isGoogle ? "#94A3B8" : cat.colour;
+                  const sc = getShiftConfig(e.shiftType);
+                  // Resolve icon + colour: prefer system shift, then the
+                  // event's own iconName/iconColor (custom shifts), then
+                  // category — but suppress the work-category briefcase on
+                  // shift-shaped events where no specific icon exists.
+                  const customIcon = e.iconName ? ICON_MAP[e.iconName] : null;
+                  const Icon =
+                    sc?.Icon ??
+                    customIcon ??
+                    (e.category === "work" && (e.shiftType || e.iconColor)
+                      ? null
+                      : cat.Icon);
+                  const bg = isGoogle
+                    ? "#94A3B8"
+                    : (sc?.colour ?? e.iconColor ?? cat.colour);
                   return (
                     <button
                       key={e.id}
@@ -168,9 +182,9 @@ export function TimeGrid({
                           <svg viewBox="0 0 24 24" className={cn("shrink-0", days.length === 1 ? "size-[18px]" : "size-4")} fill="currentColor" aria-hidden="true">
                             <path d="M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 18H5V8h14v13z" />
                           </svg>
-                        ) : (
+                        ) : Icon ? (
                           <Icon className={cn("shrink-0", days.length === 1 ? "size-[18px]" : "size-4")} />
-                        )}
+                        ) : null}
                         <span className="truncate">{e.title}</span>
                       </span>
                       {height > 32 && (
