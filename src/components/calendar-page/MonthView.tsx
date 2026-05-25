@@ -53,26 +53,26 @@ export function MonthView({
         {days.map((day) => {
           const inMonth = isSameMonth(day, cursor);
           const dayEvents = events.filter((e) => isSameDay(e.start, day));
-          // Prefer system shift, otherwise treat a custom-shift event
-          // (work category with a saved iconColor — created from a
-          // shift_templates row) as the day's badge.
-          const shift =
-            dayEvents.find((e) => e.shiftType) ??
-            dayEvents.find(
-              (e) => e.category === "work" && !!e.iconColor && e.source !== "google",
-            );
-          const shiftStyle = shift?.shiftType ? getShiftConfig(shift.shiftType) : null;
-          const customShiftIcon =
-            shift && !shiftStyle && shift.iconName ? ICON_MAP[shift.iconName] : null;
+          // All shift-like events (system shifts + custom work-category
+          // templates with an iconColor) become stacked badges.
+          const shifts = dayEvents.filter(
+            (e) =>
+              e.shiftType ||
+              (e.category === "work" && !!e.iconColor && e.source !== "google"),
+          );
+          const shiftIds = new Set(shifts.map((s) => s.id));
           const isSel = isSameDay(day, selected);
           const today = isToday(day);
           const iconEvents = dayEvents
-            .filter((e) => e.iconName && (!shift || e.id !== shift.id))
+            .filter((e) => e.iconName && !shiftIds.has(e.id))
             .slice(0, 3);
           const googleEvents = dayEvents.filter((e) => e.source === "google");
           const dots = dayEvents
-            .filter((e) => e.source !== "google" && (!shift || e.id !== shift.id))
+            .filter((e) => e.source !== "google" && !shiftIds.has(e.id))
             .slice(0, 5);
+          const MAX_SHIFTS = 3;
+          const shiftsToShow = shifts.slice(0, MAX_SHIFTS);
+          const extraShifts = shifts.length - shiftsToShow.length;
 
           return (
             <DayCell
@@ -95,30 +95,37 @@ export function MonthView({
                   {format(day, "d")}
                 </span>
               </div>
-              {shift && (
-                <button
-                  type="button"
-                  onClick={(ev) => {
-                    ev.stopPropagation();
-                    onEventClick?.(shift);
-                  }}
-                  aria-label={`Edit ${shift.title}`}
-                  className="flex w-full items-center justify-center gap-0.5 truncate rounded-sm px-1 py-0.5 text-[10px] sm:text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm min-h-[16px]"
-                  style={{ backgroundColor: shiftStyle?.colour ?? shift.iconColor }}
-                  title={`${shiftStyle?.label ?? shift.title} shift`}
-                >
-                  {shiftStyle ? (
-                    <shiftStyle.Icon className="size-3 sm:size-2.5" />
-                  ) : customShiftIcon ? (
-                    (() => {
-                      const Ic = customShiftIcon;
-                      return <Ic className="size-3 sm:size-2.5" />;
-                    })()
-                  ) : null}
-                  <span className="truncate">
-                    {shiftStyle ? shiftStyle.label : shift.title.slice(0, 8)}
-                  </span>
-                </button>
+              {shiftsToShow.map((shift) => {
+                const shiftStyle = shift.shiftType ? getShiftConfig(shift.shiftType) : null;
+                const CustomIcon =
+                  !shiftStyle && shift.iconName ? ICON_MAP[shift.iconName] : null;
+                const label = shiftStyle ? shiftStyle.label : shift.title;
+                return (
+                  <button
+                    key={shift.id}
+                    type="button"
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      onEventClick?.(shift);
+                    }}
+                    aria-label={`Edit ${shift.title}`}
+                    className="flex w-full items-center justify-center gap-0.5 truncate rounded-sm px-1 py-0.5 text-[10px] sm:text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm min-h-[16px]"
+                    style={{ backgroundColor: shiftStyle?.colour ?? shift.iconColor }}
+                    title={`${label}${shiftStyle ? " shift" : ""}`}
+                  >
+                    {shiftStyle ? (
+                      <shiftStyle.Icon className="size-3 sm:size-2.5" />
+                    ) : CustomIcon ? (
+                      <CustomIcon className="size-3 sm:size-2.5" />
+                    ) : null}
+                    <span className="truncate">{label.slice(0, 10)}</span>
+                  </button>
+                );
+              })}
+              {extraShifts > 0 && (
+                <span className="text-[9px] font-medium text-muted-foreground">
+                  +{extraShifts} more
+                </span>
               )}
               {iconEvents.length > 0 && (
                 <div className="flex flex-wrap items-center gap-px">
