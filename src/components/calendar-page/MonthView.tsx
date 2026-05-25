@@ -95,7 +95,7 @@ export function MonthView({
                   {format(day, "d")}
                 </span>
               </div>
-              {shift && (shiftStyle || customShiftIcon) && (
+              {shift && (
                 <button
                   type="button"
                   onClick={(ev) => {
