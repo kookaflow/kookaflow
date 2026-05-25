@@ -24,6 +24,7 @@ import { TimeGrid } from "@/components/calendar-page/TimeGrid";
 import { TodayPanel } from "@/components/calendar-page/TodayPanel";
 import { EventDialog } from "@/components/events/EventDialog";
 import { WeekSummaryDialog } from "@/components/calendar-page/WeekSummaryDialog";
+import { DaySummaryDialog } from "@/components/calendar-page/DaySummaryDialog";
 import type { MockEvent, IconName } from "@/components/calendar-page/constants";
 import type { ShiftType as MockShiftType } from "@/types/event";
 import { useEvents } from "@/providers/EventsProvider";
@@ -97,6 +98,7 @@ function CalendarPageInner() {
   const [dialogDefault, setDialogDefault] = useState<Date>(new Date());
   const [dialogCategory, setDialogCategory] = useState<CategoryId | undefined>(undefined);
   const [weekSummaryOpen, setWeekSummaryOpen] = useState(false);
+  const [daySummaryOpen, setDaySummaryOpen] = useState(false);
   const [googleDetail, setGoogleDetail] = useState<MockEvent | null>(null);
   const { selected: stamp, applyStamp, panelOpen } = useStamp();
 
@@ -121,6 +123,7 @@ function CalendarPageInner() {
       return;
     }
     setDate(d);
+    setDaySummaryOpen(true);
   };
 
   const goPrev = () => {
@@ -404,6 +407,15 @@ function CalendarPageInner() {
         onOpenChange={setWeekSummaryOpen}
         weekAnchor={date}
         events={events}
+      />
+
+      <DaySummaryDialog
+        open={daySummaryOpen}
+        onOpenChange={setDaySummaryOpen}
+        date={date}
+        events={events}
+        onEventClick={openEdit}
+        onAddEvent={openCreate}
       />
 
       <Dialog
