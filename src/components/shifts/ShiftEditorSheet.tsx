@@ -72,6 +72,10 @@ export function ShiftEditorSheet({ open, onOpenChange, template }: Props) {
       toast("Name required");
       return;
     }
+    if (sameTimeError) {
+      toast("Start and end cannot be the same");
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
