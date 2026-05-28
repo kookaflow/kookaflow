@@ -64,9 +64,16 @@ export function ShiftEditorSheet({ open, onOpenChange, template }: Props) {
     return `${Math.floor(m / 60)}h ${m % 60}m`;
   })();
 
+  const isOvernight = !!start && !!end && end <= start;
+  const sameTimeError = !!start && !!end && start === end;
+
   const onSave = async () => {
     if (!name.trim()) {
       toast("Name required");
+      return;
+    }
+    if (sameTimeError) {
+      toast("Start and end cannot be the same");
       return;
     }
     setSaving(true);
@@ -136,6 +143,12 @@ export function ShiftEditorSheet({ open, onOpenChange, template }: Props) {
             <div>
               <Label htmlFor="shift-end">End</Label>
               <Input id="shift-end" type="time" value={end} onChange={(e) => setEnd(e.target.value)} />
+              {isOvernight && !sameTimeError && (
+                <p className="mt-1 text-[11px] text-muted-foreground">🌙 Ends next day</p>
+              )}
+              {sameTimeError && (
+                <p className="mt-1 text-[11px] text-destructive">Start and end cannot be the same</p>
+              )}
             </div>
           </div>
           <p className="text-xs text-muted-foreground">Duration: {duration}</p>

@@ -76,7 +76,12 @@ export function EventForm({ initial, defaultStart, defaultCategory, onSubmit, on
   );
 
   const cat = getCategoryConfig(category);
-  const invalidRange = new Date(end) < new Date(start);
+  const startMs = new Date(start).getTime();
+  const endMs = new Date(end).getTime();
+  // Only block when start === end. end < start is treated as an overnight
+  // shift and the end date is bumped to the next day on submit.
+  const invalidRange = endMs === startMs;
+  const isOvernight = endMs < startMs;
 
   const startDate = start.slice(0, 10);
   const startTime = start.slice(11, 16);
@@ -100,7 +105,8 @@ export function EventForm({ initial, defaultStart, defaultCategory, onSubmit, on
     if (!p.allDay && p.startTime && p.endTime) {
       const base = new Date(start);
       const ns = setTimeOnDate(base, p.startTime);
-      const ne = setTimeOnDate(base, p.endTime, p.overnight ? 1 : 0);
+      const overnight = p.overnight || p.endTime <= p.startTime;
+      const ne = setTimeOnDate(base, p.endTime, overnight ? 1 : 0);
       setStart(toInputDateTime(ns.toISOString()));
       setEnd(toInputDateTime(ne.toISOString()));
     }
@@ -109,11 +115,18 @@ export function EventForm({ initial, defaultStart, defaultCategory, onSubmit, on
   const submit = () => {
     if (!title.trim()) return;
     if (invalidRange) return;
+    // Auto-promote overnight shifts: if end < start, push end to next day.
+    let endISO = fromInputDateTime(end);
+    if (isOvernight) {
+      const d = new Date(end);
+      d.setDate(d.getDate() + 1);
+      endISO = d.toISOString();
+    }
     const draft: EventDraft = {
       title: title.trim(),
       category,
       start: fromInputDateTime(start),
-      end: fromInputDateTime(end),
+      end: endISO,
       allDay,
       iconName: iconName || undefined,
       iconGradient: iconName && !iconColor ? (iconGradient ?? "ocean") : undefined,
@@ -140,7 +153,8 @@ export function EventForm({ initial, defaultStart, defaultCategory, onSubmit, on
     if (!t.isAllDay && t.defaultStart && t.defaultEnd) {
       const base = new Date(start);
       const ns = setTimeOnDate(base, t.defaultStart);
-      const ne = setTimeOnDate(base, t.defaultEnd, 0);
+      const overnight = t.defaultEnd <= t.defaultStart;
+      const ne = setTimeOnDate(base, t.defaultEnd, overnight ? 1 : 0);
       setStart(toInputDateTime(ns.toISOString()));
       setEnd(toInputDateTime(ne.toISOString()));
     }
@@ -219,7 +233,10 @@ export function EventForm({ initial, defaultStart, defaultCategory, onSubmit, on
           />
         </div>
         {invalidRange && (
-          <p className="text-xs text-destructive">End time must be after start time</p>
+          <p className="text-xs text-destructive">Start and end time cannot be the same</p>
+        )}
+        {!invalidRange && isOvernight && (
+          <p className="text-xs text-muted-foreground">🌙 Ends next day</p>
         )}
       </div>
 
