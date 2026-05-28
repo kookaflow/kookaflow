@@ -476,13 +476,21 @@ function CalendarPageInner() {
 }
 
 function toMockEvent(e: CalendarEvent): MockEvent {
+  // Custom-template shifts have shiftType === "custom" in app state but no
+  // matching system shift colour/icon. Surface them as `undefined` so the
+  // month/week views fall through to the event's own iconColor + iconName.
+  const rawShiftType = e.shift?.shiftType;
+  const mockShiftType =
+    rawShiftType && rawShiftType !== "custom"
+      ? (rawShiftType as MockShiftType)
+      : undefined;
   return {
     id: e.id,
     title: e.title,
     category: e.category,
     start: new Date(e.start),
     end: new Date(e.end),
-    shiftType: e.shift?.shiftType as MockShiftType | undefined,
+    shiftType: mockShiftType,
     location: e.shift?.location,
     notes: e.notes,
     iconName: e.iconName as IconName | undefined,
