@@ -57,7 +57,7 @@ export function EventForm({ initial, defaultStart, defaultCategory, onSubmit, on
     new Date(new Date(start0).getTime() + 8 * 60 * 60 * 1000).toISOString();
 
   const [title, setTitle] = useState(initial?.title ?? "");
-  const [category, setCategory] = useState<CategoryId>(initial?.category ?? defaultCategory ?? "personal");
+  const [category, setCategory] = useState<CategoryId>(initial?.category ?? defaultCategory ?? "work");
   const [start, setStart] = useState(toInputDateTime(start0));
   const [end, setEnd] = useState(toInputDateTime(end0));
   const [allDay, setAllDay] = useState(initial?.allDay ?? false);
