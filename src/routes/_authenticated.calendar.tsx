@@ -103,7 +103,7 @@ function CalendarPageInner() {
   const { selected: stamp, applyStamp, panelOpen } = useStamp();
 
   const events = useMemo(() => {
-    const local = rawEvents.flatMap((e) => expandRecurring(toMockEvent(e), e.recurrenceEndDate));
+    const local = rawEvents.flatMap((e) => expandRecurring(toMockEvent(e), e.recurrenceEndDate ?? null));
     const google: MockEvent[] = googleEvents.map((g) => ({
       id: `google:${g.id}`,
       title: g.summary ?? "(no title)",
