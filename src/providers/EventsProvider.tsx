@@ -49,9 +49,12 @@ function dtoToCalendarEvent(d: EventDTO): CalendarEvent {
     isPayday: d.isPayday,
     shift: hasShift
       ? {
-          shiftType: (d.shiftType ?? "morning") as ShiftType,
+          // shift_type is null for custom templates — fall back to "custom"
+          // (NOT "morning") so the UI keeps the template's icon/colour.
+          shiftType: (d.shiftType ?? "custom") as ShiftType,
           role: d.shiftRole ?? "",
           location: d.location ?? "",
+          customLabel: d.shiftType ? undefined : d.shiftRole ?? undefined,
           split:
             d.splitFirstStart &&
             d.splitFirstEnd &&
