@@ -147,6 +147,16 @@
     overflow-x: hidden;
     max-width: 100vw;
   }
+
+  [data-lovable-badge],
+  #lovable-badge,
+  .lovable-badge,
+  iframe[src*="lovable"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
 }
 
 /* Auth page gradient tokens (header backdrop on /login & /signup). */
