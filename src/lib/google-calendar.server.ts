@@ -66,10 +66,8 @@ export async function exchangeCodeForTokens(
   scope: string;
   id_token?: string;
 }> {
-  const clientId =
-    process.env.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_OAUTH_CLIENT_ID;
-  const clientSecret =
-    process.env.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (!clientId || !clientSecret)
     throw new Error("Google OAuth credentials not configured");
 
@@ -94,10 +92,8 @@ export async function exchangeCodeForTokens(
 export async function refreshAccessToken(
   refreshToken: string,
 ): Promise<{ access_token: string; expires_in: number }> {
-  const clientId =
-    process.env.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_OAUTH_CLIENT_ID;
-  const clientSecret =
-    process.env.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (!clientId || !clientSecret)
     throw new Error("Google OAuth credentials not configured");
 
