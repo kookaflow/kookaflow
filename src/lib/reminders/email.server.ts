@@ -53,7 +53,7 @@ export async function sendResendEmail(args: {
       "X-Connection-Api-Key": RESEND_API_KEY,
     },
     body: JSON.stringify({
-      from: "Kookaflow <onboarding@resend.dev>",
+      from: "Kookaflow <hello@kookaflow.com>",
       to: [args.to],
       subject: args.subject,
       html: args.html,
