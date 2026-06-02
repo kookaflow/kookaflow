@@ -63,8 +63,16 @@ export function AccountSection() {
       ? `${sub.trialDaysRemaining} day${sub.trialDaysRemaining === 1 ? "" : "s"} left in your free trial`
       : "14-day trial";
 
-  const showManage = sub.tier === "pro" && !!sub.stripeCustomerId;
-  const showUpgrade = sub.tier === "trial" || sub.tier === "basic" || sub.tier === "expired";
+  const showManage =
+    (sub.tier === "pro" || sub.tier === "basic") && !!sub.stripeCustomerId;
+  const showUpgrade =
+    sub.tier === "trial" || sub.tier === "basic" || sub.tier === "expired";
+  const upgradeLabel =
+    sub.tier === "basic"
+      ? "Upgrade to Pro"
+      : sub.tier === "expired"
+        ? "Resubscribe"
+        : "Upgrade";
 
   async function handlePortal() {
     try {
@@ -117,7 +125,7 @@ export function AccountSection() {
           <div className="flex w-full gap-2 sm:w-auto">
             {showUpgrade && (
               <Button asChild size="sm" variant="default" className="flex-1 sm:flex-none">
-                <Link to="/pricing">Upgrade</Link>
+                <Link to="/pricing">{upgradeLabel}</Link>
               </Button>
             )}
             {showManage && (
