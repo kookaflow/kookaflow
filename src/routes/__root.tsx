@@ -83,6 +83,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
+      { name: "google-site-verification", content: "bcV_myttg-cEbX2Xffm26CdzaGvQ_xEQ6HLwjATKFpw" },
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Kookaflow — Find your flow, whatever your hours" },
@@ -94,7 +95,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
       { name: "theme-color", content: "#1E2A6E" },
-      { name: "google-site-verification", content: "bcV_myttg-cEbX2Xffm26CdzaGvQ_xEQ6HLwjATKFpw" },
       { name: "twitter:title", content: "Kookaflow — Find your flow, whatever your hours" },
       { name: "twitter:description", content: "Kookaflow helps shift workers plan shifts and balance rest, wellness, family, and social time." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2d43d583-d01a-499d-9b06-bc8d13f6e7fb/id-preview-c3b21344--96b5e46f-e4e7-44bf-8bb8-b8c33dc6b93b.lovable.app-1779550240470.png" },
