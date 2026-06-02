@@ -25,23 +25,23 @@ export interface PlanConfig {
 export function getPlanConfig(plan: PlanKey): PlanConfig {
   switch (plan) {
     case "basic":
-      return { priceId: requireEnv("STRIPE_BASIC_MONTHLY_PRICE_ID"), mode: "subscription", tier: "basic" };
+      return { priceId: requireEnv("LIVE_STRIPE_BASIC_MONTHLY_PRICE_ID"), mode: "subscription", tier: "basic" };
     case "pro_monthly":
-      return { priceId: requireEnv("STRIPE_PRO_MONTHLY_PRICE_ID"), mode: "subscription", tier: "pro" };
+      return { priceId: requireEnv("LIVE_STRIPE_PRO_MONTHLY_PRICE_ID"), mode: "subscription", tier: "pro" };
     case "pro_yearly":
-      return { priceId: requireEnv("STRIPE_PRO_YEARLY_PRICE_ID"), mode: "subscription", tier: "pro" };
+      return { priceId: requireEnv("LIVE_STRIPE_PRO_YEARLY_PRICE_ID"), mode: "subscription", tier: "pro" };
     case "lifetime":
-      return { priceId: requireEnv("STRIPE_pro_LIFETIME_PRICE_ID"), mode: "payment", tier: "lifetime" };
+      return { priceId: requireEnv("LIVE_STRIPE_PRO_LIFETIME_PRICE_ID"), mode: "payment", tier: "lifetime" };
   }
 }
 
 /** Resolve which plan a Stripe price_id maps to (used in webhook). */
 export function planForPriceId(priceId: string): PlanConfig | null {
   const map: Array<[string | undefined, PlanKey]> = [
-    [process.env.STRIPE_BASIC_MONTHLY_PRICE_ID, "basic"],
-    [process.env.STRIPE_PRO_MONTHLY_PRICE_ID, "pro_monthly"],
-    [process.env.STRIPE_PRO_YEARLY_PRICE_ID, "pro_yearly"],
-    [process.env.STRIPE_pro_LIFETIME_PRICE_ID, "lifetime"],
+    [process.env.LIVE_STRIPE_BASIC_MONTHLY_PRICE_ID, "basic"],
+    [process.env.LIVE_STRIPE_PRO_MONTHLY_PRICE_ID, "pro_monthly"],
+    [process.env.LIVE_STRIPE_PRO_YEARLY_PRICE_ID, "pro_yearly"],
+    [process.env.LIVE_STRIPE_PRO_LIFETIME_PRICE_ID, "lifetime"],
   ];
   for (const [id, key] of map) {
     if (id && id === priceId) return getPlanConfig(key);
