@@ -89,17 +89,21 @@ function LandingPage() {
             className="mb-6 h-28 w-auto object-contain drop-shadow-lg sm:h-32"
           />
           <h1
-            className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl"
+            className="text-5xl font-bold leading-tight tracking-tight sm:text-6xl md:text-7xl"
             style={{ textShadow: "0 2px 12px rgba(0,0,0,0.3)" }}
           >
-            Find your flow, whatever your hours
+            Kookaflow
           </h1>
-          <p className="mt-5 max-w-2xl text-lg text-white/90 sm:text-xl">
+          <p className="mt-4 text-xl font-medium text-white/95 sm:text-2xl">
+            Find your flow, whatever your hours
+          </p>
+          <p className="mt-5 max-w-2xl text-base text-white/90 sm:text-lg">
             The shift calendar that cares about your whole life, not just your shifts.
+            Built for nurses, paramedics, and every shift worker who deserves better.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg" className="bg-white text-[#251074] hover:bg-white/90 [background:white]">
-              <Link to="/signup">Start Free Trial</Link>
+              <Link to="/signup">Start Free 14-Day Trial</Link>
             </Button>
             <Button
               asChild
@@ -191,7 +195,7 @@ function LandingPage() {
         style={{ background: BRAND_GRADIENT }}
       >
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 text-center">
-          <img src={logo} alt="Kookaflow" className="h-12 w-auto object-contain" />
+          <div className="text-2xl font-bold tracking-tight">Kookaflow</div>
           <p className="text-sm text-white/90">Find your flow, whatever your hours</p>
           <nav className="mt-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
             <Link to="/privacy" className="text-white/90 hover:text-white hover:underline">
@@ -208,7 +212,7 @@ function LandingPage() {
             </Link>
           </nav>
           <p className="mt-4 text-xs text-white/70">
-            © {new Date().getFullYear()} Kookaflow
+            © {new Date().getFullYear()} Kookaflow. All rights reserved.
           </p>
         </div>
       </footer>
