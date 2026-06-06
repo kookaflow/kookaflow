@@ -162,7 +162,7 @@ export function TimeGrid({
                       : cat.Icon);
                   const bg = isGoogle
                     ? "#94A3B8"
-                    : (sc?.colour ?? e.iconColor ?? cat.colour);
+                    : (sc?.colour ?? ensureReadableBadgeColour(e.iconColor, cat.colour));
                   return (
                     <button
                       key={e.id}
