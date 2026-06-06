@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Plus, Sparkles } from "lucide-react";
-import { CATEGORY_LIST, getCategoryConfig, getShiftConfig } from "@/lib/shiftConfig";
+import { CATEGORY_LIST, getCategoryConfig, getShiftConfig, ensureReadableBadgeColour } from "@/lib/shiftConfig";
 import { ICON_MAP } from "@/components/events/IconPicker";
 import type { MockEvent } from "./constants";
 
@@ -82,7 +82,7 @@ export function DaySummaryDialog({ open, onOpenChange, date, events, onEventClic
                   const cat = getCategoryConfig(e.category);
                   const shiftStyle = getShiftConfig(e.shiftType);
                   const CustomIcon = e.iconName ? ICON_MAP[e.iconName] : null;
-                  const bg = shiftStyle?.colour ?? e.iconColor ?? cat.colour;
+                  const bg = shiftStyle?.colour ?? ensureReadableBadgeColour(e.iconColor, cat.colour);
                   const Icon = shiftStyle?.Icon ?? CustomIcon ?? cat.Icon;
                   return (
                     <li key={e.id}>

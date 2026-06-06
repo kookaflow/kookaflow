@@ -19,13 +19,14 @@ export interface CategoryConfig {
 
 export const CATEGORY_CONFIG: Record<CategoryId, CategoryConfig> = {
   work:     { label: "Work / Shifts", colour: "#3B82F6", icon: "Briefcase", Icon: Briefcase },
+  business: { label: "Business",      colour: "#0EA5E9", icon: "Briefcase", Icon: Briefcase },
   rest:     { label: "Rest / Sleep",  colour: "#8B5CF6", icon: "Moon",      Icon: Moon },
   wellness: { label: "Wellness",      colour: "#EC4899", icon: "Heart",     Icon: Heart },
-  exercise: { label: "Exercise",      colour: "#F59E0B", icon: "Dumbbell",  Icon: Dumbbell },
-  social:   { label: "Social",        colour: "#10B981", icon: "Users",     Icon: Users },
+  exercise: { label: "Exercise",      colour: "#10B981", icon: "Dumbbell",  Icon: Dumbbell },
+  social:   { label: "Social",        colour: "#F59E0B", icon: "Users",     Icon: Users },
   family:   { label: "Family",        colour: "#EF4444", icon: "Home",      Icon: Home },
-  personal: { label: "Personal",      colour: "#6B7280", icon: "Star",      Icon: Star },
-  travel:   { label: "Travel",        colour: "#64748B", icon: "Car",       Icon: Car },
+  personal: { label: "Personal",      colour: "#6366F1", icon: "Star",      Icon: Star },
+  travel:   { label: "Travel",        colour: "#06B6D4", icon: "Car",       Icon: Car },
 };
 
 export interface ShiftConfig {
@@ -62,6 +63,33 @@ export const SHIFT_CONFIG: Record<ShiftKey, ShiftConfig> = {
 
 export function getCategoryConfig(id: CategoryId): CategoryConfig {
   return CATEGORY_CONFIG[id] ?? CATEGORY_CONFIG.personal;
+}
+
+/**
+ * Ensure a badge background is dark enough to meet ~3:1 contrast vs white text.
+ * If the colour is too light (or unparseable), fall back to the supplied default.
+ */
+export function ensureReadableBadgeColour(
+  colour: string | null | undefined,
+  fallback: string,
+): string {
+  if (!colour) return fallback;
+  const hex = colour.trim().replace(/^#/, "");
+  const norm =
+    hex.length === 3
+      ? hex.split("").map((c) => c + c).join("")
+      : hex.length === 6
+        ? hex
+        : null;
+  if (!norm || !/^[0-9a-fA-F]{6}$/.test(norm)) return fallback;
+  const r = parseInt(norm.slice(0, 2), 16) / 255;
+  const g = parseInt(norm.slice(2, 4), 16) / 255;
+  const b = parseInt(norm.slice(4, 6), 16) / 255;
+  const lin = (c: number) =>
+    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  // Contrast vs white = 1.05 / (L + 0.05). 3:1 requires L <= 0.3.
+  return L > 0.3 ? fallback : `#${norm}`;
 }
 
 export function getShiftConfig(type: string | null | undefined): ShiftConfig | null {

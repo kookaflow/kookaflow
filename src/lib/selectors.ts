@@ -32,7 +32,7 @@ export interface CategoryBreakdown {
 
 export function getCategoryBreakdown(events: CalendarEvent[], start: Date, end: Date): CategoryBreakdown {
   const totals: Record<CategoryId, number> = {
-    work: 0, rest: 0, wellness: 0, exercise: 0, social: 0, family: 0, personal: 0, travel: 0,
+    work: 0, business: 0, rest: 0, wellness: 0, exercise: 0, social: 0, family: 0, personal: 0, travel: 0,
   };
   for (const e of events) {
     const es = maxDate([new Date(e.start), start]);
