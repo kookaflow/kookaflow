@@ -1,5 +1,6 @@
 export type CategoryId =
   | "work"
+  | "business"
   | "rest"
   | "wellness"
   | "exercise"
