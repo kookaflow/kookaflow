@@ -1,7 +1,7 @@
 import { format, isSameDay, isToday, startOfDay, differenceInMinutes } from "date-fns";
 import { useEffect, useRef } from "react";
 import { type MockEvent } from "./constants";
-import { getCategoryConfig, getShiftConfig } from "@/lib/shiftConfig";
+import { getCategoryConfig, getShiftConfig, ensureReadableBadgeColour } from "@/lib/shiftConfig";
 import { ICON_MAP } from "@/components/events/IconPicker";
 import { cn } from "@/lib/utils";
 
