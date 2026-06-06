@@ -13,7 +13,7 @@ import {
 } from "date-fns";
 import { type MockEvent } from "./constants";
 import { ICON_MAP } from "@/components/events/IconPicker";
-import { getCategoryConfig, getShiftConfig } from "@/lib/shiftConfig";
+import { getCategoryConfig, getShiftConfig, ensureReadableBadgeColour } from "@/lib/shiftConfig";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -131,7 +131,7 @@ export function MonthView({
                 const cat = getCategoryConfig(e.category);
                 const CustomIcon = e.iconName ? ICON_MAP[e.iconName] : null;
                 const Icon = CustomIcon ?? cat.Icon;
-                const bg = e.iconColor ?? cat.colour;
+                const bg = ensureReadableBadgeColour(e.iconColor, cat.colour);
                 return (
                   <button
                     key={e.id}
