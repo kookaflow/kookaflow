@@ -67,7 +67,7 @@ export function MonthView({
           const otherEvents = dayEvents.filter(
             (e) => e.source !== "google" && !shiftIds.has(e.id),
           );
-          const MAX_SHIFTS = 3;
+          const MAX_SHIFTS = 2;
           const shiftsToShow = shifts.slice(0, MAX_SHIFTS);
           const extraShifts = shifts.length - shiftsToShow.length;
           const MAX_OTHERS = 3;
