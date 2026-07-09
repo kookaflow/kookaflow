@@ -67,10 +67,10 @@ export function MonthView({
           const otherEvents = dayEvents.filter(
             (e) => e.source !== "google" && !shiftIds.has(e.id),
           );
-          const MAX_SHIFTS = 3;
+          const MAX_SHIFTS = 2;
           const shiftsToShow = shifts.slice(0, MAX_SHIFTS);
           const extraShifts = shifts.length - shiftsToShow.length;
-          const MAX_OTHERS = 3;
+          const MAX_OTHERS = 2;
           const othersToShow = otherEvents.slice(0, MAX_OTHERS);
           const extraOthers = otherEvents.length - othersToShow.length;
 
@@ -83,7 +83,7 @@ export function MonthView({
               onSelect={onSelect}
               onCreate={onCreate}
             >
-              <div className="flex items-start justify-between gap-1">
+              <div className="flex shrink-0 items-start justify-between gap-1">
                 <span
                   className={cn(
                     "flex size-5 items-center justify-center rounded-full text-[11px] font-semibold",
@@ -109,7 +109,7 @@ export function MonthView({
                       onEventClick?.(shift);
                     }}
                     aria-label={`Edit ${shift.title}`}
-                    className="flex w-full items-center justify-center gap-0.5 truncate rounded-sm px-1 py-0.5 text-[10px] sm:text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm min-h-[16px]"
+                    className="flex w-full shrink-0 items-center justify-center gap-0.5 truncate rounded-sm px-1 py-0.5 text-[10px] sm:text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm min-h-[16px]"
                     style={{ backgroundColor: shiftStyle?.colour ?? shift.iconColor }}
                     title={`${label}${shiftStyle ? " shift" : ""}`}
                   >
@@ -123,7 +123,7 @@ export function MonthView({
                 );
               })}
               {extraShifts > 0 && (
-                <span className="text-[9px] font-medium text-muted-foreground">
+                <span className="shrink-0 text-[9px] font-medium text-muted-foreground">
                   +{extraShifts} more
                 </span>
               )}
@@ -141,7 +141,7 @@ export function MonthView({
                       onEventClick?.(e);
                     }}
                     aria-label={`Edit ${e.title}`}
-                    className="flex w-full items-center gap-0.5 truncate rounded-sm px-1 py-0.5 text-[10px] sm:text-[9px] font-medium text-white shadow-sm min-h-[16px]"
+                    className="flex w-full shrink-0 items-center gap-0.5 truncate rounded-sm px-1 py-0.5 text-[10px] sm:text-[9px] font-medium text-white shadow-sm min-h-[16px]"
                     style={{ backgroundColor: bg }}
                     title={e.title}
                   >
@@ -151,11 +151,11 @@ export function MonthView({
                 );
               })}
               {extraOthers > 0 && (
-                <span className="text-[9px] font-medium text-muted-foreground">
+                <span className="shrink-0 text-[9px] font-medium text-muted-foreground">
                   +{extraOthers} more
                 </span>
               )}
-              {googleEvents.slice(0, 2).map((e) => (
+              {googleEvents.slice(0, 1).map((e) => (
                 <button
                   key={e.id}
                   type="button"
@@ -163,7 +163,7 @@ export function MonthView({
                     ev.stopPropagation();
                     onEventClick?.(e);
                   }}
-                  className="flex w-full items-center gap-1 truncate rounded-sm px-1 py-px text-[9px] font-medium text-white hover:brightness-110"
+                  className="flex w-full shrink-0 items-center gap-1 truncate rounded-sm px-1 py-px text-[9px] font-medium text-white hover:brightness-110"
                   style={{ backgroundColor: "#94A3B8" }}
                   title={`${e.title} (Google Calendar)`}
                 >
@@ -173,9 +173,9 @@ export function MonthView({
                   <span className="truncate">{e.title}</span>
                 </button>
               ))}
-              {googleEvents.length > 2 && (
-                <span className="text-[9px] text-muted-foreground/70">
-                  +{googleEvents.length - 2} Google
+              {googleEvents.length > 1 && (
+                <span className="shrink-0 text-[9px] text-muted-foreground/70">
+                  +{googleEvents.length - 1} Google
                 </span>
               )}
             </DayCell>
