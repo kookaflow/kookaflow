@@ -29,6 +29,35 @@ function PrivacyPage() {
         <li>Google Calendar events, only if you choose to connect your Google account.</li>
       </ul>
 
+      <h2>Google User Data</h2>
+      <p>
+        Kookaflow integrates with Google Calendar via OAuth 2.0. When you connect your Google
+        account, Kookaflow requests read-only access to your Google Calendar data (scope:
+        calendar.readonly).
+      </p>
+      <p>What we access: Calendar event titles, dates, times, and descriptions from your Google Calendar.</p>
+      <p>What we do NOT do:</p>
+      <ul>
+        <li>We do not write to, modify, or delete your Google Calendar events.</li>
+        <li>We do not sell your Google Calendar data to third parties.</li>
+        <li>We do not share your Google Calendar data with any third parties.</li>
+        <li>We do not use your Google Calendar data to train AI or machine learning models.</li>
+        <li>We do not transfer your Google Calendar data except as necessary to provide the Kookaflow service.</li>
+      </ul>
+      <p>
+        Data storage: Google Calendar data is accessed in real time to display events in your
+        Kookaflow calendar. We store only the minimum data necessary to display your schedule within
+        the app.
+      </p>
+      <p>
+        Revoking access: You can disconnect Google Calendar at any time from the More tab in
+        Kookaflow, or by visiting your Google Account permissions at{" "}
+        <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">
+          myaccount.google.com/permissions
+        </a>
+        .
+      </p>
+
       <h2>How we use your data</h2>
       <ul>
         <li>To provide the calendar, shift management, and life-balance features.</li>
