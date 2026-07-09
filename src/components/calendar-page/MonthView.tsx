@@ -173,9 +173,9 @@ export function MonthView({
                   <span className="truncate">{e.title}</span>
                 </button>
               ))}
-              {googleEvents.length > 2 && (
+              {googleEvents.length > 1 && (
                 <span className="shrink-0 text-[9px] text-muted-foreground/70">
-                  +{googleEvents.length - 2} Google
+                  +{googleEvents.length - 1} Google
                 </span>
               )}
             </DayCell>
