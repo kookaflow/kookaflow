@@ -122,10 +122,9 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const scheduleAlert = useServerFn(scheduleShiftAlert);
   const cancelAlert = useServerFn(cancelShiftAlert);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: QK,
     queryFn: () => list(),
-    initialData: [] as EventDTO[],
   });
 
   const events = useMemo(() => (data ?? []).map(dtoToCalendarEvent), [data]);
@@ -171,7 +170,7 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
 
   const value: Ctx = {
     events,
-    isLoading,
+    isLoading: isLoading || isFetching,
     createEvent: async (draft) => {
       const dto = await createMut.mutateAsync(draft);
       return dtoToCalendarEvent(dto);
