@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { MoreHero } from "@/components/more/MoreHero";
 import { AccountSection } from "@/components/more/AccountSection";
 import { ShiftsLinkRow } from "@/components/more/ShiftsLinkRow";
+import { SignOutSection } from "@/components/more/SignOutSection";
 import { CalendarPreferences } from "@/components/settings/CalendarPreferences";
 import { ConnectedCalendars } from "@/components/settings/ConnectedCalendars";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
@@ -46,6 +47,7 @@ function MorePage() {
         <ExportSection />
         <AboutSection />
         <DangerZone />
+        <SignOutSection />
       </main>
     </div>
   );
