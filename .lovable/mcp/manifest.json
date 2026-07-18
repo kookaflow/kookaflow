@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "sdk_version": "0.23.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://zssperwyftamtseuojqg.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "kookaflow-mcp",
+      "version": "0.1.0",
+      "title": "Kookaflow"
+    },
+    "tools": [
+      {
+        "name": "list_events",
+        "title": "List calendar events",
+        "description": "List the signed-in user's Kookaflow calendar events (shifts and personal events) between two ISO datetimes.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "description": "Start of range, ISO 8601 datetime (e.g. 2026-07-18T00:00:00Z)."
+            },
+            "to": {
+              "type": "string",
+              "description": "End of range, ISO 8601 datetime."
+            },
+            "category": {
+              "type": "string",
+              "enum": [
+                "work",
+                "rest",
+                "wellness",
+                "exercise",
+                "social",
+                "family",
+                "personal",
+                "travel"
+              ],
+              "description": "Optional category filter."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Max rows (default 100)."
+            }
+          },
+          "required": [
+            "from",
+            "to"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_event",
+        "title": "Create calendar event",
+        "description": "Create a new event in the signed-in user's Kookaflow calendar (shift or personal event).",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "description": "Event title."
+            },
+            "category": {
+              "type": "string",
+              "enum": [
+                "work",
+                "rest",
+                "wellness",
+                "exercise",
+                "social",
+                "family",
+                "personal",
+                "travel"
+              ],
+              "description": "Life category for the event."
+            },
+            "start": {
+              "type": "string",
+              "description": "Start datetime, ISO 8601."
+            },
+            "end": {
+              "type": "string",
+              "description": "End datetime, ISO 8601."
+            },
+            "isAllDay": {
+              "type": "boolean"
+            },
+            "notes": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "location": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "title",
+            "category",
+            "start",
+            "end"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
