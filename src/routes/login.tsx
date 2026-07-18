@@ -118,7 +118,11 @@ function LoginPage() {
 
         <p className="auth-field-in text-center text-sm text-muted-foreground" style={{ animationDelay: "480ms" }}>
           New to Kookaflow?{" "}
-          <Link to="/signup" className="font-medium text-primary hover:underline">
+          <Link
+            to="/signup"
+            search={next ? { next } : undefined}
+            className="font-medium text-primary hover:underline"
+          >
             Create an account
           </Link>
         </p>
