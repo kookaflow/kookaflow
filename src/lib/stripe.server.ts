@@ -5,8 +5,8 @@ import Stripe from "stripe";
  * Uses the fetch-based HTTP client and async crypto for webhook verification.
  */
 export function getStripe(): Stripe {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY is not configured");
+  const key = process.env.STRIPE_LIVE_API_KEY || process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("STRIPE_LIVE_API_KEY is not configured");
   return new Stripe(key, {
     apiVersion: "2026-04-22.dahlia",
     httpClient: Stripe.createFetchHttpClient(),
