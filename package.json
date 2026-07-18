@@ -7,6 +7,7 @@
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "build:mobile": "BUILD_TARGET=mobile vite build && cp dist-mobile/client/_shell.html dist-mobile/client/index.html",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write ."
