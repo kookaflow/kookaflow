@@ -20,14 +20,15 @@ export default defineTool({
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   handler: async (input, ctx) => {
-    if (!ctx.isAuthenticated()) {
+    const userId = ctx.getUserId();
+    if (!ctx.isAuthenticated() || !userId) {
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const supabase = supabaseForUser(ctx);
     const { data, error } = await supabase
       .from("events")
       .insert({
-        user_id: ctx.getUserId(),
+        user_id: userId,
         title: input.title,
         category: input.category,
         start_time: input.start,
