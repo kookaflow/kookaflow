@@ -9,11 +9,17 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Sign in — Kookaflow" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//")
+      ? s.next
+      : undefined,
+  }),
   component: LoginPage,
 });
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +34,8 @@ function LoginPage() {
       toast.error(error.message);
       return;
     }
-    navigate({ to: "/calendar" });
+    if (next) window.location.assign(next);
+    else navigate({ to: "/calendar" });
   };
 
   const sendReset = async () => {
@@ -111,7 +118,11 @@ function LoginPage() {
 
         <p className="auth-field-in text-center text-sm text-muted-foreground" style={{ animationDelay: "480ms" }}>
           New to Kookaflow?{" "}
-          <Link to="/signup" className="font-medium text-primary hover:underline">
+          <Link
+            to="/signup"
+            search={next ? { next } : undefined}
+            className="font-medium text-primary hover:underline"
+          >
             Create an account
           </Link>
         </p>

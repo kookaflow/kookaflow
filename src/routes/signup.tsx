@@ -9,11 +9,17 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({ meta: [{ title: "Create account — Kookaflow" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//")
+      ? s.next
+      : undefined,
+  }),
   component: SignupPage,
 });
 
 function SignupPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,7 +35,7 @@ function SignupPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/calendar`,
+        emailRedirectTo: `${window.location.origin}${next ?? "/calendar"}`,
         data: { full_name: fullName },
       },
     });
@@ -42,7 +48,10 @@ function SignupPage() {
       await supabase.from("profiles").update({ full_name: fullName }).eq("id", data.user.id);
     }
     setLoading(false);
-    if (data.session) navigate({ to: "/onboarding" });
+    if (data.session) {
+      if (next) window.location.assign(next);
+      else navigate({ to: "/onboarding" });
+    }
     else toast.success("Check your email to confirm your account");
   };
 
