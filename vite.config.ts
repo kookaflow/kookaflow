@@ -18,6 +18,10 @@ import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 // Web behavior is unchanged — kookaflow.com continues to host webhooks,
 // cron endpoints, Stripe/Google OAuth callbacks, and MCP.
 const isMobileBuild = process.env.BUILD_TARGET === "mobile";
+// Origin the mobile bundle points server functions at.
+// Overridable per-build with MOBILE_SERVER_ORIGIN=... npm run build:mobile
+const mobileServerOrigin =
+  process.env.MOBILE_SERVER_ORIGIN ?? "https://kookaflow.com";
 
 export default defineConfig({
   tanstackStart: {
@@ -31,6 +35,10 @@ export default defineConfig({
   ...(isMobileBuild ? { nitro: false as const } : {}),
   vite: {
     plugins: [mcpPlugin()],
+    define: {
+      "import.meta.env.VITE_IS_MOBILE_BUILD": JSON.stringify(isMobileBuild),
+      "import.meta.env.VITE_MOBILE_SERVER_ORIGIN": JSON.stringify(mobileServerOrigin),
+    },
     ...(isMobileBuild ? { build: { outDir: "dist-mobile", emptyOutDir: true } } : {}),
   },
 });
