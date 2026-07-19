@@ -43,9 +43,7 @@ const ALLOWED_MOBILE_ORIGINS = new Set([
 ]);
 
 const corsMiddleware = createMiddleware().server(async ({ next }) => {
-  const { getRequest, setResponseHeaders } = await import(
-    "@tanstack/react-start/server"
-  );
+  const { getRequest } = await import("@tanstack/react-start/server");
   const req = getRequest();
   const origin = req.headers.get("origin");
   const allowed = origin && ALLOWED_MOBILE_ORIGINS.has(origin) ? origin : null;
@@ -67,11 +65,13 @@ const corsMiddleware = createMiddleware().server(async ({ next }) => {
   }
 
   const result = await next();
-  if (allowed) {
-    setResponseHeaders({
-      "access-control-allow-origin": allowed,
-      vary: "origin",
-    });
+  if (allowed && result instanceof Response) {
+    try {
+      result.headers.set("access-control-allow-origin", allowed);
+      result.headers.set("vary", "origin");
+    } catch {
+      // Headers may be immutable in some runtimes; ignore.
+    }
   }
   return result;
 });
