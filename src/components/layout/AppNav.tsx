@@ -51,6 +51,7 @@ export function AppNav() {
 
       {/* Mobile bottom nav */}
       <nav
+        data-app-bottom-nav
         className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-border bg-card shadow-[0_-4px_12px_-6px_rgba(0,0,0,0.15)] md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
@@ -62,7 +63,7 @@ export function AppNav() {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-1 py-2 min-h-12 text-[10px] font-medium transition-colors",
+                "flex min-w-0 flex-1 flex-col items-center justify-center gap-1 py-2 min-h-12 text-[10px] font-medium transition-colors",
                 active ? "text-primary" : "text-muted-foreground",
               )}
             >
