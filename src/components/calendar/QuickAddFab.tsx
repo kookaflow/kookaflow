@@ -15,9 +15,10 @@ export function QuickAddFab() {
       className={cn(
         "fixed z-50 flex size-14 items-center justify-center rounded-full text-white shadow-xl transition-transform hover:scale-105",
         "bg-gradient-to-br from-primary to-primary/80",
+        // Sit above the mobile bottom nav (~64px + safe-area); revert on md+.
+        "bottom-[calc(72px+env(safe-area-inset-bottom))] md:bottom-5",
       )}
       style={{
-        bottom: "max(20px, env(safe-area-inset-bottom))",
         right: "max(16px, env(safe-area-inset-right))",
       }}
     >

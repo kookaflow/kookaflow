@@ -1,82 +1,56 @@
-# Static build for Capacitor — investigation (no code changes)
+## Findings
 
-## 1. What this project actually is
+### 1. Why the mobile Calendar shows "empty" while the Dashboard shows totals
 
-- **Framework:** TanStack **Start** (full-stack React 19 meta-framework), not plain Vite React and not TanStack Router-only.
-- **Build tool:** Vite 7 via the Lovable preset `@lovable.dev/vite-tanstack-config`, which internally wires the `tanstackStart` Vite plugin.
-- **Deploy target:** Cloudflare Workers via `@cloudflare/vite-plugin` + `wrangler.jsonc` (`main: src/server.ts`). Under the hood TanStack Start uses Nitro to emit the server bundle — that's the `.output/server` folder you're seeing.
-- **Routing:** File-based routes in `src/routes/`, generated into `src/routeTree.gen.ts`. Root shell is in `src/routes/__root.tsx` and uses `HeadContent` / `Scripts` — this is SSR shell markup, there is no static `index.html` template anywhere in the repo.
+The Dashboard is **not** proof that the mobile app is fetching real data.
 
-## 2. Why `npm run build` produces a server, not static files
+- `src/routes/_authenticated.dashboard.tsx` reads from `useEventsStore()` (`src/lib/events-store.ts`).
+- That store is a module-level array seeded with `buildMockEvents(new Date())` — synthetic demo shifts (roughly the 40h Work / 58h totals the user is seeing). Nothing in the code path writes real events into it.
+- The Calendar (`src/routes/_authenticated.calendar.tsx`) reads from `useEvents()` → `EventsProvider` → `listEvents` server function via `useServerFn` + React Query.
 
-TanStack Start is an **SSR framework by design**. `vite build` runs the `tanstackStart` plugin which:
+So on mobile:
+- Dashboard "works" because it's always showing mock data (same on web too — the web Dashboard is also mock; on web the Calendar happens to work so it looks consistent).
+- Calendar is empty because the real `listEvents` server-fn call from the Capacitor bundle is not returning events.
 
-1. Builds the client bundle.
-2. Builds a **server entry** (`src/server.ts` → Cloudflare Worker) that renders every route on the fly using `renderToPipeableStream` and injects head/scripts.
-3. Emits everything to `.output/` in the Nitro/Worker layout, with **no `index.html`** — the HTML is produced per-request by the Worker.
+### 2. Does the Calendar's query differ from the Dashboard's?
 
-So there is no config flag on the current setup that says "just emit static files". A static export would require either (a) full prerendering of every route, or (b) migrating off TanStack Start to a plain Vite React SPA. And the app has real server code that rules out (a) as-is (see §4).
+Yes — completely different data sources. The Dashboard never calls a server function, so it cannot validate that Capacitor → kookaflow.com RPC is working. The Calendar's query is the first real network call to `/_serverFn/*` in that view.
 
-## 3. What it would take to get a Capacitor-ready static SPA
+The Capacitor server-fn pipeline (`src/start.ts`) rewrites `/_serverFn/...` to `https://kookaflow.com/_serverFn/...` when `VITE_IS_MOBILE_BUILD=true`. Likely failure modes, in order of probability:
 
-There is no small config toggle. Two realistic paths:
+- **a. `VITE_IS_MOBILE_BUILD` isn't set during `build:mobile`.** If unset, `mobileServerFnFetch` is never wired in and the app tries to hit `capacitor://localhost/_serverFn/...`, which resolves to nothing. Query silently returns `undefined`/`[]` and `events.length === 0` shows the empty state. Need to confirm the build script sets this env.
+- **b. Auth bearer not attached on mobile.** `attachSupabaseAuth` reads the Supabase session from the client's `localStorage`. In Capacitor WebView the user is logged in under `capacitor://localhost` — the token IS on that origin's storage, so the middleware should still find it. But the cross-origin fetch to kookaflow.com then sends `Authorization: Bearer ...` from a different origin — the server-fn hits `requireSupabaseAuth`, which should validate it and return the events. If the session isn't yet hydrated when the query first fires we'd see `Unauthorized`, and React Query would surface an error — not silently empty.
+- **c. CORS response drops the body.** The CORS middleware in `src/start.ts` only sets `access-control-allow-origin` on the final `Response`. Preflight is handled. This should be fine for a GET, but worth verifying the response actually reaches the client (network tab / console error) — a CORS block would produce a console error, not zero events.
+- **d. React Query default `queryKey: ["events"]` with `initialData` removed** — Provider looks fine; `useQuery` will return `data: undefined` until first fetch resolves, `events` becomes `[]`, and the empty-state renders before load completes. On web this flashes for a moment; on mobile if the fetch never resolves, it stays empty. Combined with (a) that's the visible symptom.
 
-### Path A — Migrate the shell to a plain Vite React SPA (recommended for Capacitor)
+The dominant hypothesis is **(a)**: `build:mobile` is not injecting `VITE_IS_MOBILE_BUILD=true`, so Capacitor never rewrites `/_serverFn/*` to kookaflow.com and every server-fn quietly no-ops. This also explains why there's no visible error — the fetch fails at the WebView layer and React Query is left with empty data.
 
-Capacitor wraps a static `dist/` folder (index.html + JS/CSS). The clean way to get there:
+### 3. Does the calendar library fail silently in the SPA build?
 
-1. Replace `@lovable.dev/vite-tanstack-config` + `tanstackStart` plugin with plain `@vitejs/plugin-react` (+ keep `@tanstack/router-plugin` in **SPA mode**, or switch to `react-router`).
-2. Add a real `index.html` at the project root with a `<div id="root">` and a client entry (`src/main.tsx`) that mounts the router with `createRouter` + `RouterProvider` — no `shellComponent`, no `HeadContent`/`Scripts`, no `__root.tsx` html/head/body.
-3. Remove/relocate everything under `src/routes/api/**` (they are server routes — invalid in SPA mode) and rewrite `createServerFn` call sites (see §4).
-4. Remove `src/server.ts`, `src/start.ts`, `wrangler.jsonc`, `@cloudflare/vite-plugin`, `nitro`.
-5. Move head metadata from route `head()` to `react-helmet-async` (or similar) since there's no SSR to render `<HeadContent>`.
-6. `vite build` then outputs static `dist/` → point `capacitor.config.ts` `webDir: "dist"`.
+No SSR-only assumption on the render path — `MonthView`/`TimeGrid` are pure client components, and the empty-state branch is chosen before any calendar library runs (`events.length === 0` early-returns). Date parsing uses `date-fns` and `new Date(iso)`, which behaves the same in the Capacitor WebView. The rendering layer is not the bug.
 
-This is a meaningful refactor (touches routing shell, ~10 server-function files, all API routes, head metadata, and env access), but it's the only way to get a clean SPA that Capacitor can wrap.
+### 4. FAB overlaps the "More" tab
 
-### Path B — Keep TanStack Start for web, add a parallel Capacitor build
+`QuickAddFab` is `fixed; bottom: max(20px, env(safe-area-inset-bottom)); right: max(16px, ...)`. The mobile bottom nav (`AppNav`) is `fixed inset-x-0 bottom-0` with its own safe-area padding and ~56px content height. So the FAB sits directly on top of the right-most tab ("More"), blocking taps.
 
-Not currently supported by TanStack Start's `prerender` option for a fully dynamic app like this (auth-gated routes, per-user data, server functions). Not recommended.
+## Proposed fix
 
-### Recommendation
+### A. Calendar-empty bug
 
-Go with **Path A**. Capacitor + TanStack Start SSR do not mix — mobile apps can't ship a Cloudflare Worker inside the bundle.
+1. Update `package.json` `build:mobile` script to set `VITE_IS_MOBILE_BUILD=true` (and optionally `VITE_MOBILE_SERVER_ORIGIN=https://kookaflow.com` explicitly) so the flag reaches the client bundle. Verify by grepping the built `dist-mobile/client/assets/*.js` for `kookaflow.com` and for the mobile fetch rewrite.
+2. Add a lightweight fetch-error surface in `EventsProvider` so a failed `listEvents` renders a "Couldn't load events — retry" state instead of the misleading empty-state. This prevents future silent failures from looking like "no data".
+3. Add a one-line dev log inside `mobileServerFnFetch` (only when `import.meta.env.DEV`) so any future Capacitor-vs-web routing mistake is visible in Safari Web Inspector.
+4. After rebuilding the mobile bundle, re-test in the iOS app; if events still don't load, inspect the Network panel for the `_serverFn` request — that will distinguish auth (401), CORS (blocked), or wrong-origin failures.
 
-## 4. Server-side features that will break in a static build
+Not changing: the Dashboard's `useEventsStore` mock source is a separate cleanup and is out of scope for this bug (though it should eventually be migrated to `useEvents()`).
 
-The app has substantial server code that must be re-homed before it can run as a static SPA. Everything in these two buckets runs on the server today:
+### B. FAB overlap on Calendar tab
 
-**Server routes (`src/routes/api/public/**`)** — external HTTP endpoints. In a static build they simply cease to exist:
+Raise the FAB above the mobile bottom nav. In `src/components/calendar/QuickAddFab.tsx`, change the `bottom` style to clear the ~56px tab bar plus the safe-area inset on mobile, and keep the current offset on `md+`:
 
-- `stripe/webhook.ts` — Stripe webhook receiver
-- `hooks/send-daily-reminder.ts`, `send-weekly-reminder.ts`, `send-trial-reminders.ts`, `send-push-*.ts`, `dispatch-shift-alerts.ts` — pg_cron-triggered jobs
-- `google/sync-all.ts` — scheduled Google Calendar sync
-- `auth.google.callback.ts` — Google OAuth callback
-- MCP endpoints under `src/routes/[.mcp]/` and `[.well-known]/oauth-protected-resource.ts`
+```
+bottom: calc(64px + env(safe-area-inset-bottom) + 16px)  // mobile
+md:bottom: max(20px, env(safe-area-inset-bottom))         // desktop
+```
 
-**Server functions (`*.functions.ts`) — 9 files** currently using `createServerFn` + `requireSupabaseAuth`:
-
-- `account`, `events`, `preferences`, `push`, `shift-alerts`, `shift-templates`, `google-calendar`, `stripe`, plus MCP helpers
-
-**Handling strategy for a Capacitor SPA:**
-
-| Concern | Solution |
-|---|---|
-| Server routes (webhooks, cron, OAuth callback, MCP) | **Keep them running on the web deployment** at kookaflow.com. Mobile app never calls them; Stripe/pg_cron/Google keep hitting the web origin. |
-| `createServerFn` calls (events CRUD, preferences, shift templates, etc.) | Rewrite each as a **direct Supabase client call** from the browser using the already-generated `@/integrations/supabase/client`. RLS already scopes them to `auth.uid()`, so this is mostly deleting the `.handler()` wrapper and calling `supabase.from(...)` inline (or via a thin client helper). |
-| `createServerFn` calls that use `supabaseAdmin` or secrets (Stripe checkout session, Google OAuth token exchange) | Move to a small **Supabase Edge Function** or keep them on the web origin and call over `fetch(https://kookaflow.com/api/...)` from the mobile app. Google OAuth in Capacitor should switch to the native `@capacitor-community/generic-oauth2` plugin. |
-| `process.env.*` reads | Server-only. Replace secret-backed logic per row above; public config becomes `import.meta.env.VITE_*`. |
-| SSR head metadata (`head()` per route) | Replace with `react-helmet-async` for the web SPA. Inside Capacitor the head barely matters (no share previews, no SEO). |
-| OneSignal / push | Already client-side — fine as-is, but on mobile you'll want the Capacitor OneSignal SDK instead of `react-onesignal`. |
-| Google Calendar sync loop | Keep the pg_cron→web-origin `sync-all` endpoint; the mobile app just reads the cached rows via Supabase. |
-
-## 5. What I need from you before writing a plan to implement
-
-Before I write an implementation plan, please confirm:
-
-1. **Ship model:** Are you OK with **two builds** (web SPA/SSR on kookaflow.com continues to host webhooks + cron + Stripe/Google callbacks; mobile is a static SPA that talks to Supabase directly and calls the web origin only for Stripe/OAuth)? Or do you want to fully decommission the web version?
-2. **Router:** Keep TanStack Router in **SPA/client-only mode**, or switch to `react-router-dom`? (TanStack Router SPA mode preserves your file-based routes with the least churn.)
-3. **Google sign-in on mobile:** switch to Capacitor's native OAuth plugin, or open the web OAuth flow in an in-app browser?
-4. **Stripe on mobile:** iOS App Store forbids external payments for digital goods. Do you plan to use **RevenueCat / native IAP** on mobile (recommended), or keep Stripe Checkout via an in-app browser (Android-only feasible; iOS will likely reject)?
-
-Once you answer these, I'll produce a concrete step-by-step migration plan.
+Simplest implementation: keep the fixed positioning but use Tailwind responsive classes (`bottom-[calc(64px+env(safe-area-inset-bottom)+16px)] md:bottom-5`) and drop the inline `bottom` style so it doesn't override at md.
