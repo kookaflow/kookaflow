@@ -3,6 +3,79 @@ import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 import { renderErrorPage } from "./lib/error-page";
 
+// -----------------------------------------------------------------------------
+// Mobile (Capacitor) support
+// -----------------------------------------------------------------------------
+// The Capacitor bundle is served from `capacitor://localhost` (iOS) or
+// `https://localhost` (Android) — there is no server on that origin.
+// Rewrite server-fn calls (`/_serverFn/<hash>`) to hit the deployed web app.
+const IS_MOBILE_BUILD =
+  (import.meta.env.VITE_IS_MOBILE_BUILD as boolean | undefined) === true;
+const MOBILE_SERVER_ORIGIN =
+  (import.meta.env.VITE_MOBILE_SERVER_ORIGIN as string | undefined) ??
+  "https://kookaflow.com";
+
+const mobileServerFnFetch: typeof fetch = (input, init) => {
+  if (typeof input === "string" && input.startsWith("/")) {
+    return fetch(`${MOBILE_SERVER_ORIGIN}${input}`, init);
+  }
+  if (input instanceof URL) {
+    return fetch(input, init);
+  }
+  if (input instanceof Request && input.url.startsWith("/")) {
+    return fetch(
+      new Request(`${MOBILE_SERVER_ORIGIN}${input.url}`, input),
+      init,
+    );
+  }
+  return fetch(input, init);
+};
+
+// -----------------------------------------------------------------------------
+// CORS for cross-origin Capacitor clients hitting kookaflow.com/_serverFn/*
+// -----------------------------------------------------------------------------
+// Capacitor's WebView origins are fixed and safe to allow-list. Any other
+// origin is denied (same-origin browser requests don't need CORS headers).
+const ALLOWED_MOBILE_ORIGINS = new Set([
+  "capacitor://localhost",
+  "https://localhost",
+  "ionic://localhost",
+]);
+
+const corsMiddleware = createMiddleware().server(async ({ next }) => {
+  const { getRequest } = await import("@tanstack/react-start/server");
+  const req = getRequest();
+  const origin = req.headers.get("origin");
+  const allowed = origin && ALLOWED_MOBILE_ORIGINS.has(origin) ? origin : null;
+
+  // Handle preflight before running the rest of the pipeline.
+  if (allowed && req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "access-control-allow-origin": allowed,
+        "access-control-allow-methods": "GET,POST,OPTIONS",
+        "access-control-allow-headers":
+          req.headers.get("access-control-request-headers") ??
+          "authorization,content-type",
+        "access-control-max-age": "86400",
+        vary: "origin",
+      },
+    });
+  }
+
+  const result = await next();
+  if (allowed && result instanceof Response) {
+    try {
+      result.headers.set("access-control-allow-origin", allowed);
+      result.headers.set("vary", "origin");
+    } catch {
+      // Headers may be immutable in some runtimes; ignore.
+    }
+  }
+  return result;
+});
+
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
     return await next();
@@ -19,6 +92,7 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
 });
 
 export const startInstance = createStart(() => ({
-  requestMiddleware: [errorMiddleware],
+  requestMiddleware: [corsMiddleware, errorMiddleware],
   functionMiddleware: [attachSupabaseAuth],
+  ...(IS_MOBILE_BUILD ? { serverFns: { fetch: mobileServerFnFetch } } : {}),
 }));

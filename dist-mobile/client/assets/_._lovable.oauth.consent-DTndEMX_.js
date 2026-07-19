@@ -1,1 +1,0 @@
-import{j as e}from"./index-CO-JBghi.js";import{A as o}from"./AuthShell-Bf6_N7Yi.js";const r=({error:t})=>e.jsx(o,{tagline:"Connect an app",subtitle:"Could not load this request",children:e.jsx("p",{className:"text-sm text-muted-foreground",children:String(t?.message??t)})});export{r as errorComponent};
