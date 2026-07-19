@@ -16,6 +16,10 @@ const MOBILE_SERVER_ORIGIN =
   "https://kookaflow.com";
 
 const mobileServerFnFetch: typeof fetch = (input, init) => {
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.debug("[mobile serverFn]", input);
+  }
   if (typeof input === "string" && input.startsWith("/")) {
     return fetch(`${MOBILE_SERVER_ORIGIN}${input}`, init);
   }
