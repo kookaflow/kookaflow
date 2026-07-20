@@ -10,43 +10,60 @@ import { GRADIENT_MAP, getGradient, nextGradient } from "@/lib/gradients";
 import type { GradientId } from "@/types/event";
 
 export const ICONS: { name: string; Icon: LucideIcon }[] = [
-  { name: "Sun", Icon: Sun },
-  { name: "Moon", Icon: Moon },
-  { name: "Sunset", Icon: Sunset },
-  { name: "Car", Icon: Car },
-  { name: "Briefcase", Icon: Briefcase },
-  { name: "Heart", Icon: Heart },
-  { name: "Dumbbell", Icon: Dumbbell },
-  { name: "Users", Icon: Users },
-  { name: "Home", Icon: Home },
-  { name: "Coffee", Icon: Coffee },
-  { name: "Music", Icon: Music },
-  { name: "Book", Icon: Book },
-  { name: "Plane", Icon: Plane },
-  { name: "Utensils", Icon: Utensils },
-  { name: "Bike", Icon: Bike },
-  { name: "Leaf", Icon: Leaf },
-  { name: "Star", Icon: Star },
-  { name: "Bell", Icon: Bell },
-  { name: "Zap", Icon: Zap },
-  { name: "Thermometer", Icon: Thermometer },
-  { name: "Umbrella", Icon: Umbrella },
-  { name: "Radio", Icon: Radio },
-  { name: "GitBranch", Icon: GitBranch },
-  { name: "DollarSign", Icon: DollarSign },
-  { name: "Baby", Icon: Baby },
-  { name: "Dog", Icon: Dog },
-  { name: "Gamepad", Icon: Gamepad2 },
-  { name: "ShoppingBag", Icon: ShoppingBag },
-  { name: "Stethoscope", Icon: Stethoscope },
-  { name: "Bus", Icon: Bus },
-  { name: "Clock3", Icon: Clock3 },
-  { name: "Flag", Icon: Flag },
+  // Shifts & Time
+  { name: "sun", Icon: Sun },
+  { name: "moon", Icon: Moon },
+  { name: "sunset", Icon: Sunset },
+  { name: "zap", Icon: Zap },
+  { name: "clock-3", Icon: Clock3 },
+  { name: "arrow-left-right", Icon: ArrowLeftRight },
+
+  // Travel & Commute
+  { name: "car", Icon: Car },
+  { name: "plane", Icon: Plane },
+
+  // Rest & Wellness
+  { name: "coffee", Icon: Coffee },
+  { name: "bed-double", Icon: BedDouble },
+  { name: "leaf", Icon: Leaf },
+  { name: "heart", Icon: Heart },
+  { name: "thermometer", Icon: Thermometer },
+  { name: "dumbbell", Icon: Dumbbell },
+
+  // Family & Social
+  { name: "home", Icon: Home },
+  { name: "users", Icon: Users },
+  { name: "baby", Icon: Baby },
+  { name: "party-popper", Icon: PartyPopper },
+
+  // Scheduling & Notes
+  { name: "bell", Icon: Bell },
+  { name: "flag", Icon: Flag },
+  { name: "utensils", Icon: Utensils },
+  { name: "umbrella", Icon: Umbrella },
 ];
+
+const EXTRA_ICON_MAP: Record<string, LucideIcon> = {
+  // Preserved for src/lib/shiftConfig.ts and src/lib/stamps.ts references
+  // (removed from the picker grid so existing saved data keeps rendering)
+  Briefcase,
+  Radio,
+  GitBranch,
+  DollarSign,
+  Star,
+  Music,
+  Book,
+  Dog,
+
+  // Backward-compat aliases for events saved with the old PascalCase icon names
+  Sun, Moon, Sunset, Zap, Clock3, ArrowLeftRight, Car, Plane,
+  Coffee, BedDouble, Leaf, Heart, Thermometer, Dumbbell,
+  Home, Users, Baby, PartyPopper, Bell, Flag, Utensils, Umbrella,
+};
 
 export const ICON_MAP: Record<string, LucideIcon> = ICONS.reduce(
   (a, i) => ((a[i.name] = i.Icon), a),
-  {} as Record<string, LucideIcon>,
+  { ...EXTRA_ICON_MAP } as Record<string, LucideIcon>,
 );
 
 export function getIcon(name?: string | null): LucideIcon | null {
