@@ -103,7 +103,7 @@ function CalendarPageInner() {
   const { selected: stamp, applyStamp, panelOpen } = useStamp();
 
   const events = useMemo(() => {
-    const local = rawEvents.flatMap((e) => expandRecurring(toMockEvent(e), e.recurrenceEndDate ?? null));
+    const local = rawEvents.map(toMockEvent);
     const google: MockEvent[] = googleEvents.map((g) => ({
       id: `google:${g.id}`,
       title: g.summary ?? "(no title)",
@@ -512,65 +512,4 @@ const WEEKDAY_INDEX: Record<string, number> = {
 };
 function weekdayKeyToIndex(k: string): number | null {
   return WEEKDAY_INDEX[k] ?? null;
-}
-
-// Maximum number of recurring occurrences we materialise client-side. This
-// keeps the calendar fast while covering the foreseeable navigation window
-// (e.g. ~1 year of weekly shifts, ~3 months of daily shifts).
-const MAX_RECURRING_OCCURRENCES = 60;
-
-function expandRecurring(base: MockEvent, recurrenceEndDate: string | null): MockEvent[] {
-  const rec = base.recurrence;
-  if (!rec || rec.kind === "none") return [base];
-
-  const durationMs = base.end.getTime() - base.start.getTime();
-  const endLimit = recurrenceEndDate
-    ? new Date(`${recurrenceEndDate}T23:59:59`)
-    : addDays(base.start, 365);
-
-  const out: MockEvent[] = [];
-  const pushAt = (d: Date, idx: number) => {
-    const start = new Date(d);
-    const end = new Date(start.getTime() + durationMs);
-    out.push(
-      idx === 0
-        ? { ...base, start, end }
-        : { ...base, id: `${base.id}::rec-${idx}`, start, end },
-    );
-  };
-
-  if (rec.kind === "daily") {
-    for (let i = 0; i < MAX_RECURRING_OCCURRENCES; i++) {
-      const d = addDays(base.start, i);
-      if (d > endLimit) break;
-      pushAt(d, i);
-    }
-  } else if (rec.kind === "weekly") {
-    for (let i = 0; i < MAX_RECURRING_OCCURRENCES; i++) {
-      const d = addDays(base.start, i * 7);
-      if (d > endLimit) break;
-      pushAt(d, i);
-    }
-  } else if (rec.kind === "fortnightly") {
-    for (let i = 0; i < MAX_RECURRING_OCCURRENCES; i++) {
-      const d = addDays(base.start, i * 14);
-      if (d > endLimit) break;
-      pushAt(d, i);
-    }
-  } else if (rec.kind === "custom") {
-    const days = new Set(rec.days);
-    if (days.size === 0) return [base];
-    let count = 0;
-    let idx = 0;
-    for (let offset = 0; count < MAX_RECURRING_OCCURRENCES; offset++) {
-      const d = addDays(base.start, offset);
-      if (d > endLimit) break;
-      if (!days.has(d.getDay())) continue;
-      pushAt(d, idx);
-      idx++;
-      count++;
-    }
-  }
-
-  return out.length > 0 ? out : [base];
 }
