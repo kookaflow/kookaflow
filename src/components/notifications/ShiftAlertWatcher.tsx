@@ -8,6 +8,21 @@ import type { CalendarEvent } from "@/types/event";
 
 const SOUND_PREFS_KEY = "kookaflow.sound-prefs.v1";
 const LAST_OPENED_KEY = "kookaflow.lastOpenedDate";
+const LATCH_RESET_KEY = "kookaflow.summaryLatchResetV1";
+
+// One-shot migration: earlier builds could latch a wrong "0 events today"
+// summary for the rest of the day. Clear that latch once so the corrected
+// count shows immediately on the next load.
+if (typeof window !== "undefined") {
+  try {
+    if (!window.localStorage.getItem(LATCH_RESET_KEY)) {
+      window.localStorage.removeItem(LAST_OPENED_KEY);
+      window.localStorage.setItem(LATCH_RESET_KEY, "1");
+    }
+  } catch {
+    /* noop */
+  }
+}
 
 type SoundPrefs = { eventAlertMinutes?: number; shiftAlertEnabled?: boolean };
 
