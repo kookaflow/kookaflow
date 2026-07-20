@@ -1,8 +1,8 @@
 import {
   Sun, Moon, Sunset, Car, Briefcase, Heart, Dumbbell, Users, Home, Coffee,
-  Music, Book, Plane, Utensils, Bike, Leaf, Star, Bell, Zap, Thermometer,
-  Umbrella, Radio, GitBranch, DollarSign, Baby, Dog, Gamepad2, ShoppingBag,
-  Stethoscope, Bus, Clock3, Flag,
+  Music, Book, Plane, Utensils, Leaf, Star, Bell, Zap, Thermometer,
+  Umbrella, Radio, GitBranch, DollarSign, Baby, Dog,
+  Clock3, Flag, ArrowLeftRight, PartyPopper, BedDouble,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
