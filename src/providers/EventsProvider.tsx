@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { addDays } from "date-fns";
 import {
   listEvents,
   createEvent as createEventFn,
@@ -113,6 +114,81 @@ function draftToInput(draft: EventDraft) {
   };
 }
 
+// Maximum number of recurring occurrences we materialise client-side. Matches
+// the previous per-route cap and covers ~1 year of weekly / ~3 months of daily.
+const MAX_RECURRING_OCCURRENCES = 60;
+
+const WEEKDAY_INDEX: Record<string, number> = {
+  sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6,
+};
+
+function expandRecurring(base: CalendarEvent): CalendarEvent[] {
+  const pattern = base.recurrencePattern;
+  if (!pattern) return [base];
+
+  const startDate = new Date(base.start);
+  const endDate = new Date(base.end);
+  const durationMs = endDate.getTime() - startDate.getTime();
+  const endLimit = base.recurrenceEndDate
+    ? new Date(`${base.recurrenceEndDate}T23:59:59`)
+    : addDays(startDate, 365);
+
+  const out: CalendarEvent[] = [];
+  const pushAt = (d: Date, idx: number) => {
+    const s = new Date(d);
+    const e = new Date(s.getTime() + durationMs);
+    out.push(
+      idx === 0
+        ? { ...base, start: s.toISOString(), end: e.toISOString() }
+        : {
+            ...base,
+            id: `${base.id}::rec-${idx}`,
+            start: s.toISOString(),
+            end: e.toISOString(),
+          },
+    );
+  };
+
+  if (pattern === "daily") {
+    for (let i = 0; i < MAX_RECURRING_OCCURRENCES; i++) {
+      const d = addDays(startDate, i);
+      if (d > endLimit) break;
+      pushAt(d, i);
+    }
+  } else if (pattern === "weekly") {
+    for (let i = 0; i < MAX_RECURRING_OCCURRENCES; i++) {
+      const d = addDays(startDate, i * 7);
+      if (d > endLimit) break;
+      pushAt(d, i);
+    }
+  } else if (pattern === "fortnightly") {
+    for (let i = 0; i < MAX_RECURRING_OCCURRENCES; i++) {
+      const d = addDays(startDate, i * 14);
+      if (d > endLimit) break;
+      pushAt(d, i);
+    }
+  } else if (pattern === "custom") {
+    const days = new Set(
+      (base.recurrenceDays ?? [])
+        .map((k) => WEEKDAY_INDEX[k])
+        .filter((n): n is number => n != null),
+    );
+    if (days.size === 0) return [base];
+    let count = 0;
+    let idx = 0;
+    for (let offset = 0; count < MAX_RECURRING_OCCURRENCES; offset++) {
+      const d = addDays(startDate, offset);
+      if (d > endLimit) break;
+      if (!days.has(d.getDay())) continue;
+      pushAt(d, idx);
+      idx++;
+      count++;
+    }
+  }
+
+  return out.length > 0 ? out : [base];
+}
+
 export function EventsProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const list = useServerFn(listEvents);
@@ -127,7 +203,10 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
     queryFn: () => list(),
   });
 
-  const events = useMemo(() => (data ?? []).map(dtoToCalendarEvent), [data]);
+  const events = useMemo(
+    () => (data ?? []).map(dtoToCalendarEvent).flatMap(expandRecurring),
+    [data],
+  );
 
   const createMut = useMutation({
     mutationFn: async (draft: EventDraft) => {
