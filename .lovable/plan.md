@@ -1,75 +1,39 @@
-## Findings
+# Fix: Materialise recurring events in EventsProvider
 
-### 1. Viewport meta is present and correct
-The built `dist-mobile/client/index.html` already includes:
-```
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-```
-and `src/styles.css` sets `html, body { overflow-x: hidden; max-width: 100vw }`.
+## Root cause (confirmed)
+`expandRecurring` currently lives in `src/routes/_authenticated.calendar.tsx` and only runs there. `EventsProvider.events` returns raw base rows, so `ShiftAlertWatcher` (welcome toast) counts 0 shifts on days when the only shift is a recurring occurrence. The wrong count is then latched via `summaryShownRef` + the `kookaflow.lastOpenedDate` localStorage key.
 
-So a *missing* viewport tag is **not** the root cause.
+## Changes
 
-### 2. Why the iOS Capacitor build still overflows
-iOS WKWebView is stricter than desktop Safari in two ways that match your symptoms:
+### 1. `src/providers/EventsProvider.tsx`
+- Add an `expandRecurring(base: CalendarEvent): CalendarEvent[]` helper (ported from calendar.tsx, adapted to operate on `CalendarEvent` fields — `recurrencePattern`, `recurrenceDays`, `recurrenceEndDate` — instead of the MockEvent `recurrence` object).
+- Keep the same rules: `daily`, `weekly`, `fortnightly`, `custom` (weekday keys → indices), cap at `MAX_RECURRING_OCCURRENCES = 60`, end limit = `recurrenceEndDate` or +365d, occurrence IDs = `${base.id}::rec-${idx}` (idx 0 keeps the original id so edits/lookups still work).
+- Replace the memo:
+  ```ts
+  const events = useMemo(() => {
+    const mapped = (data ?? []).map(dtoToCalendarEvent);
+    return mapped.flatMap(expandRecurring);
+  }, [data]);
+  ```
+- `getEvent`, `updateEvent`, `deleteEvent` continue to work: `updateMut` looks up `existing` by id — occurrence ids won't match, but they never should (edits go through the base event id from the editor). Preserve original id on the first occurrence so existing lookups keep working.
 
-- **`overflow-x: hidden` on `html`/`body` is unreliable in WKWebView when a fixed-position descendant or a `100vw` element extends past the layout viewport.** The visual viewport then grows to fit that element, and the user can pan horizontally. `overflow-x: clip` is the reliable equivalent.
-- **`100vw` includes the area under the notch/home indicator when `viewport-fit=cover` is set.** Combined with `env(safe-area-inset-*)`, this can push content ~30–50px wider than the device on iPhones with a notch. That's exactly enough to shove the 4th nav tab ("More") off-screen.
+### 2. `src/routes/_authenticated.calendar.tsx`
+- Delete the local `expandRecurring` function and the `WEEKDAY_INDEX` / `weekdayKeyToIndex` helpers (only used by expandRecurring).
+- Simplify the memo:
+  ```ts
+  const local = rawEvents.map(toMockEvent);
+  ```
+- Leave everything else (Google merging, toMockEvent, UI) unchanged.
 
-The bottom nav (`AppNav`) uses `fixed inset-x-0` — its width tracks the layout viewport. So if *any* child of `<body>` establishes a wider layout viewport, the nav stretches with it and its last flex child (More) sits beyond the visible area. Because `QuickAddFab` is also `fixed` and anchored `right: max(16px, env(safe-area-inset-right))`, it lands in that same off-screen zone.
+### 3. `src/components/notifications/ShiftAlertWatcher.tsx`
+- No logic changes. It will now see materialised occurrences via `useEvents()`.
 
-### 3. Likely wide-content culprits found in a scan
-No components use hardcoded pixel widths, but candidates that can force layout expansion under iOS include:
-- `SplashScreen` / gradient backdrops using `fixed inset-0` combined with `100vw` math
-- `PageHeader` / `MoreHero` sections that use `w-screen` or full-bleed backgrounds
-- Long unbroken strings (email addresses, tokens) in `AccountSection` or trial banners without `break-words`
+### 4. One-time latch reset
+The old wrong "0 events today" toast may have already written today's date to `localStorage['kookaflow.lastOpenedDate']`, suppressing the corrected toast for the rest of the day. To force the corrected count to show on next load:
+- In `ShiftAlertWatcher.tsx`, add a one-shot migration guard at module scope (using a distinct versioned key, e.g. `kookaflow.summaryLatchResetV1`) that:
+  - On first mount, if the reset key is not set, delete `kookaflow.lastOpenedDate` from localStorage and set the reset key to `"1"`.
+  - Runs before the summary effect reads `LAST_OPENED_KEY`.
+- `summaryShownRef` is per-mount and already resets on reload, so clearing the localStorage key is sufficient — the effect will re-evaluate with the correct materialised events.
 
-Confirming the exact culprit needs a device-side inspection (Safari Web Inspector attached to the iOS simulator), but the web-layer fixes below neutralise *all* of them at once.
-
-### 4. Capacitor config is not in the repo
-There is no `capacitor.config.ts` / `.json` in this project — you're running Capacitor from a separate mobile shell. That means we can only fix this at the web layer (which is enough), but I'll also flag a native-side setting to verify.
-
----
-
-## Plan (2 small edits, no logic changes)
-
-### Edit 1 — `src/styles.css` (base layer)
-Harden the root overflow rules so WKWebView cannot expand the layout viewport:
-
-```css
-html, body {
-  overflow-x: clip;        /* replaces `hidden`; not defeated by fixed children */
-  width: 100%;             /* replaces `max-width: 100vw` — avoids notch math */
-  max-width: 100%;
-}
-```
-
-Add horizontal safe-area padding to the bottom nav so nothing sits under the notch in landscape:
-
-```css
-@supports (padding: env(safe-area-inset-left)) {
-  nav[data-app-bottom-nav] {
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
-}
-```
-
-### Edit 2 — `src/components/layout/AppNav.tsx`
-- Add `data-app-bottom-nav` attribute to the mobile `<nav>` so the CSS above targets it.
-- Add `min-w-0` to each nav `<Link>` so the 4 tabs share width evenly even if a label wraps.
-
-### Edit 3 — `src/components/calendar/QuickAddFab.tsx` (verification only)
-Once the viewport no longer overflows, the FAB's existing `bottom-[calc(72px+env(safe-area-inset-bottom))] md:bottom-5` + `right: max(16px, env(safe-area-inset-right))` will correctly place it above the bottom nav and inside the safe area. No code change expected — I'll verify visually after Edit 1/2.
-
-### Native-side check (for you to confirm after rebuild)
-In the iOS Xcode project, open `ios/App/App/Info.plist` and confirm there is **no** `UIRequiresFullScreen = YES` and no custom `WKWebView` viewport override. Capacitor's defaults are correct; a stray override would defeat the meta tag. No code change needed from me here.
-
----
-
-## Verification after implementation
-1. `npm run build:mobile`, `npx cap sync ios`, run on device/simulator.
-2. Confirm no horizontal scroll on `/calendar`, `/dashboard`, `/shifts`, `/more`.
-3. Confirm all 4 bottom-nav tabs are visible and tappable.
-4. Confirm `+` FAB sits above the bottom nav with no overlap.
-
-No business logic, no server code, no data layer touched — purely CSS/markup.
+## Out of scope
+No changes to toast UI/styling, no changes to server functions, no changes to Google event handling, no changes to alert scheduling.
