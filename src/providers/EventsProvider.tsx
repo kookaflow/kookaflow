@@ -118,6 +118,14 @@ function draftToInput(draft: EventDraft) {
 // the previous per-route cap and covers ~1 year of weekly / ~3 months of daily.
 const MAX_RECURRING_OCCURRENCES = 60;
 
+// Synthetic occurrences of a recurring event use ids of the form
+// `<baseUuid>::rec-<n>`. Server mutations only accept the real UUID, so
+// strip the suffix before calling create/update/delete.
+function baseEventId(id: string): string {
+  const i = id.indexOf("::rec-");
+  return i === -1 ? id : id.slice(0, i);
+}
+
 const WEEKDAY_INDEX: Record<string, number> = {
   sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6,
 };
@@ -226,7 +234,8 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       const existing = events.find((e) => e.id === args.id);
       if (!existing) throw new Error("Event not found");
       const merged: EventDraft = { ...existing, ...args.patch };
-      const dto = await update({ data: { id: args.id, ...draftToInput(merged) } });
+      const realId = baseEventId(args.id);
+      const dto = await update({ data: { id: realId, ...draftToInput(merged) } });
       if (dto.category === "work") {
         scheduleAlert({ data: { eventId: dto.id } }).catch((e) =>
           console.warn("scheduleShiftAlert failed", e),
@@ -241,8 +250,9 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
-      cancelAlert({ data: { eventId: id } }).catch(() => undefined);
-      return remove({ data: { id } });
+      const realId = baseEventId(id);
+      cancelAlert({ data: { eventId: realId } }).catch(() => undefined);
+      return remove({ data: { id: realId } });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QK }),
   });
