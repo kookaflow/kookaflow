@@ -208,10 +208,25 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const scheduleAlert = useServerFn(scheduleShiftAlert);
   const cancelAlert = useServerFn(cancelShiftAlert);
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, error, status } = useQuery({
     queryKey: QK,
     queryFn: () => list(),
   });
+
+  // Observability: this query previously failed silently (undefined data ->
+  // empty array -> "Your calendar is empty"). Log every state change so the
+  // real cause is visible in device consoles / Safari Web Inspector.
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.info(
+      "[events] status",
+      status,
+      "count",
+      data?.length,
+      "error",
+      error instanceof Error ? error.message : error,
+    );
+  }, [status, data, error]);
 
   const events = useMemo(
     () => (data ?? []).map(dtoToCalendarEvent).flatMap(expandRecurring),
@@ -262,6 +277,12 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const value: Ctx = {
     events,
     isLoading: isLoading || isFetching,
+    error:
+      error instanceof Error
+        ? error
+        : error
+          ? new Error(String(error))
+          : null,
     createEvent: async (draft) => {
       const dto = await createMut.mutateAsync(draft);
       return dtoToCalendarEvent(dto);
