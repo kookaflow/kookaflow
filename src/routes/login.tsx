@@ -9,11 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Sign in — Kookaflow" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({
-    next: typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//")
-      ? s.next
-      : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { next?: string } =>
+    typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//")
+      ? { next: s.next }
+      : {},
   component: LoginPage,
 });
 
@@ -120,7 +119,7 @@ function LoginPage() {
           New to Kookaflow?{" "}
           <Link
             to="/signup"
-            search={next ? { next } : undefined}
+            search={next ? { next } : {}}
             className="font-medium text-primary hover:underline"
           >
             Create an account
