@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { addDays } from "date-fns";
@@ -25,6 +25,8 @@ const QK = ["events"] as const;
 interface Ctx {
   events: CalendarEvent[];
   isLoading: boolean;
+  /** Non-null when the events query failed (e.g. 401 / network / CORS). */
+  error: Error | null;
   createEvent: (draft: EventDraft) => Promise<CalendarEvent>;
   updateEvent: (id: string, patch: Partial<EventDraft>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
@@ -206,10 +208,25 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const scheduleAlert = useServerFn(scheduleShiftAlert);
   const cancelAlert = useServerFn(cancelShiftAlert);
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, error, status } = useQuery({
     queryKey: QK,
     queryFn: () => list(),
   });
+
+  // Observability: this query previously failed silently (undefined data ->
+  // empty array -> "Your calendar is empty"). Log every state change so the
+  // real cause is visible in device consoles / Safari Web Inspector.
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.info(
+      "[events] status",
+      status,
+      "count",
+      data?.length,
+      "error",
+      error instanceof Error ? error.message : error,
+    );
+  }, [status, data, error]);
 
   const events = useMemo(
     () => (data ?? []).map(dtoToCalendarEvent).flatMap(expandRecurring),
@@ -260,6 +277,12 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const value: Ctx = {
     events,
     isLoading: isLoading || isFetching,
+    error:
+      error instanceof Error
+        ? error
+        : error
+          ? new Error(String(error))
+          : null,
     createEvent: async (draft) => {
       const dto = await createMut.mutateAsync(draft);
       return dtoToCalendarEvent(dto);
