@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { addDays } from "date-fns";
@@ -25,6 +25,8 @@ const QK = ["events"] as const;
 interface Ctx {
   events: CalendarEvent[];
   isLoading: boolean;
+  /** Non-null when the events query failed (e.g. 401 / network / CORS). */
+  error: Error | null;
   createEvent: (draft: EventDraft) => Promise<CalendarEvent>;
   updateEvent: (id: string, patch: Partial<EventDraft>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
