@@ -1,39 +1,67 @@
-# Fix: Materialise recurring events in EventsProvider
+# iOS 402 vs 352 viewport mismatch — investigation report
 
-## Root cause (confirmed)
-`expandRecurring` currently lives in `src/routes/_authenticated.calendar.tsx` and only runs there. `EventsProvider.events` returns raw base rows, so `ShiftAlertWatcher` (welcome toast) counts 0 shifts on days when the only shift is a recurring occurrence. The wrong count is then latched via `summaryShownRef` + the `kookaflow.lastOpenedDate` localStorage key.
+## What the audit found
 
-## Changes
+### 1. The mobile build being tested is stale (highest-confidence finding)
+The built stylesheet the simulator loads still contains the **old** rule:
 
-### 1. `src/providers/EventsProvider.tsx`
-- Add an `expandRecurring(base: CalendarEvent): CalendarEvent[]` helper (ported from calendar.tsx, adapted to operate on `CalendarEvent` fields — `recurrencePattern`, `recurrenceDays`, `recurrenceEndDate` — instead of the MockEvent `recurrence` object).
-- Keep the same rules: `daily`, `weekly`, `fortnightly`, `custom` (weekday keys → indices), cap at `MAX_RECURRING_OCCURRENCES = 60`, end limit = `recurrenceEndDate` or +365d, occurrence IDs = `${base.id}::rec-${idx}` (idx 0 keeps the original id so edits/lookups still work).
-- Replace the memo:
-  ```ts
-  const events = useMemo(() => {
-    const mapped = (data ?? []).map(dtoToCalendarEvent);
-    return mapped.flatMap(expandRecurring);
-  }, [data]);
-  ```
-- `getEvent`, `updateEvent`, `deleteEvent` continue to work: `updateMut` looks up `existing` by id — occurrence ids won't match, but they never should (edits go through the base event id from the editor). Preserve original id on the first occurrence so existing lookups keep working.
+```text
+dist-mobile/client/assets/styles-Buh1dAF0.css
+html,body{max-width:100vw;overflow-x:hidden}
+```
 
-### 2. `src/routes/_authenticated.calendar.tsx`
-- Delete the local `expandRecurring` function and the `WEEKDAY_INDEX` / `weekdayKeyToIndex` helpers (only used by expandRecurring).
-- Simplify the memo:
-  ```ts
-  const local = rawEvents.map(toMockEvent);
-  ```
-- Leave everything else (Google merging, toMockEvent, UI) unchanged.
+The current source (`src/styles.css`, lines 146-150) is:
 
-### 3. `src/components/notifications/ShiftAlertWatcher.tsx`
-- No logic changes. It will now see materialised occurrences via `useEvents()`.
+```text
+html, body { overflow-x: clip; width: 100%; max-width: 100%; }
+```
 
-### 4. One-time latch reset
-The old wrong "0 events today" toast may have already written today's date to `localStorage['kookaflow.lastOpenedDate']`, suppressing the corrected toast for the rest of the day. To force the corrected count to show on next load:
-- In `ShiftAlertWatcher.tsx`, add a one-shot migration guard at module scope (using a distinct versioned key, e.g. `kookaflow.summaryLatchResetV1`) that:
-  - On first mount, if the reset key is not set, delete `kookaflow.lastOpenedDate` from localStorage and set the reset key to `"1"`.
-  - Runs before the summary effect reads `LAST_OPENED_KEY`.
-- `summaryShownRef` is per-mount and already resets on reload, so clearing the localStorage key is sufficient — the effect will re-evaluate with the correct materialised events.
+So the `width:100%` fix is **not** in the bundle running on the device — `max-width:100vw` is, and it is the only viewport-unit width declaration anywhere in the shipped CSS. Under `viewport-fit=cover`, `100vw` includes the safe-area insets and resolves against the layout viewport rather than the visual viewport. Any conclusion drawn from the current simulator run is measuring pre-fix code.
 
-## Out of scope
-No changes to toast UI/styling, no changes to server functions, no changes to Google event handling, no changes to alert scheduling.
+### 2. No other full-bleed offender exists in the source tree
+Searched all of `src/` for `100vw`, `w-screen`, `100dvw`, `min-width`, and fixed widths >= 393px:
+
+- App shell `src/routes/_authenticated.calendar.tsx:179` — `flex h-[100dvh] flex-col bg-background overflow-hidden`: height only, no width declaration.
+- `src/components/layout/SplashScreen.tsx:22` — `fixed inset-0`: sized by containing block, no `100vw`.
+- `src/components/layout/PageHeader.tsx:20` — `relative w-full`; wave SVG is `block w-full` with `preserveAspectRatio="none"`: percentage-based.
+- `src/components/more/MoreHero.tsx` — no width declaration; inner backdrop is `absolute inset-0`.
+- `src/components/calendar/QuickAddFab.tsx` — `fixed`, offset via `right: max(16px, env(safe-area-inset-right))` and `bottom: calc(72px + env(safe-area-inset-bottom))`: no `100vw` math.
+- `src/components/layout/AppNav.tsx:55` — bottom nav is `fixed inset-x-0` plus safe-area padding: no `100vw`.
+- Only fixed min-widths found are small and safe: `min-w-[180px]` (`DatePicker.tsx:30`), `min-w-[8rem]`/`min-w-[12rem]` in shadcn menus, `min-w-[140px]` (`RemindersSettings.tsx:260`).
+- `src/components/today/TodayPanel.tsx:29` uses `h-[calc(100vh-65px)]` — vertical only, cannot cause horizontal overflow.
+
+### 3. 402 is very likely correct; 352 is the anomaly
+iPhone 17 Pro's portrait CSS width is 402pt. `documentElement.scrollWidth = 402` with every widest element at exactly `width:402, left:0` and no rogue child is what a **correctly sized** page looks like on that device. A `window.innerWidth` of 352 that is *smaller* than the layout viewport means the visual viewport is scaled in (~1.14x) or the WKWebView frame is narrower than the screen — both native-side conditions, not CSS overflow. This is unconfirmed and should be measured before any CSS change.
+
+## Proposed sequence
+
+1. **Rebuild and re-test before changing anything.** `bun run build:mobile`, then `npx cap sync ios`, then re-measure. Confirm the bundle contains `html,body{width:100%;overflow-x:clip}` and no `100vw`.
+2. **Run one diagnostic snippet** in Web Inspector to separate CSS overflow from native scaling (below).
+3. **Then fix based on the result:**
+   - If a `100vw`/`w-screen` element is still present: replace with `100%` / `w-full`. Full-bleed is not required anywhere in this shell — `PageHeader`, `MoreHero`, `AppNav` and the app shell are already percentage or `inset-x-0` based.
+   - If the snippet shows `visualViewport.scale > 1`, or a webview frame narrower than `screen.width`: the fix is native-side (Capacitor iOS contentInset/zoom settings, or adding `maximum-scale=1, user-scalable=no` to the viewport meta at `src/routes/__root.tsx:88`), not a CSS width change.
+
+## Diagnostic snippet to run
+
+```js
+JSON.stringify({
+  scrollW: document.documentElement.scrollWidth,
+  clientW: document.documentElement.clientWidth,
+  innerW: window.innerWidth,
+  screenW: screen.width,
+  vv: { w: visualViewport.width, scale: visualViewport.scale, offsetLeft: visualViewport.offsetLeft },
+  htmlRule: [...document.styleSheets].flatMap(s => { try { return [...s.cssRules] } catch { return [] } })
+    .filter(r => r.selectorText && /^html\s*,\s*body$/.test(r.selectorText))
+    .map(r => r.cssText),
+  wide: [...document.querySelectorAll('*')]
+    .map(e => ({ t: e.tagName + '.' + e.className, w: Math.round(e.getBoundingClientRect().width), cw: getComputedStyle(e).width, mw: getComputedStyle(e).maxWidth }))
+    .filter(x => x.w >= 393).slice(0, 25)
+}, null, 2)
+```
+
+`htmlRule` confirms or rules out the stale-bundle theory; `vv.scale` plus `screenW` distinguishes native scaling from CSS overflow.
+
+## Notes
+
+- No code changes were made in this investigation.
+- `dist-mobile/` is checked-in build output; it does not update when `src/styles.css` changes, so the Capacitor project must be re-synced after every CSS fix or the device keeps testing old CSS.
