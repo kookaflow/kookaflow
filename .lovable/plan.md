@@ -1,67 +1,82 @@
-# iOS 402 vs 352 viewport mismatch — investigation report
+# Calendar empty on iOS while dashboard "works" — investigation report
 
-## What the audit found
+## Headline: the dashboard is not proof that data access works
 
-### 1. The mobile build being tested is stale (highest-confidence finding)
-The built stylesheet the simulator loads still contains the **old** rule:
+`src/routes/_authenticated.dashboard.tsx:42` reads:
 
-```text
-dist-mobile/client/assets/styles-Buh1dAF0.css
-html,body{max-width:100vw;overflow-x:hidden}
+```ts
+const events = useEventsStore();
 ```
 
-The current source (`src/styles.css`, lines 146-150) is:
+`src/lib/events-store.ts:5` initialises that store from **mock data**:
 
-```text
-html, body { overflow-x: clip; width: 100%; max-width: 100%; }
+```ts
+let events: MockEvent[] = buildMockEvents(new Date());
 ```
 
-So the `width:100%` fix is **not** in the bundle running on the device — `max-width:100vw` is, and it is the only viewport-unit width declaration anywhere in the shipped CSS. Under `viewport-fit=cover`, `100vw` includes the safe-area insets and resolves against the layout viewport rather than the visual viewport. Any conclusion drawn from the current simulator run is measuring pre-fix code.
+`buildMockEvents(today)` (`src/components/calendar-page/mock.ts:8`) generates a fixed set of events anchored to *today* — "Morning shift — Ward 4B", "Yoga flow", "Dinner with Mia", etc. A repo-wide search shows `setEvents` is never called anywhere, so the store is never populated from the server. The dashboard therefore renders plausible-looking hours for the current week on **any** device, signed in or not, with or without a working server call.
 
-### 2. No other full-bleed offender exists in the source tree
-Searched all of `src/` for `100vw`, `w-screen`, `100dvw`, `min-width`, and fixed widths >= 393px:
+So the dashboard summary does not demonstrate that server functions, bearer-token attachment, or RLS are working in the mobile build. The calendar is the only surface on that screen pair actually reading `EventsProvider` / `listEvents` — and it is showing empty. The most likely reading of the evidence is the opposite of the premise: **`listEvents` is failing or returning `[]` in the mobile build, and the dashboard masks it with mock data.**
 
-- App shell `src/routes/_authenticated.calendar.tsx:179` — `flex h-[100dvh] flex-col bg-background overflow-hidden`: height only, no width declaration.
-- `src/components/layout/SplashScreen.tsx:22` — `fixed inset-0`: sized by containing block, no `100vw`.
-- `src/components/layout/PageHeader.tsx:20` — `relative w-full`; wave SVG is `block w-full` with `preserveAspectRatio="none"`: percentage-based.
-- `src/components/more/MoreHero.tsx` — no width declaration; inner backdrop is `absolute inset-0`.
-- `src/components/calendar/QuickAddFab.tsx` — `fixed`, offset via `right: max(16px, env(safe-area-inset-right))` and `bottom: calc(72px + env(safe-area-inset-bottom))`: no `100vw` math.
-- `src/components/layout/AppNav.tsx:55` — bottom nav is `fixed inset-x-0` plus safe-area padding: no `100vw`.
-- Only fixed min-widths found are small and safe: `min-w-[180px]` (`DatePicker.tsx:30`), `min-w-[8rem]`/`min-w-[12rem]` in shadcn menus, `min-w-[140px]` (`RemindersSettings.tsx:260`).
-- `src/components/today/TodayPanel.tsx:29` uses `h-[calc(100vh-65px)]` — vertical only, cannot cause horizontal overflow.
+## The three theories in the request are ruled out by the code
 
-### 3. 402 is very likely correct; 352 is the anomaly
-iPhone 17 Pro's portrait CSS width is 402pt. `documentElement.scrollWidth = 402` with every widest element at exactly `width:402, left:0` and no rogue child is what a **correctly sized** page looks like on that device. A `window.innerWidth` of 352 that is *smaller* than the layout viewport means the visual viewport is scaled in (~1.14x) or the WKWebView frame is narrower than the screen — both native-side conditions, not CSS overflow. This is unconfirmed and should be measured before any CSS change.
+### Date range — there isn't one
+`src/lib/events.functions.ts:202-212`:
 
-## Proposed sequence
-
-1. **Rebuild and re-test before changing anything.** `bun run build:mobile`, then `npx cap sync ios`, then re-measure. Confirm the bundle contains `html,body{width:100%;overflow-x:clip}` and no `100vw`.
-2. **Run one diagnostic snippet** in Web Inspector to separate CSS overflow from native scaling (below).
-3. **Then fix based on the result:**
-   - If a `100vw`/`w-screen` element is still present: replace with `100%` / `w-full`. Full-bleed is not required anywhere in this shell — `PageHeader`, `MoreHero`, `AppNav` and the app shell are already percentage or `inset-x-0` based.
-   - If the snippet shows `visualViewport.scale > 1`, or a webview frame narrower than `screen.width`: the fix is native-side (Capacitor iOS contentInset/zoom settings, or adding `maximum-scale=1, user-scalable=no` to the viewport meta at `src/routes/__root.tsx:88`), not a CSS width change.
-
-## Diagnostic snippet to run
-
-```js
-JSON.stringify({
-  scrollW: document.documentElement.scrollWidth,
-  clientW: document.documentElement.clientWidth,
-  innerW: window.innerWidth,
-  screenW: screen.width,
-  vv: { w: visualViewport.width, scale: visualViewport.scale, offsetLeft: visualViewport.offsetLeft },
-  htmlRule: [...document.styleSheets].flatMap(s => { try { return [...s.cssRules] } catch { return [] } })
-    .filter(r => r.selectorText && /^html\s*,\s*body$/.test(r.selectorText))
-    .map(r => r.cssText),
-  wide: [...document.querySelectorAll('*')]
-    .map(e => ({ t: e.tagName + '.' + e.className, w: Math.round(e.getBoundingClientRect().width), cw: getComputedStyle(e).width, mw: getComputedStyle(e).maxWidth }))
-    .filter(x => x.w >= 393).slice(0, 25)
-}, null, 2)
+```ts
+export const listEvents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("events").select(ROW_COLS).order("start_time", { ascending: true });
 ```
 
-`htmlRule` confirms or rules out the stale-bundle theory; `vv.scale` plus `screenW` distinguishes native scaling from CSS overflow.
+No input validator, no params, no `.gte`/`.lte` filter. The client (`EventsProvider`, `queryFn: () => listEvents()`) sends no arguments. There is no date window to compute wrongly, and no month/year value that could be `undefined` in the SPA build.
+
+### Timezone — cannot cause an empty result
+Because no window is sent, a UTC-vs-AEST offset cannot push rows out of range. Timezone only affects which *cell* an event lands in (`toMockEvent` does `new Date(e.start)`, which is correct local parsing of a timestamptz), never whether rows are returned. A timezone bug would show shifts on the wrong day, not "Your calendar is empty".
+
+### Response shape — not the cause of the empty state either
+`src/routes/_authenticated.calendar.tsx:359-368` gates on the array length itself:
+
+```ts
+events.length === 0 && eventsLoading ? "Loading your calendar…"
+  : events.length === 0 ? <EmptyState title="Your calendar is empty" .../>
+```
+
+`events` = `rawEvents.map(toMockEvent)` + Google events. A shape mismatch inside `toMockEvent` would throw or render odd badges; it cannot reduce the array length. Seeing the empty state means `rawEvents.length === 0`, i.e. `listEvents` returned an empty array **or the query errored** — `useQuery` on error leaves `data` undefined, `EventsProvider` falls back to `[]`, `isLoading` goes false, and the calendar renders the empty state with no error shown anywhere. That silent-failure path is the prime suspect and is currently unobservable on device.
+
+## Most probable cause
+
+`listEvents` errors (401 from `requireSupabaseAuth`, or a blocked cross-origin request) in the Capacitor build and the failure is swallowed:
+
+- `src/start.ts` rewrites relative `/_serverFn/...` to `https://kookaflow.com` only when `VITE_IS_MOBILE_BUILD === true`, and only for string / relative-`Request` inputs.
+- The bearer token comes from `attachSupabaseAuth`, which reads `supabase.auth.getSession()` from WebView `localStorage`. If the Capacitor WebView has no persisted session (different origin from the browser login, or storage cleared on app relaunch), `requireSupabaseAuth` returns 401 and every event read comes back empty — while the mock-backed dashboard keeps looking healthy.
+- CORS in `src/start.ts` allow-lists `capacitor://localhost`, `https://localhost`, `ionic://localhost`. If the simulator's WebView origin is anything else (or the request is sent with no `Origin`), responses lack `access-control-allow-origin` and the fetch rejects.
+
+This is stated as the leading hypothesis, not a confirmed root cause — the current code makes the failure invisible, so it must be observed before fixing.
+
+## Proposed next step: make the failure visible (one small, reversible change)
+
+In `src/providers/EventsProvider.tsx`, surface what `useQuery` already knows instead of silently coercing to `[]`:
+
+- Destructure `error` and `status` from the events `useQuery`.
+- Log once per state change: `console.info('[events] status', status, 'count', data?.length, 'error', error?.message)`.
+- Expose `error` on the context so the calendar can render "Couldn't load your events — <message>" instead of the empty state when the query failed.
+
+Then, on the device with Safari Web Inspector open, read that log plus the Network tab entry for `/_serverFn/...listEvents`:
+
+| Observation | Cause | Fix |
+| --- | --- | --- |
+| No request at all, or request to `capacitor://localhost/_serverFn/...` | mobile rewrite inactive — `VITE_IS_MOBILE_BUILD` not `true` in the bundle | fix the build env var / `build:mobile` script |
+| Request to `kookaflow.com`, status 401 | no Supabase session in the WebView, so no bearer attached | persist/restore the session in the Capacitor WebView (native storage, or re-login inside the app) |
+| Request blocked / CORS error in console | WebView origin not in `ALLOWED_MOBILE_ORIGINS` | add the actual origin reported by the console |
+| Status 200 with `[]` | genuinely no rows for that user under RLS | confirm the signed-in user id matches the account that owns the shifts |
+
+## Separate, real bug worth fixing regardless
+
+The dashboard is wired to mock data. It should read `useEvents()` (the same `EventsProvider` source as the calendar) so its balance score, weekly chart, and category cards reflect real events. Right now it silently shows fabricated hours to every user on web and mobile alike. That's a behaviour change, so it is called out here rather than folded into the calendar fix.
 
 ## Notes
 
 - No code changes were made in this investigation.
-- `dist-mobile/` is checked-in build output; it does not update when `src/styles.css` changes, so the Capacitor project must be re-synced after every CSS fix or the device keeps testing old CSS.
