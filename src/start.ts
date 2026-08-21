@@ -35,50 +35,9 @@ const mobileServerFnFetch: typeof fetch = (input, init) => {
   return fetch(input, init);
 };
 
-// -----------------------------------------------------------------------------
-// CORS for cross-origin Capacitor clients hitting kookaflow.com/_serverFn/*
-// -----------------------------------------------------------------------------
-// Capacitor's WebView origins are fixed and safe to allow-list. Any other
-// origin is denied (same-origin browser requests don't need CORS headers).
-const ALLOWED_MOBILE_ORIGINS = new Set([
-  "capacitor://localhost",
-  "https://localhost",
-  "ionic://localhost",
-]);
-
-const corsMiddleware = createMiddleware().server(async ({ next }) => {
-  const { getRequest } = await import("@tanstack/react-start/server");
-  const req = getRequest();
-  const origin = req.headers.get("origin");
-  const allowed = origin && ALLOWED_MOBILE_ORIGINS.has(origin) ? origin : null;
-
-  // Handle preflight before running the rest of the pipeline.
-  if (allowed && req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "access-control-allow-origin": allowed,
-        "access-control-allow-methods": "GET,POST,OPTIONS",
-        "access-control-allow-headers":
-          req.headers.get("access-control-request-headers") ??
-          "authorization,content-type",
-        "access-control-max-age": "86400",
-        vary: "origin",
-      },
-    });
-  }
-
-  const result = await next();
-  if (allowed && result instanceof Response) {
-    try {
-      result.headers.set("access-control-allow-origin", allowed);
-      result.headers.set("vary", "origin");
-    } catch {
-      // Headers may be immutable in some runtimes; ignore.
-    }
-  }
-  return result;
-});
+// CORS for Capacitor WebView origins is handled in src/server.ts, which owns
+// the final Response object (a request middleware's `next()` does not resolve
+// to a Response, so headers set there never reached real /_serverFn/* replies).
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
