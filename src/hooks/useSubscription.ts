@@ -138,7 +138,7 @@ async function subscribeToProfileChanges(
   };
 }
 
-
+/**
  * Single source of truth for subscription state.
  * Every feature gate MUST read from this hook — never query the database directly.
  */
