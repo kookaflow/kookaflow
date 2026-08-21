@@ -55,7 +55,7 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
 });
 
 export const startInstance = createStart(() => ({
-  requestMiddleware: [corsMiddleware, errorMiddleware],
+  requestMiddleware: [errorMiddleware],
   functionMiddleware: [attachSupabaseAuth],
   ...(IS_MOBILE_BUILD ? { serverFns: { fetch: mobileServerFnFetch } } : {}),
 }));
