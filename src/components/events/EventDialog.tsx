@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { EventForm } from "./EventForm";
 import { useEvents } from "@/providers/EventsProvider";
 import type { CategoryId, EventDraft } from "@/types/event";
+import { toast } from "sonner";
 
 interface Props {
   open: boolean;
@@ -15,16 +16,24 @@ export function EventDialog({ open, onOpenChange, eventId, defaultStart, default
   const { getEvent, createEvent, updateEvent, deleteEvent } = useEvents();
   const initial = eventId ? getEvent(eventId) : undefined;
 
-  const handleSubmit = (draft: EventDraft) => {
-    if (initial) updateEvent(initial.id, draft);
-    else createEvent(draft);
-    onOpenChange(false);
+  const handleSubmit = async (draft: EventDraft) => {
+    try {
+      if (initial) await updateEvent(initial.id, draft);
+      else await createEvent(draft);
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save event");
+    }
   };
 
   const handleDelete = initial
-    ? () => {
-        deleteEvent(initial.id);
-        onOpenChange(false);
+    ? async () => {
+        try {
+          await deleteEvent(initial.id);
+          onOpenChange(false);
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : "Could not delete event");
+        }
       }
     : undefined;
 
