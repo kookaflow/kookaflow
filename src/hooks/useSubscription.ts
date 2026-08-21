@@ -131,20 +131,20 @@ export function useSubscription(): SubscriptionState {
     });
 
     // Realtime updates so webhook-driven subscription changes appear immediately.
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    void (async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
-      if (!user || cancelled) return;
-      channel = supabase
-        .channel(`profile-subscription-${user.id}`)
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
-          () => { void load(); },
-        )
-        .subscribe();
-    })();
+    // Shared per-user channel: multiple mounted consumers must never re-register
+    // handlers on an already-subscribed channel (that throws).
+    let detach: (() => void) | null = null;
+    let detached = false;
+    subscribeToProfileChanges(() => { void load(); })
+      .then((off) => {
+        if (detached) { off(); return; }
+        detach = off;
+      })
+      .catch((err) => {
+        // A realtime failure must never break the UI.
+        console.warn("[subscription] realtime setup failed", err);
+      });
+
 
     // Re-evaluate derived flags every minute so trial countdown stays fresh.
     const tick = setInterval(() => {
