@@ -71,6 +71,73 @@ function computeDerived(
   return { isTrialing: trialActive, trialDaysRemaining, hasFullAccess, hasProAccess, isLocked };
 }
 
+type ProfileListener = () => void;
+
+interface SharedProfileChannel {
+  channel: ReturnType<typeof supabase.channel>;
+  listeners: Set<ProfileListener>;
+}
+
+/** One realtime channel per user, shared by every mounted consumer. */
+let sharedChannel: SharedProfileChannel | null = null;
+let sharedUserId: string | null = null;
+
+async function subscribeToProfileChanges(
+  listener: ProfileListener,
+): Promise<() => void> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData.user;
+  if (!user) return () => {};
+
+  if (sharedChannel && sharedUserId !== user.id) {
+    const stale = sharedChannel;
+    sharedChannel = null;
+    sharedUserId = null;
+    void supabase.removeChannel(stale.channel);
+  }
+
+  if (!sharedChannel) {
+    const listeners = new Set<ProfileListener>();
+    const topic = `profile-subscription-${user.id}`;
+    // Remove any leaked channel with this topic — supabase.channel() returns the
+    // existing (already-subscribed) channel, and .on() on it throws.
+    const existing = supabase
+      .getChannels()
+      .find((c) => c.topic === `realtime:${topic}`);
+    if (existing) await supabase.removeChannel(existing);
+
+    const channel = supabase
+      .channel(topic)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
+        () => {
+          listeners.forEach((fn) => {
+            try {
+              fn();
+            } catch {
+              /* a single listener must not break the others */
+            }
+          });
+        },
+      )
+      .subscribe();
+    sharedChannel = { channel, listeners };
+    sharedUserId = user.id;
+  }
+
+  const entry = sharedChannel;
+  entry.listeners.add(listener);
+  return () => {
+    entry.listeners.delete(listener);
+    if (entry.listeners.size === 0 && sharedChannel === entry) {
+      sharedChannel = null;
+      sharedUserId = null;
+      void supabase.removeChannel(entry.channel);
+    }
+  };
+}
+
 /**
  * Single source of truth for subscription state.
  * Every feature gate MUST read from this hook — never query the database directly.
@@ -131,20 +198,20 @@ export function useSubscription(): SubscriptionState {
     });
 
     // Realtime updates so webhook-driven subscription changes appear immediately.
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    void (async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
-      if (!user || cancelled) return;
-      channel = supabase
-        .channel(`profile-subscription-${user.id}`)
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
-          () => { void load(); },
-        )
-        .subscribe();
-    })();
+    // Shared per-user channel: multiple mounted consumers must never re-register
+    // handlers on an already-subscribed channel (that throws).
+    let detach: (() => void) | null = null;
+    let detached = false;
+    subscribeToProfileChanges(() => { void load(); })
+      .then((off) => {
+        if (detached) { off(); return; }
+        detach = off;
+      })
+      .catch((err) => {
+        // A realtime failure must never break the UI.
+        console.warn("[subscription] realtime setup failed", err);
+      });
+
 
     // Re-evaluate derived flags every minute so trial countdown stays fresh.
     const tick = setInterval(() => {
@@ -167,9 +234,11 @@ export function useSubscription(): SubscriptionState {
     return () => {
       cancelled = true;
       authSub.subscription.unsubscribe();
-      if (channel) void supabase.removeChannel(channel);
+      detached = true;
+      detach?.();
       clearInterval(tick);
     };
+
   }, [load]);
 
   return state;
