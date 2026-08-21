@@ -53,7 +53,7 @@ function renderErrorPage() {
 let serverEntryPromise;
 async function getServerEntry() {
   if (!serverEntryPromise) {
-    serverEntryPromise = import("./assets/server-CYeycCdn.js").then((n) => n.s).then(
+    serverEntryPromise = import("./assets/server-CzGi1_X2.js").then((n) => n.s).then(
       (m) => m.default ?? m
     );
   }
@@ -93,15 +93,53 @@ async function normalizeCatastrophicSsrResponse(response) {
   console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
   return brandedErrorResponse();
 }
+const ALLOWED_MOBILE_ORIGINS = /* @__PURE__ */ new Set([
+  "capacitor://localhost",
+  "https://localhost",
+  "ionic://localhost"
+]);
+function allowedOrigin(request) {
+  const origin = request.headers.get("origin");
+  return origin && ALLOWED_MOBILE_ORIGINS.has(origin) ? origin : null;
+}
+function preflightResponse(request, origin) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "access-control-allow-origin": origin,
+      "access-control-allow-methods": "GET,POST,OPTIONS",
+      "access-control-allow-headers": request.headers.get("access-control-request-headers") ?? "authorization,content-type",
+      "access-control-max-age": "86400",
+      vary: "origin"
+    }
+  });
+}
+function withCorsHeaders(response, origin) {
+  const headers = new Headers(response.headers);
+  headers.set("access-control-allow-origin", origin);
+  const vary = headers.get("vary");
+  headers.set("vary", vary && !/\borigin\b/i.test(vary) ? `${vary}, origin` : "origin");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
 const server = {
   async fetch(request, env, ctx) {
+    const origin = allowedOrigin(request);
+    if (origin && request.method === "OPTIONS") {
+      return preflightResponse(request, origin);
+    }
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+      return origin ? withCorsHeaders(normalized, origin) : normalized;
     } catch (error) {
       console.error(error);
-      return brandedErrorResponse();
+      const errorResponse = brandedErrorResponse();
+      return origin ? withCorsHeaders(errorResponse, origin) : errorResponse;
     }
   }
 };
