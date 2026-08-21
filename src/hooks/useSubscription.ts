@@ -71,7 +71,74 @@ function computeDerived(
   return { isTrialing: trialActive, trialDaysRemaining, hasFullAccess, hasProAccess, isLocked };
 }
 
-/**
+type ProfileListener = () => void;
+
+interface SharedProfileChannel {
+  channel: ReturnType<typeof supabase.channel>;
+  listeners: Set<ProfileListener>;
+}
+
+/** One realtime channel per user, shared by every mounted consumer. */
+let sharedChannel: SharedProfileChannel | null = null;
+let sharedUserId: string | null = null;
+
+async function subscribeToProfileChanges(
+  listener: ProfileListener,
+): Promise<() => void> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData.user;
+  if (!user) return () => {};
+
+  if (sharedChannel && sharedUserId !== user.id) {
+    const stale = sharedChannel;
+    sharedChannel = null;
+    sharedUserId = null;
+    void supabase.removeChannel(stale.channel);
+  }
+
+  if (!sharedChannel) {
+    const listeners = new Set<ProfileListener>();
+    const topic = `profile-subscription-${user.id}`;
+    // Remove any leaked channel with this topic — supabase.channel() returns the
+    // existing (already-subscribed) channel, and .on() on it throws.
+    const existing = supabase
+      .getChannels()
+      .find((c) => c.topic === `realtime:${topic}`);
+    if (existing) await supabase.removeChannel(existing);
+
+    const channel = supabase
+      .channel(topic)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
+        () => {
+          listeners.forEach((fn) => {
+            try {
+              fn();
+            } catch {
+              /* a single listener must not break the others */
+            }
+          });
+        },
+      )
+      .subscribe();
+    sharedChannel = { channel, listeners };
+    sharedUserId = user.id;
+  }
+
+  const entry = sharedChannel;
+  entry.listeners.add(listener);
+  return () => {
+    entry.listeners.delete(listener);
+    if (entry.listeners.size === 0 && sharedChannel === entry) {
+      sharedChannel = null;
+      sharedUserId = null;
+      void supabase.removeChannel(entry.channel);
+    }
+  };
+}
+
+
  * Single source of truth for subscription state.
  * Every feature gate MUST read from this hook — never query the database directly.
  */
