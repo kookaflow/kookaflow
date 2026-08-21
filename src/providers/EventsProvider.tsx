@@ -3,12 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { addDays } from "date-fns";
 import {
-  listEvents,
   createEvent as createEventFn,
   updateEvent as updateEventFn,
   deleteEvent as deleteEventFn,
   type EventDTO,
 } from "@/lib/events.functions";
+import { supabase } from "@/integrations/supabase/client";
 import {
   scheduleShiftAlert,
   cancelShiftAlert,
@@ -34,6 +34,47 @@ interface Ctx {
 }
 
 const EventsContext = createContext<Ctx | null>(null);
+
+const EVENT_COLUMNS =
+  "id,title,category,start_time,end_time,is_all_day,is_payday,shift_type,shift_role,location,notes,icon_name,icon_color,split_shift_first_start,split_shift_first_end,split_shift_break_duration,split_shift_second_start,split_shift_second_end,travel_duration_minutes,hourly_rate,calculated_earnings,is_recurring,recurrence_pattern,recurrence_days,recurrence_end_date,recurrence_group_id";
+
+async function listEventsForCurrentUser(): Promise<EventDTO[]> {
+  const { data, error } = await supabase
+    .from("events")
+    .select(EVENT_COLUMNS)
+    .order("start_time", { ascending: true });
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    title: row.title,
+    category: row.category as EventDTO["category"],
+    start: row.start_time,
+    end: row.end_time,
+    isAllDay: row.is_all_day,
+    isPayday: row.is_payday,
+    shiftType: row.shift_type as EventDTO["shiftType"],
+    shiftRole: row.shift_role,
+    location: row.location,
+    notes: row.notes,
+    iconName: row.icon_name,
+    iconColor: row.icon_color,
+    splitFirstStart: row.split_shift_first_start,
+    splitFirstEnd: row.split_shift_first_end,
+    splitBreakMinutes: row.split_shift_break_duration,
+    splitSecondStart: row.split_shift_second_start,
+    splitSecondEnd: row.split_shift_second_end,
+    travelDurationMinutes: row.travel_duration_minutes,
+    hourlyRate: row.hourly_rate,
+    calculatedEarnings: row.calculated_earnings,
+    isRecurring: row.is_recurring,
+    recurrencePattern: row.recurrence_pattern,
+    recurrenceDays: row.recurrence_days,
+    recurrenceEndDate: row.recurrence_end_date,
+    recurrenceGroupId: row.recurrence_group_id,
+  }));
+}
 
 function dtoToCalendarEvent(d: EventDTO): CalendarEvent {
   const hasShift =
@@ -201,7 +242,6 @@ function expandRecurring(base: CalendarEvent): CalendarEvent[] {
 
 export function EventsProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
-  const list = useServerFn(listEvents);
   const create = useServerFn(createEventFn);
   const update = useServerFn(updateEventFn);
   const remove = useServerFn(deleteEventFn);
@@ -210,7 +250,10 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
 
   const { data, isLoading, isFetching, error, status } = useQuery({
     queryKey: QK,
-    queryFn: () => list(),
+    // Reads can safely use the authenticated browser client: RLS still limits
+    // results to the signed-in user, and this avoids cross-origin serverFn
+    // transport differences in Capacitor WebViews.
+    queryFn: listEventsForCurrentUser,
   });
 
   // Observability: this query previously failed silently (undefined data ->
