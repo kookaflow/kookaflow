@@ -167,9 +167,11 @@ export function useSubscription(): SubscriptionState {
     return () => {
       cancelled = true;
       authSub.subscription.unsubscribe();
-      if (channel) void supabase.removeChannel(channel);
+      detached = true;
+      detach?.();
       clearInterval(tick);
     };
+
   }, [load]);
 
   return state;
