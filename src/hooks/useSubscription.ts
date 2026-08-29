@@ -1,5 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  IS_NATIVE_IAP,
+  NO_ENTITLEMENTS,
+  getRevenueCatEntitlements,
+  onRevenueCatEntitlementsChange,
+  type RevenueCatEntitlements,
+} from "@/lib/revenuecat";
 
 export type SubscriptionTier = "trial" | "basic" | "pro" | "lifetime" | "expired";
 export type SubscriptionStatus = "active" | "trialling" | "past_due" | "canceled" | "expired" | null;
