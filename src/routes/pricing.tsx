@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createCheckoutSession } from "@/lib/stripe.functions";
 import type { PlanKey } from "@/lib/stripe.server";
+import { IS_NATIVE_IAP } from "@/lib/revenuecat";
+import { PaywallModal } from "@/components/subscription/PaywallModal";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
