@@ -164,3 +164,140 @@ export function onRevenueCatEntitlementsChange(
     })();
   };
 }
+
+/* -------------------------------------------------------------------------
+ * Stage 4 — native offerings + purchase flow.
+ * Native-only (VITE_IS_MOBILE_BUILD), dynamic import, never throws.
+ * ---------------------------------------------------------------------- */
+
+/** App-shaped view of a RevenueCat package for the paywall UI. */
+export interface RevenueCatPlan {
+  /** RevenueCat package identifier, e.g. "basic_monthly" | "pro_yearly". */
+  identifier: string;
+  /** Store product id. */
+  productId: string;
+  /** Store-provided localized price string, e.g. "$4.99". */
+  priceString: string;
+  /** Store product title (fallback label). */
+  title: string;
+  /** Human cadence label derived from the package type. */
+  periodLabel: string;
+  /** Opaque SDK package, passed straight back to purchasePackage. */
+  raw: unknown;
+}
+
+function periodLabelFor(pkg: { packageType?: string }): string {
+  switch (pkg.packageType) {
+    case "ANNUAL":
+      return "per year";
+    case "MONTHLY":
+      return "per month";
+    case "WEEKLY":
+      return "per week";
+    case "SIX_MONTH":
+      return "per 6 months";
+    case "THREE_MONTH":
+      return "per 3 months";
+    case "TWO_MONTH":
+      return "per 2 months";
+    case "LIFETIME":
+      return "one-time";
+    default:
+      return "";
+  }
+}
+
+/**
+ * Packages of the current RevenueCat offering, ordered for display.
+ * Returns [] on web or on any failure — the paywall then shows its
+ * "purchases unavailable" state (never a Stripe fallback on native).
+ */
+export async function getRevenueCatPlans(): Promise<RevenueCatPlan[]> {
+  if (!enabled()) return [];
+  try {
+    if (!(await configureRevenueCat())) return [];
+    const { Purchases } = await loadSdk();
+    const offerings = await Purchases.getOfferings();
+    const packages = offerings?.current?.availablePackages ?? [];
+    const plans: RevenueCatPlan[] = packages.map((pkg) => ({
+      identifier: pkg.identifier,
+      productId: pkg.product?.identifier ?? "",
+      priceString: pkg.product?.priceString ?? "",
+      title: pkg.product?.title ?? pkg.identifier,
+      periodLabel: periodLabelFor(pkg as { packageType?: string }),
+      raw: pkg,
+    }));
+
+    const order = ["pro_yearly", "lifetime", "pro_monthly", "basic_monthly"];
+    return plans.sort((a, b) => {
+      const ai = order.indexOf(a.identifier);
+      const bi = order.indexOf(b.identifier);
+      return (ai === -1 ? order.length : ai) - (bi === -1 ? order.length : bi);
+    });
+  } catch (err) {
+    console.warn("[revenuecat] getOfferings failed", err);
+    return [];
+  }
+}
+
+export type RevenueCatPurchaseResult =
+  | { status: "purchased"; entitlements: RevenueCatEntitlements }
+  | { status: "cancelled" }
+  | { status: "error"; message: string };
+
+function isUserCancelled(err: unknown): boolean {
+  const e = err as { code?: unknown; userCancelled?: unknown; message?: unknown } | null;
+  if (!e) return false;
+  if (e.userCancelled === true) return true;
+  if (e.code === "1" || e.code === 1) return true; // PURCHASE_CANCELLED_ERROR
+  const code = typeof e.code === "string" ? e.code : "";
+  if (code.toUpperCase().includes("CANCEL")) return true;
+  return typeof e.message === "string" && /cancel/i.test(e.message);
+}
+
+/** Run the native purchase flow for a package returned by getRevenueCatPlans. */
+export async function purchaseRevenueCatPlan(
+  plan: RevenueCatPlan,
+): Promise<RevenueCatPurchaseResult> {
+  if (!enabled()) return { status: "error", message: "Purchases are unavailable." };
+  try {
+    if (!(await configureRevenueCat())) {
+      return { status: "error", message: "Purchases are unavailable." };
+    }
+    const { Purchases } = await loadSdk();
+    const res = await Purchases.purchasePackage({
+      aPackage: plan.raw as Parameters<typeof Purchases.purchasePackage>[0]["aPackage"],
+    });
+    return { status: "purchased", entitlements: mapEntitlements(res.customerInfo) };
+  } catch (err) {
+    if (isUserCancelled(err)) return { status: "cancelled" };
+    console.warn("[revenuecat] purchasePackage failed", err);
+    const message =
+      (err as { message?: string } | null)?.message ??
+      "Purchase could not be completed. Please try again.";
+    return { status: "error", message };
+  }
+}
+
+/** Restore previous purchases (Apple requires a visible restore action). */
+export async function restoreRevenueCatPurchases(): Promise<
+  { ok: true; entitlements: RevenueCatEntitlements } | { ok: false; message: string }
+> {
+  if (!enabled()) return { ok: false, message: "Purchases are unavailable." };
+  try {
+    if (!(await configureRevenueCat())) {
+      return { ok: false, message: "Purchases are unavailable." };
+    }
+    const { Purchases } = await loadSdk();
+    const { customerInfo } = await Purchases.restorePurchases();
+    return { ok: true, entitlements: mapEntitlements(customerInfo) };
+  } catch (err) {
+    console.warn("[revenuecat] restorePurchases failed", err);
+    return {
+      ok: false,
+      message:
+        (err as { message?: string } | null)?.message ??
+        "Could not restore purchases. Please try again.",
+    };
+  }
+}
