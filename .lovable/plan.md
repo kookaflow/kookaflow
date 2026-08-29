@@ -1,52 +1,67 @@
-# Stage 4 — Native paywall + purchase flow (RevenueCat on iOS, Stripe on web)
+# Native paywall: all cards buy Lifetime, and Lifetime shows $39.99
 
-## Goal
-Inside the iOS app, the paywall shows App Store prices from the RevenueCat `current` offering and buys through native IAP. On the web, nothing changes — Stripe checkout stays exactly as it is.
+## What the code actually does (verified by reading both files)
 
-## How native vs web is split
-One flag decides everything: `IS_NATIVE_IAP` (already exported from `src/lib/revenuecat.ts`, derived from `VITE_IS_MOBILE_BUILD`). The paywall renders two branches:
+`PaywallModal.tsx` native branch, lines 193-231: `nativePlans.map((p) => ...)`, and the tap handler is
+`onClick={() => void handleNativePick(p)}`. `p` is a per-iteration arrow-function parameter, so there is
+**no closure/loop-variable bug** — each card captures its own package object. `handleNativePick` passes that
+same object straight to `purchaseRevenueCatPlan(plan)`, which calls
+`Purchases.purchasePackage({ aPackage: plan.raw })` with that package's own `raw`.
 
-```text
-PaywallModal
-├── IS_NATIVE_IAP === false  → existing Stripe path (unchanged)
-│     createCheckoutSession → window.location.assign(url)
-└── IS_NATIVE_IAP === true   → RevenueCat path
-      getRevenueCatOfferings() → packages with store prices
-      tap → purchaseRevenueCatPackage() → entitlement listener unlocks gates
-```
+`getRevenueCatPlans()` in `src/lib/revenuecat.ts` (lines 215-241) maps with a pure callback:
+`identifier: pkg.identifier`, `productId: pkg.product?.identifier`, `priceString: pkg.product?.priceString`,
+`raw: pkg`. Nothing is hoisted, mutated, or reassigned between iterations, so no field can be overwritten by a
+later package. The only post-processing is a `sort()` by identifier for display order.
 
-The Stripe import stays, but on native the `handlePick` Stripe branch is unreachable: the native branch has its own handler, and the checkout call is guarded by `if (IS_NATIVE_IAP) return;` as a second safety net so a redirect can never fire inside the WebView.
+There is also **nothing in the codebase that can force USD or a US price**. Every native price string comes
+from `pkg.product.priceString`, which StoreKit fills in from the active storefront. The hardcoded `$59.99`
+in `PLANS` is the web/Stripe array only and is not rendered on native.
 
-## What gets added to `src/lib/revenuecat.ts`
-Same posture as Stages 1–3: native guard, dynamic import, try/catch, never throws.
+## Therefore both symptoms point outside the React code
 
-- `getRevenueCatOfferings()` — configures if needed, calls `Purchases.getOfferings()`, returns the `current` offering's packages mapped to a small app-shaped type: `{ id, identifier, title, priceString, productId, periodLabel, entitlement }`. Returns `[]` on web or any failure.
-- `purchaseRevenueCatPackage(pkg)` — calls `Purchases.purchasePackage({ aPackage })` and returns a discriminated result: `{ status: "purchased", entitlements }`, `{ status: "cancelled" }`, or `{ status: "error", message }`. User cancellation is detected from the SDK's `userCancelled` flag / error code and is never surfaced as an error toast.
-- `restoreRevenueCatPurchases()` — `Purchases.restorePurchases()`, returning mapped entitlements. Apple requires a visible Restore Purchases action on any paywall, so this is included.
+### 1. Every card opening the Lifetime sheet
+Because each card demonstrably passes a distinct package object, the most likely cause is that the packages in
+the RevenueCat **`current` offering** are not attached to four distinct App Store products — e.g. all four
+packages (or several of them) have the Lifetime product attached in the dashboard, so `purchasePackage`
+correctly buys "the product on this package" and that product is Lifetime for all of them. A second, less
+likely variant: the four packages share the same `identifier`, in which case React's `key={p.identifier}`
+collides and the rendered/pressed card can resolve to the wrong sibling.
 
-Package identifiers expected from the dashboard offering: `basic_monthly`, `pro_monthly`, `pro_yearly`, `lifetime`. Ordering and highlight badges ("Best value", "Pay once") are applied by identifier so the native list reads like the web one; unknown identifiers still render, just unranked.
+Both are distinguishable from the data itself, which is why the fix starts with one diagnostic log.
 
-## What changes in `src/components/subscription/PaywallModal.tsx`
-- Native only: load offerings when the modal opens (`useEffect` on `open && IS_NATIVE_IAP`), with a spinner while loading.
-- Render `priceString` from the store (localized, correct currency) instead of the hardcoded `$29.99` etc. The hardcoded `PLANS` array remains as the web source of truth.
-- If offerings come back empty on native (no products configured / StoreKit unavailable), show a short "Purchases are unavailable right now" state with a Restore button — no Stripe fallback.
-- Tap handler on native: `purchaseRevenueCatPackage` → on `purchased`, success toast and `onOpenChange(false)`; on `cancelled`, silently reset button state; on `error`, `toast.error` with the SDK message.
-- Add a "Restore purchases" ghost button in the footer on native.
-- Native: hide the "See full comparison" link that navigates to `/pricing` (that page is Stripe-only), so the Stripe surface is not reachable from the paywall on iOS.
-- Gates unlock through the Stage 2 `onRevenueCatEntitlementsChange` listener already wired into `useSubscription` — no extra refresh logic, no restart.
+### 2. Lifetime showing $39.99
+$39.99 is the US tier price. `priceString` is whatever StoreKit hands back for the current **storefront**,
+which in the simulator/sandbox is driven by the Apple ID signed into *Settings > App Store > Sandbox Account*
+(and, in the simulator, sometimes by a local StoreKit configuration file in the Xcode scheme rather than App
+Store Connect at all). A US storefront or a StoreKit `.storekit` config with US prices produces exactly this.
+This is an environment issue, not a code issue — no change to `revenuecat.ts` will alter it.
 
-## `src/routes/pricing.tsx` (public marketing page)
-It is part of the SPA bundle, so it is technically reachable in the native app by URL. Keep all its Stripe copy and behaviour for web, and add the same guard at the top of its `handlePick`: on native, do not call `createCheckoutSession`; instead open `PaywallModal` (native branch) so the user buys through IAP. Its plan buttons on native therefore route into the native purchase flow rather than the browser. No visual redesign of the page.
+## Proposed fix (in order)
 
-## Not touched
-`src/hooks/useSubscription.ts` (merge logic), `src/lib/revenuecat.server.ts`, the RevenueCat webhook, `src/lib/stripe.functions.ts` / `stripe.server.ts`, `FeatureLock`, `TrialBanner`.
+1. **Add a temporary diagnostic log** in `getRevenueCatPlans()` — one `console.log` of
+   `plans.map(p => ({ identifier: p.identifier, productId: p.productId, priceString: p.priceString }))`,
+   plus one log in `handleNativePick` of the tapped `plan.identifier` / `plan.productId`. Run the paywall on
+   device/simulator and read the four rows.
+   - If two or more rows show the **same `productId`** → the dashboard offering is mis-configured: in
+     RevenueCat, each package (`basic_monthly`, `pro_monthly`, `pro_yearly`, `lifetime`) must have its own
+     matching App Store product attached. Fix in the dashboard; no app code change needed.
+   - If `productId`s are distinct but the purchase sheet still shows Lifetime → the wrong product is attached
+     under a correct-looking identifier, or the sheet is showing a cached StoreKit transaction; re-check the
+     product ids in App Store Connect against the ones logged.
+2. **Harden the card key** regardless: use `key={p.productId || p.identifier}` (and the same value for the
+   `nativeBusy` comparison) so duplicate package identifiers can never make two cards share React state.
+3. **Price**: verify the storefront rather than the code — confirm the Xcode scheme is not using a
+   `.storekit` configuration file (that bypasses App Store Connect pricing entirely), and confirm the sandbox
+   Apple ID's country is Australia. Once the storefront is AU, `priceString` will render `A$59.99`
+   automatically. If the AU price genuinely reads $39.99 in App Store Connect, correct the price tier there.
 
-## Files touched
-- `src/lib/revenuecat.ts` — add offerings, purchase, restore helpers.
-- `src/components/subscription/PaywallModal.tsx` — native branch, store prices, restore, hide `/pricing` link on native.
-- `src/routes/pricing.tsx` — native guard on the checkout handler only.
+## Files that would change
+- `src/lib/revenuecat.ts` — temporary diagnostic log in `getRevenueCatPlans()` (removed after diagnosis).
+- `src/components/subscription/PaywallModal.tsx` — log the tapped package; switch card key / busy key to
+  `productId`.
 
-## Verification
-- Typecheck.
-- Web preview: paywall still shows the hardcoded plans and opens Stripe checkout (unchanged).
-- Native: after `bun run build:mobile` + `npx cap sync ios`, the paywall lists App Store prices, a sandbox purchase unlocks gates without restart, cancel closes cleanly, and no Stripe URL is ever navigated to.
+No changes to the web/Stripe branch, `useSubscription`, the webhook, or gates.
+
+## Note on rebuilding
+The checked-in `dist-mobile` bundle here does not contain `getOfferings`/`purchasePackage`, so it predates
+Stage 4. Any verification must run against a fresh `bun run build:mobile` + `npx cap sync ios`.
