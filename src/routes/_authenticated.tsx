@@ -55,6 +55,7 @@ function AuthenticatedLayout() {
   return (
     <EventsProvider>
       <ShiftTemplatesProvider>
+        <RevenueCatProvider />
         <ShiftAlertWatcher />
         <TrialBanner />
         <Outlet />
