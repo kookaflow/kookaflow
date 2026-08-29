@@ -32,6 +32,8 @@ export interface SubscriptionState {
   hasProAccess: boolean;
   /** Computed: should see paywall blocking advanced features */
   isLocked: boolean;
+  /** Native (RevenueCat) entitlements — always false on web */
+  nativeEntitlements: RevenueCatEntitlements;
 
   refresh: () => Promise<void>;
 }
@@ -51,6 +53,7 @@ const DEFAULT_STATE: SubscriptionState = {
   hasFullAccess: false,
   hasProAccess: false,
   isLocked: false,
+  nativeEntitlements: NO_ENTITLEMENTS,
   refresh: async () => {},
 };
 
@@ -59,6 +62,7 @@ function computeDerived(
   status: SubscriptionStatus,
   trialEndsAt: Date | null,
   subscriptionEndDate: Date | null,
+  native: RevenueCatEntitlements = NO_ENTITLEMENTS,
 ) {
   const now = Date.now();
   const trialActive =
@@ -71,8 +75,9 @@ function computeDerived(
     (tier === "pro" && (status === "active" || status === "trialling")) ||
     tier === "lifetime";
   const basicActive = tier === "basic";
-  const hasProAccess = trialActive || proActive;
-  const hasFullAccess = hasProAccess || basicActive;
+  // RevenueCat can only ever ADD access — never downgrade Stripe-derived access.
+  const hasProAccess = trialActive || proActive || native.pro;
+  const hasFullAccess = hasProAccess || basicActive || native.basic;
   const isLocked = !hasFullAccess;
 
   return { isTrialing: trialActive, trialDaysRemaining, hasFullAccess, hasProAccess, isLocked };
