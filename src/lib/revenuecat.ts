@@ -82,3 +82,85 @@ export async function logOutRevenueCatUser(): Promise<void> {
     console.warn("[revenuecat] logOut failed", err);
   }
 }
+
+/** Active RevenueCat entitlements, mapped to the app's tier names. */
+export interface RevenueCatEntitlements {
+  basic: boolean;
+  pro: boolean;
+}
+
+export const NO_ENTITLEMENTS: RevenueCatEntitlements = { basic: false, pro: false };
+
+function mapEntitlements(customerInfo: {
+  entitlements?: { active?: Record<string, unknown> };
+}): RevenueCatEntitlements {
+  const active = customerInfo?.entitlements?.active ?? {};
+  return { basic: !!active["basic"], pro: !!active["pro"] };
+}
+
+/**
+ * Read the current entitlements. Returns NO_ENTITLEMENTS on web or on any
+ * failure — RevenueCat must never remove access, only add it.
+ */
+export async function getRevenueCatEntitlements(): Promise<RevenueCatEntitlements> {
+  if (!enabled()) return NO_ENTITLEMENTS;
+  try {
+    if (!(await configureRevenueCat())) return NO_ENTITLEMENTS;
+    const { Purchases } = await loadSdk();
+    const { customerInfo } = await Purchases.getCustomerInfo();
+    return mapEntitlements(customerInfo);
+  } catch (err) {
+    console.warn("[revenuecat] getCustomerInfo failed", err);
+    return NO_ENTITLEMENTS;
+  }
+}
+
+/**
+ * Listen for CustomerInfo changes (e.g. right after a purchase) so gates react
+ * without an app restart. Returns an unsubscribe function; no-op on web.
+ */
+export function onRevenueCatEntitlementsChange(
+  callback: (entitlements: RevenueCatEntitlements) => void,
+): () => void {
+  if (!enabled()) return () => {};
+
+  let detached = false;
+  let listenerId: string | null = null;
+
+  void (async () => {
+    try {
+      if (!(await configureRevenueCat())) return;
+      const { Purchases } = await loadSdk();
+      const id = await Purchases.addCustomerInfoUpdateListener((info) => {
+        if (detached) return;
+        try {
+          callback(mapEntitlements(info));
+        } catch {
+          /* a listener error must never break the SDK callback */
+        }
+      });
+      if (detached) {
+        void Purchases.removeCustomerInfoUpdateListener({ listenerToRemove: id });
+        return;
+      }
+      listenerId = id;
+    } catch (err) {
+      console.warn("[revenuecat] listener setup failed", err);
+    }
+  })();
+
+  return () => {
+    detached = true;
+    if (!listenerId) return;
+    const id = listenerId;
+    listenerId = null;
+    void (async () => {
+      try {
+        const { Purchases } = await loadSdk();
+        await Purchases.removeCustomerInfoUpdateListener({ listenerToRemove: id });
+      } catch {
+        /* teardown failures are harmless — `detached` already gates the callback */
+      }
+    })();
+  };
+}
