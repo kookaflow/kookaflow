@@ -191,6 +191,8 @@ function PricingPage() {
           .
         </p>
       </div>
+
+      {IS_NATIVE_IAP && <PaywallModal open={paywallOpen} onOpenChange={setPaywallOpen} />}
     </main>
   );
 }
