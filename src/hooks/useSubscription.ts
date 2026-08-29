@@ -156,6 +156,8 @@ async function subscribeToProfileChanges(
  */
 export function useSubscription(): SubscriptionState {
   const [state, setState] = useState<SubscriptionState>(DEFAULT_STATE);
+  /** Latest native entitlements; always NO_ENTITLEMENTS on web. */
+  const nativeRef = useRef<RevenueCatEntitlements>(NO_ENTITLEMENTS);
 
   const load = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
@@ -181,7 +183,8 @@ export function useSubscription(): SubscriptionState {
       ? new Date(row.subscription_end_date)
       : null;
 
-    const derived = computeDerived(tier, status, trialEndsAt, subscriptionEndDate);
+    const native = nativeRef.current;
+    const derived = computeDerived(tier, status, trialEndsAt, subscriptionEndDate, native);
 
     setState({
       loading: false,
@@ -194,7 +197,32 @@ export function useSubscription(): SubscriptionState {
       stripeCustomerId: row?.stripe_customer_id ?? null,
       stripeSubscriptionId: row?.stripe_subscription_id ?? null,
       ...derived,
+      nativeEntitlements: native,
       refresh: load,
+    });
+  }, []);
+
+  /** Merge freshly-read native entitlements into state without touching Stripe fields. */
+  const applyNative = useCallback((native: RevenueCatEntitlements) => {
+    nativeRef.current = native;
+    setState((prev) => {
+      const derived = computeDerived(
+        prev.tier,
+        prev.status,
+        prev.trialEndsAt,
+        prev.subscriptionEndDate,
+        native,
+      );
+      if (
+        prev.nativeEntitlements.basic === native.basic &&
+        prev.nativeEntitlements.pro === native.pro &&
+        derived.hasFullAccess === prev.hasFullAccess &&
+        derived.hasProAccess === prev.hasProAccess &&
+        derived.isLocked === prev.isLocked
+      ) {
+        return prev;
+      }
+      return { ...prev, ...derived, nativeEntitlements: native };
     });
   }, []);
 
@@ -202,10 +230,34 @@ export function useSubscription(): SubscriptionState {
     let cancelled = false;
     void load();
 
+    // Native-only: read RevenueCat entitlements. Never runs on web.
+    const refreshNative = () => {
+      if (!IS_NATIVE_IAP) return;
+      void getRevenueCatEntitlements().then((native) => {
+        if (cancelled) return;
+        applyNative(native);
+      });
+    };
+    refreshNative();
+
+    let detachNative: (() => void) | null = null;
+    if (IS_NATIVE_IAP) {
+      // Live listener so a purchase flips gates without an app restart.
+      detachNative = onRevenueCatEntitlementsChange((native) => {
+        if (cancelled) return;
+        applyNative(native);
+      });
+    }
+
     const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
       if (cancelled) return;
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
         void load();
+        if (event === "SIGNED_OUT") {
+          nativeRef.current = NO_ENTITLEMENTS;
+        } else {
+          refreshNative();
+        }
       }
     });
 
@@ -229,7 +281,13 @@ export function useSubscription(): SubscriptionState {
     const tick = setInterval(() => {
       setState((prev) => {
         if (!prev.signedIn) return prev;
-        const derived = computeDerived(prev.tier, prev.status, prev.trialEndsAt, prev.subscriptionEndDate);
+        const derived = computeDerived(
+          prev.tier,
+          prev.status,
+          prev.trialEndsAt,
+          prev.subscriptionEndDate,
+          nativeRef.current,
+        );
         if (
           derived.isTrialing === prev.isTrialing &&
           derived.trialDaysRemaining === prev.trialDaysRemaining &&
@@ -248,10 +306,11 @@ export function useSubscription(): SubscriptionState {
       authSub.subscription.unsubscribe();
       detached = true;
       detach?.();
+      detachNative?.();
       clearInterval(tick);
     };
 
-  }, [load]);
+  }, [load, applyNative]);
 
   return state;
 }
