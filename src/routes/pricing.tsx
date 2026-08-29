@@ -93,8 +93,14 @@ function PricingPage() {
   const navigate = useNavigate();
   const checkout = useServerFn(createCheckoutSession);
   const [loadingPlan, setLoadingPlan] = useState<PlanKey | null>(null);
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   async function handlePick(plan: PlanKey) {
+    // Native (iOS) must purchase through RevenueCat IAP — never Stripe checkout.
+    if (IS_NATIVE_IAP) {
+      setPaywallOpen(true);
+      return;
+    }
     try {
       setLoadingPlan(plan);
       const { data: userData } = await supabase.auth.getUser();
