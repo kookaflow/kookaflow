@@ -5,6 +5,7 @@ import { EventsProvider } from "@/providers/EventsProvider";
 import { ShiftAlertWatcher } from "@/components/notifications/ShiftAlertWatcher";
 import { ShiftTemplatesProvider } from "@/providers/ShiftTemplatesProvider";
 import { TrialBanner } from "@/components/subscription/TrialBanner";
+import { RevenueCatProvider } from "@/providers/RevenueCatProvider";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
