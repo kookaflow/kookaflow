@@ -289,6 +289,90 @@ export async function purchaseRevenueCatPlan(
   }
 }
 
+/* -------------------------------------------------------------------------
+ * Tier key → RevenueCat package identifier / store product id.
+ * Resolution is always by identifier (product id is a fallback only) — never
+ * by array position, and a package is never synthesised.
+ * ---------------------------------------------------------------------- */
+
+/** Pricing-page tier keys (same keys the web/Stripe flow uses). */
+export type NativeTierKey = "basic" | "pro_monthly" | "pro_yearly" | "lifetime";
+
+export interface NativePackageMapping {
+  /** RevenueCat package identifier inside the current offering. */
+  packageIdentifier: string;
+  /** Expected App Store / Play product id — fallback match only. */
+  productId: string;
+  /** Entitlement this tier must grant once purchased. */
+  entitlement: keyof RevenueCatEntitlements;
+}
+
+export const NATIVE_PACKAGE_MAP: Record<NativeTierKey, NativePackageMapping> = {
+  basic: {
+    packageIdentifier: "basic_monthly",
+    productId: "com.kookaflow.app.basic.monthly",
+    entitlement: "basic",
+  },
+  pro_monthly: {
+    packageIdentifier: "pro_monthly",
+    productId: "com.kookaflow.app.pro.monthly",
+    entitlement: "pro",
+  },
+  pro_yearly: {
+    packageIdentifier: "pro_yearly",
+    productId: "com.kookaflow.app.pro.yearly",
+    entitlement: "pro",
+  },
+  lifetime: {
+    packageIdentifier: "lifetime",
+    productId: "com.kookaflow.app.lifetime",
+    entitlement: "pro",
+  },
+};
+
+/**
+ * Resolve the RevenueCat package for a pricing-page tier.
+ * Returns the plan object produced by getRevenueCatPlans(), which still carries
+ * the original SDK package in `raw`. Returns null when the current offering
+ * does not contain a matching package.
+ */
+export async function findRevenueCatPlan(
+  tierKey: NativeTierKey,
+): Promise<RevenueCatPlan | null> {
+  if (!enabled()) return null;
+  const mapping = NATIVE_PACKAGE_MAP[tierKey];
+  if (!mapping) return null;
+
+  const plans = await getRevenueCatPlans();
+  if (plans.length === 0) return null;
+
+  const byIdentifier = plans.find((p) => p.identifier === mapping.packageIdentifier);
+  if (byIdentifier) return byIdentifier;
+
+  // Fallback only: the package was renamed but still points at the right product.
+  const byProduct = plans.find((p) => p.productId === mapping.productId);
+  return byProduct ?? null;
+}
+
+/**
+ * Invalidate the cached CustomerInfo (where the SDK supports it) and re-read
+ * entitlements. Used right after a purchase or restore.
+ */
+export async function refreshRevenueCatEntitlements(): Promise<RevenueCatEntitlements> {
+  if (!enabled()) return NO_ENTITLEMENTS;
+  try {
+    if (!(await configureRevenueCat())) return NO_ENTITLEMENTS;
+    const { Purchases } = await loadSdk();
+    if (typeof Purchases.invalidateCustomerInfoCache === "function") {
+      await Purchases.invalidateCustomerInfoCache();
+    }
+  } catch (err) {
+    // A cache-invalidation failure must not stop the entitlement read.
+    console.warn("[revenuecat] invalidateCustomerInfoCache failed", err);
+  }
+  return getRevenueCatEntitlements();
+}
+
 /** Restore previous purchases (Apple requires a visible restore action). */
 export async function restoreRevenueCatPurchases(): Promise<
   { ok: true; entitlements: RevenueCatEntitlements } | { ok: false; message: string }
