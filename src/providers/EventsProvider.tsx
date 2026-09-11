@@ -78,7 +78,7 @@ function queryEvents() {
 async function listEventsForCurrentUser(from: string, to: string): Promise<EventDTO[]> {
   const todayFrom = startOfDay(addDays(new Date(), -7)).toISOString();
   const todayTo = endOfDay(addDays(new Date(), 31)).toISOString();
-  const recurringFloor = addDays(new Date(from < todayFrom ? from : todayFrom), -365).toISOString();
+  const recurringFloor = addDays(new Date(from < todayFrom ? from : todayFrom), -840).toISOString();
   const recurringCeiling = to > todayTo ? to : todayTo;
   const [overlapping, current, recurring] = await Promise.all([
     queryEvents()

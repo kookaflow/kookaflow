@@ -59,6 +59,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastLocalValueRef = useRef<string | null>(null);
   const lastRemoteValueRef = useRef<string | null>(null);
+  const remoteReadyRef = useRef(false);
 
   // Hydrate from localStorage on mount.
   useEffect(() => {
@@ -101,14 +102,16 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
         .select("theme, theme_mode")
         .eq("user_id", data.user.id)
         .maybeSingle();
-      if (cancelled || !row) return;
-      const remoteTheme = isThemeName(row.theme) ? row.theme : prefs.themeName;
-      const remoteMode = isThemeMode(row.theme_mode) ? (row.theme_mode as ThemeMode) : prefs.mode;
-      lastRemoteValueRef.current = `${remoteTheme}:${remoteMode}`;
+      if (cancelled) return;
+      remoteReadyRef.current = true;
+      if (!row) return;
       setPrefs((p) => ({
-        ...p,
-        themeName: remoteTheme,
-        mode: remoteMode,
+        ...(() => {
+          const themeName = isThemeName(row.theme) ? row.theme : p.themeName;
+          const mode = isThemeMode(row.theme_mode) ? (row.theme_mode as ThemeMode) : p.mode;
+          lastRemoteValueRef.current = `${themeName}:${mode}`;
+          return { ...p, themeName, mode };
+        })(),
       }));
     }
     pull();
@@ -124,7 +127,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     if (syncTimer.current) clearTimeout(syncTimer.current);
     syncTimer.current = setTimeout(async () => {
       const { data } = await supabase.auth.getUser();
-      if (!data.user) return;
+      if (!data.user || !remoteReadyRef.current) return;
       // Persist 'system' as the OS-resolved value so it round-trips.
       const persistMode: "light" | "dark" =
         prefs.mode === "system" ? (resolveDarkClass("system") ? "dark" : "light") : prefs.mode;
