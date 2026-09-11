@@ -102,12 +102,71 @@ function PricingPage() {
   const navigate = useNavigate();
   const checkout = useServerFn(createCheckoutSession);
   const [loadingPlan, setLoadingPlan] = useState<PlanKey | null>(null);
-  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const busy = loadingPlan !== null || restoring;
+
+  /** Native only: buy the exact RevenueCat package for the tapped tier. */
+  async function handleNativePick(plan: NativeTierKey) {
+    try {
+      setLoadingPlan(plan);
+      const resolved = await findRevenueCatPlan(plan);
+      if (!resolved) {
+        toast.error("This plan is temporarily unavailable. Please try again.");
+        return;
+      }
+      const res = await purchaseRevenueCatPlan(resolved);
+      if (res.status === "cancelled") return; // normal cancellation — stay silent
+      if (res.status === "error") {
+        toast.error(res.message);
+        return;
+      }
+      // StoreKit succeeded — confirm the entitlement actually landed.
+      const expected = NATIVE_PACKAGE_MAP[plan].entitlement;
+      let entitlements = await refreshRevenueCatEntitlements();
+      if (!entitlements[expected]) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        entitlements = await refreshRevenueCatEntitlements();
+      }
+      if (entitlements[expected]) {
+        toast.success("You're all set — thanks for upgrading!");
+      } else {
+        toast.info("Purchase received. Refreshing your access…");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoadingPlan(null);
+    }
+  }
+
+  /** Native only: Apple/Google require a reachable restore action. */
+  async function handleRestore() {
+    try {
+      setRestoring(true);
+      const res = await restoreRevenueCatPurchases();
+      if (!res.ok) {
+        toast.error(res.message);
+        return;
+      }
+      const entitlements = await refreshRevenueCatEntitlements();
+      if (entitlements.pro || entitlements.basic) {
+        toast.success("Purchases restored.");
+      } else {
+        toast.info("No previous purchases found for this account.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not restore purchases. Please try again.");
+    } finally {
+      setRestoring(false);
+    }
+  }
 
   async function handlePick(plan: PlanKey) {
-    // Native (iOS) must purchase through RevenueCat IAP — never Stripe checkout.
+    // Native must purchase through RevenueCat IAP — never Stripe checkout.
     if (IS_NATIVE_IAP) {
-      setPaywallOpen(true);
+      await handleNativePick(plan as NativeTierKey);
       return;
     }
     try {
