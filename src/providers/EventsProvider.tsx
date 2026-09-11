@@ -76,22 +76,34 @@ function queryEvents() {
 }
 
 async function listEventsForCurrentUser(from: string, to: string): Promise<EventDTO[]> {
-  const recurringFloor = addDays(new Date(from), -365).toISOString();
-  const [overlapping, recurring] = await Promise.all([
+  const todayFrom = startOfDay(addDays(new Date(), -7)).toISOString();
+  const todayTo = endOfDay(addDays(new Date(), 31)).toISOString();
+  const recurringFloor = addDays(new Date(from < todayFrom ? from : todayFrom), -365).toISOString();
+  const recurringCeiling = to > todayTo ? to : todayTo;
+  const [overlapping, current, recurring] = await Promise.all([
     queryEvents()
       .lt("start_time", to)
       .gt("end_time", from)
       .order("start_time", { ascending: true }),
     queryEvents()
+      .lt("start_time", todayTo)
+      .gt("end_time", todayFrom)
+      .order("start_time", { ascending: true }),
+    queryEvents()
       .eq("is_recurring", true)
       .gte("start_time", recurringFloor)
-      .lte("start_time", to)
+      .lte("start_time", recurringCeiling)
       .order("start_time", { ascending: true }),
   ]);
   if (overlapping.error) throw new Error(overlapping.error.message);
+  if (current.error) throw new Error(current.error.message);
   if (recurring.error) throw new Error(recurring.error.message);
   const byId = new Map<string, EventDTO>();
-  for (const dto of [...rowsToDtos(overlapping.data), ...rowsToDtos(recurring.data)]) {
+  for (const dto of [
+    ...rowsToDtos(overlapping.data),
+    ...rowsToDtos(current.data),
+    ...rowsToDtos(recurring.data),
+  ]) {
     byId.set(dto.id, dto);
   }
   return [...byId.values()].sort((a, b) => a.start.localeCompare(b.start));
@@ -312,10 +324,18 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   }, [status, data, error]);
 
   const events = useMemo(
-    () => (data ?? [])
-      .map(dtoToCalendarEvent)
-      .flatMap(expandRecurring)
-      .filter((event) => event.start < range.to && event.end > range.from),
+    () => {
+      const todayFrom = startOfDay(addDays(new Date(), -7)).toISOString();
+      const todayTo = endOfDay(addDays(new Date(), 31)).toISOString();
+      return (data ?? [])
+        .map(dtoToCalendarEvent)
+        .flatMap(expandRecurring)
+        .filter(
+          (event) =>
+            (event.start < range.to && event.end > range.from) ||
+            (event.start < todayTo && event.end > todayFrom),
+        );
+    },
     [data, range],
   );
 

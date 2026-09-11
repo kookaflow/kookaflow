@@ -26,10 +26,11 @@ export function ExportSection() {
   async function exportPdf() {
     try {
       setBusy("pdf");
+      const allEvents = await loadAllEvents();
       const now = new Date();
       const monthLabel = format(now, "MMMM yyyy");
       const filename = `Kookaflow-${format(now, "MMMM")}-${format(now, "yyyy")}.pdf`;
-      generateMonthlyPdf(events, now, monthLabel).save(filename);
+      generateMonthlyPdf(allEvents, now, monthLabel).save(filename);
       toast.success("Monthly report downloaded");
     } catch (e) {
       toast.error((e as Error).message || "Could not generate PDF");
