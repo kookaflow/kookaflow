@@ -20,16 +20,17 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 export function ExportSection() {
-  const { events } = useEvents();
+  const { loadAllEvents } = useEvents();
   const [busy, setBusy] = useState<"pdf" | "csv" | null>(null);
 
   async function exportPdf() {
     try {
       setBusy("pdf");
+      const allEvents = await loadAllEvents();
       const now = new Date();
       const monthLabel = format(now, "MMMM yyyy");
       const filename = `Kookaflow-${format(now, "MMMM")}-${format(now, "yyyy")}.pdf`;
-      generateMonthlyPdf(events, now, monthLabel).save(filename);
+      generateMonthlyPdf(allEvents, now, monthLabel).save(filename);
       toast.success("Monthly report downloaded");
     } catch (e) {
       toast.error((e as Error).message || "Could not generate PDF");
@@ -38,10 +39,11 @@ export function ExportSection() {
     }
   }
 
-  function exportCsv() {
+  async function exportCsv() {
     try {
       setBusy("csv");
-      const csv = eventsToCsv(events);
+      const allEvents = await loadAllEvents();
+      const csv = eventsToCsv(allEvents);
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

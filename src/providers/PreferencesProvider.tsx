@@ -57,11 +57,16 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
   const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT);
   const hydratedRef = useRef(false);
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastLocalValueRef = useRef<string | null>(null);
+  const lastRemoteValueRef = useRef<string | null>(null);
+  const remoteReadyRef = useRef(false);
 
   // Hydrate from localStorage on mount.
   useEffect(() => {
     const stored = loadJSON<unknown>(KEY, null);
-    setPrefs(migrateLegacy(stored));
+    const migrated = migrateLegacy(stored);
+    setPrefs(migrated);
+    lastLocalValueRef.current = JSON.stringify(migrated);
     hydratedRef.current = true;
   }, []);
 
@@ -70,7 +75,11 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     if (typeof document === "undefined") return;
     document.documentElement.dataset.theme = prefs.themeName;
     document.documentElement.classList.toggle("dark", resolveDarkClass(prefs.mode));
-    if (hydratedRef.current) saveJSON(KEY, prefs);
+    const serialized = JSON.stringify(prefs);
+    if (hydratedRef.current && serialized !== lastLocalValueRef.current) {
+      saveJSON(KEY, prefs);
+      lastLocalValueRef.current = serialized;
+    }
   }, [prefs]);
 
   // Track OS scheme changes while in 'system' mode.
@@ -93,11 +102,16 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
         .select("theme, theme_mode")
         .eq("user_id", data.user.id)
         .maybeSingle();
-      if (cancelled || !row) return;
+      if (cancelled) return;
+      remoteReadyRef.current = true;
+      if (!row) return;
       setPrefs((p) => ({
-        ...p,
-        themeName: isThemeName(row.theme) ? row.theme : p.themeName,
-        mode: isThemeMode(row.theme_mode) ? (row.theme_mode as ThemeMode) : p.mode,
+        ...(() => {
+          const themeName = isThemeName(row.theme) ? row.theme : p.themeName;
+          const mode = isThemeMode(row.theme_mode) ? (row.theme_mode as ThemeMode) : p.mode;
+          lastRemoteValueRef.current = `${themeName}:${mode}`;
+          return { ...p, themeName, mode };
+        })(),
       }));
     }
     pull();
@@ -113,14 +127,17 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     if (syncTimer.current) clearTimeout(syncTimer.current);
     syncTimer.current = setTimeout(async () => {
       const { data } = await supabase.auth.getUser();
-      if (!data.user) return;
+      if (!data.user || !remoteReadyRef.current) return;
       // Persist 'system' as the OS-resolved value so it round-trips.
       const persistMode: "light" | "dark" =
         prefs.mode === "system" ? (resolveDarkClass("system") ? "dark" : "light") : prefs.mode;
-      await supabase
+      const value = `${prefs.themeName}:${persistMode}`;
+      if (value === lastRemoteValueRef.current) return;
+      const { error } = await supabase
         .from("user_preferences")
         .update({ theme: prefs.themeName, theme_mode: persistMode })
         .eq("user_id", data.user.id);
+      if (!error) lastRemoteValueRef.current = value;
     }, 400);
     return () => { if (syncTimer.current) clearTimeout(syncTimer.current); };
   }, [prefs.themeName, prefs.mode]);
