@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useMemo } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { addDays } from "date-fns";
+import { addDays, endOfDay, startOfDay } from "date-fns";
 import {
   createEvent as createEventFn,
   updateEvent as updateEventFn,
@@ -31,6 +31,8 @@ interface Ctx {
   updateEvent: (id: string, patch: Partial<EventDraft>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
   getEvent: (id: string) => CalendarEvent | undefined;
+  setVisibleRange: (from: Date, to: Date) => void;
+  loadAllEvents: () => Promise<CalendarEvent[]>;
 }
 
 const EventsContext = createContext<Ctx | null>(null);
@@ -38,14 +40,7 @@ const EventsContext = createContext<Ctx | null>(null);
 const EVENT_COLUMNS =
   "id,title,category,start_time,end_time,is_all_day,is_payday,shift_type,shift_role,location,notes,icon_name,icon_color,split_shift_first_start,split_shift_first_end,split_shift_break_duration,split_shift_second_start,split_shift_second_end,travel_duration_minutes,hourly_rate,calculated_earnings,is_recurring,recurrence_pattern,recurrence_days,recurrence_end_date,recurrence_group_id";
 
-async function listEventsForCurrentUser(): Promise<EventDTO[]> {
-  const { data, error } = await supabase
-    .from("events")
-    .select(EVENT_COLUMNS)
-    .order("start_time", { ascending: true });
-
-  if (error) throw new Error(error.message);
-
+function rowsToDtos(data: Awaited<ReturnType<typeof queryEvents>>["data"]): EventDTO[] {
   return (data ?? []).map((row) => ({
     id: row.id,
     title: row.title,
@@ -74,6 +69,38 @@ async function listEventsForCurrentUser(): Promise<EventDTO[]> {
     recurrenceEndDate: row.recurrence_end_date,
     recurrenceGroupId: row.recurrence_group_id,
   }));
+}
+
+function queryEvents() {
+  return supabase.from("events").select(EVENT_COLUMNS);
+}
+
+async function listEventsForCurrentUser(from: string, to: string): Promise<EventDTO[]> {
+  const recurringFloor = addDays(new Date(from), -365).toISOString();
+  const [overlapping, recurring] = await Promise.all([
+    queryEvents()
+      .lt("start_time", to)
+      .gt("end_time", from)
+      .order("start_time", { ascending: true }),
+    queryEvents()
+      .eq("is_recurring", true)
+      .gte("start_time", recurringFloor)
+      .lte("start_time", to)
+      .order("start_time", { ascending: true }),
+  ]);
+  if (overlapping.error) throw new Error(overlapping.error.message);
+  if (recurring.error) throw new Error(recurring.error.message);
+  const byId = new Map<string, EventDTO>();
+  for (const dto of [...rowsToDtos(overlapping.data), ...rowsToDtos(recurring.data)]) {
+    byId.set(dto.id, dto);
+  }
+  return [...byId.values()].sort((a, b) => a.start.localeCompare(b.start));
+}
+
+async function listAllEventsForCurrentUser(): Promise<EventDTO[]> {
+  const { data, error } = await queryEvents().order("start_time", { ascending: true });
+  if (error) throw new Error(error.message);
+  return rowsToDtos(data);
 }
 
 function dtoToCalendarEvent(d: EventDTO): CalendarEvent {
@@ -247,13 +274,26 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const remove = useServerFn(deleteEventFn);
   const scheduleAlert = useServerFn(scheduleShiftAlert);
   const cancelAlert = useServerFn(cancelShiftAlert);
+  const [range, setRange] = useState(() => ({
+    from: startOfDay(addDays(new Date(), -31)).toISOString(),
+    to: endOfDay(addDays(new Date(), 180)).toISOString(),
+  }));
+  const setVisibleRange = useCallback((from: Date, to: Date) => {
+    const next = {
+      from: startOfDay(from).toISOString(),
+      to: endOfDay(to).toISOString(),
+    };
+    setRange((current) =>
+      current.from === next.from && current.to === next.to ? current : next,
+    );
+  }, []);
 
   const { data, isLoading, isFetching, error, status } = useQuery({
-    queryKey: QK,
+    queryKey: [...QK, range.from, range.to],
     // Reads can safely use the authenticated browser client: RLS still limits
     // results to the signed-in user, and this avoids cross-origin serverFn
     // transport differences in Capacitor WebViews.
-    queryFn: listEventsForCurrentUser,
+    queryFn: () => listEventsForCurrentUser(range.from, range.to),
   });
 
   // Observability: this query previously failed silently (undefined data ->
@@ -272,8 +312,11 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   }, [status, data, error]);
 
   const events = useMemo(
-    () => (data ?? []).map(dtoToCalendarEvent).flatMap(expandRecurring),
-    [data],
+    () => (data ?? [])
+      .map(dtoToCalendarEvent)
+      .flatMap(expandRecurring)
+      .filter((event) => event.start < range.to && event.end > range.from),
+    [data, range],
   );
 
   const createMut = useMutation({
@@ -337,6 +380,9 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       await deleteMut.mutateAsync(id);
     },
     getEvent: (id) => events.find((e) => e.id === id),
+    setVisibleRange,
+    loadAllEvents: async () =>
+      (await listAllEventsForCurrentUser()).map(dtoToCalendarEvent).flatMap(expandRecurring),
   };
 
   return (
