@@ -234,12 +234,13 @@ function PricingPage() {
               <Button
                 className="mt-6 w-full"
                 variant={t.recommended ? "default" : "outline"}
-                disabled={loadingPlan !== null}
-                onClick={() => handlePick(t.key)}
+                disabled={busy}
+                onClick={() => void handlePick(t.key)}
               >
                 {loadingPlan === t.key ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Opening checkout…
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                    {IS_NATIVE_IAP ? "Please wait…" : "Opening checkout…"}
                   </>
                 ) : (
                   t.cta
@@ -249,6 +250,27 @@ function PricingPage() {
           ))}
         </div>
 
+        {IS_NATIVE_IAP && (
+          <div className="mt-8 text-center">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              onClick={() => void handleRestore()}
+            >
+              {restoring ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Restoring…
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="mr-2 h-4 w-4" /> Restore purchases
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+
         <p className="mt-10 text-center text-xs text-muted-foreground">
           Already a customer?{" "}
           <Link to="/login" className="text-primary hover:underline">
@@ -257,8 +279,6 @@ function PricingPage() {
           .
         </p>
       </div>
-
-      {IS_NATIVE_IAP && <PaywallModal open={paywallOpen} onOpenChange={setPaywallOpen} />}
     </main>
   );
 }
