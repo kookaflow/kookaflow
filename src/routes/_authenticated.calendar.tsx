@@ -5,6 +5,8 @@ import {
   addMonths,
   startOfWeek,
   endOfWeek,
+  startOfMonth,
+  endOfMonth,
   eachDayOfInterval,
   format,
 } from "date-fns";
@@ -73,20 +75,38 @@ function CalendarPage() {
 function CalendarPageInner() {
   const [view, setView] = useState<ViewMode>("month");
   const [date, setDate] = useState<Date>(new Date());
-  const { events: rawEvents, isLoading: eventsLoading } = useEvents();
+  const { events: rawEvents, isLoading: eventsLoading, setVisibleRange } = useEvents();
   const fetchGoogle = useServerFn(listGoogleEvents);
   const fetchStatus = useServerFn(getGoogleConnectionStatus);
   const runSync = useServerFn(triggerGoogleSync);
   const { data: googleEvents = [] } = useQuery({
     queryKey: ["google-events"],
     queryFn: () => fetchGoogle({ data: {} }),
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
   });
   const { data: gStatus } = useQuery({
     queryKey: ["google-connection-status"],
     queryFn: () => fetchStatus(),
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
   });
+  const visibleRange = useMemo(() => {
+    if (view === "month") {
+      return {
+        from: startOfWeek(startOfMonth(date), { weekStartsOn: 1 }),
+        to: endOfWeek(endOfMonth(date), { weekStartsOn: 1 }),
+      };
+    }
+    if (view === "week") {
+      return {
+        from: startOfWeek(date, { weekStartsOn: 1 }),
+        to: endOfWeek(date, { weekStartsOn: 1 }),
+      };
+    }
+    return { from: date, to: date };
+  }, [date, view]);
+  useEffect(() => {
+    setVisibleRange(visibleRange.from, visibleRange.to);
+  }, [setVisibleRange, visibleRange]);
   const syncedOnceRef = useRef(false);
   useEffect(() => {
     if (!gStatus?.connected || syncedOnceRef.current) return;

@@ -20,7 +20,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 export function ExportSection() {
-  const { events } = useEvents();
+  const { events, loadAllEvents } = useEvents();
   const [busy, setBusy] = useState<"pdf" | "csv" | null>(null);
 
   async function exportPdf() {
@@ -38,10 +38,11 @@ export function ExportSection() {
     }
   }
 
-  function exportCsv() {
+  async function exportCsv() {
     try {
       setBusy("csv");
-      const csv = eventsToCsv(events);
+      const allEvents = await loadAllEvents();
+      const csv = eventsToCsv(allEvents);
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

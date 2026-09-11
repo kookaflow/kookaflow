@@ -53,6 +53,7 @@ export function ConnectedCalendars() {
   const { data: status, isLoading } = useQuery({
     queryKey: ["google-connection-status"],
     queryFn: () => fetchStatus(),
+    staleTime: 5 * 60_000,
   });
 
   // Refresh on return from OAuth
