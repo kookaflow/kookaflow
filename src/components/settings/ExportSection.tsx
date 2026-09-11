@@ -20,7 +20,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 export function ExportSection() {
-  const { events, loadAllEvents } = useEvents();
+  const { loadAllEvents } = useEvents();
   const [busy, setBusy] = useState<"pdf" | "csv" | null>(null);
 
   async function exportPdf() {
