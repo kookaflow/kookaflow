@@ -1,14 +1,21 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, RotateCcw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createCheckoutSession } from "@/lib/stripe.functions";
 import type { PlanKey } from "@/lib/stripe.server";
-import { IS_NATIVE_IAP } from "@/lib/revenuecat";
-import { PaywallModal } from "@/components/subscription/PaywallModal";
+import {
+  IS_NATIVE_IAP,
+  NATIVE_PACKAGE_MAP,
+  findRevenueCatPlan,
+  purchaseRevenueCatPlan,
+  refreshRevenueCatEntitlements,
+  restoreRevenueCatPurchases,
+  type NativeTierKey,
+} from "@/lib/revenuecat";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
