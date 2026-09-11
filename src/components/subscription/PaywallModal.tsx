@@ -143,7 +143,14 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
   }
 
   async function handleNativePick(plan: RevenueCatPlan) {
-    setNativeBusy(plan.identifier);
+    // TEMPORARY diagnostic — confirm which package was actually tapped.
+    console.log("[paywall] native pick", {
+      identifier: plan.identifier,
+      productId: plan.productId,
+      priceString: plan.priceString,
+    });
+    const busyKey = plan.productId || plan.identifier;
+    setNativeBusy(busyKey);
     const res = await purchaseRevenueCatPlan(plan);
     setNativeBusy(null);
     if (res.status === "purchased") {
@@ -194,7 +201,7 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
                 const copy = NATIVE_COPY[p.identifier];
                 return (
                   <button
-                    key={p.identifier}
+                    key={p.productId || p.identifier}
                     type="button"
                     disabled={nativeBusy !== null || restoring}
                     onClick={() => void handleNativePick(p)}
@@ -218,7 +225,7 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
                       <div className="text-xs text-muted-foreground">{copy.description}</div>
                     )}
                     <div className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
-                      {nativeBusy === p.identifier ? (
+                      {nativeBusy === (p.productId || p.identifier) ? (
                         <>
                           <Loader2 className="h-3 w-3 animate-spin" /> Processing…
                         </>

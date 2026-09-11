@@ -228,6 +228,16 @@ export async function getRevenueCatPlans(): Promise<RevenueCatPlan[]> {
       raw: pkg,
     }));
 
+    // TEMPORARY diagnostic — confirm each package's product attachment.
+    console.log(
+      "[revenuecat] plans",
+      plans.map((p) => ({
+        identifier: p.identifier,
+        productId: p.productId,
+        priceString: p.priceString,
+      })),
+    );
+
     const order = ["pro_yearly", "lifetime", "pro_monthly", "basic_monthly"];
     return plans.sort((a, b) => {
       const ai = order.indexOf(a.identifier);
