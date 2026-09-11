@@ -1,132 +1,87 @@
-# Diagnose native RevenueCat wrong-product purchase
+# Native pricing: buy directly from the pricing page, one price source
 
-## Verified code path
+## What the code does today (verified)
 
-```text
-Purchases.getOfferings()
-  → offerings.current.availablePackages
-  → one RevenueCatPlan per SDK package
-      identifier = pkg.identifier
-      productId   = pkg.product.identifier
-      priceString = pkg.product.priceString
-      raw         = the same pkg object
-  → sort whole plan objects by package identifier
-  → render one card per plan
-  → label from NATIVE_COPY[p.identifier]
-  → click closure passes that exact p
-  → purchaseRevenueCatPlan(p)
-  → Purchases.purchasePackage({ aPackage: p.raw })
-```
+- `src/routes/pricing.tsx:36-92` holds a hardcoded `TIERS` array with the correct AUD prices (A$2.99, A$4.99, A$29.99, A$59.99). This is what the main pricing page renders on every platform, including native.
+- `src/routes/pricing.tsx:100-105`: on native, every plan button ignores its own tier and just opens the modal:
+  `if (IS_NATIVE_IAP) { setPaywallOpen(true); return; }`
+  That is the duplicate paywall. The tapped tier is discarded, which is why "Start Pro Monthly" leads to a second screen showing all four plans.
+- `src/components/subscription/PaywallModal.tsx:97-110, 198-238` then loads `getRevenueCatPlans()` and renders `p.priceString` for each package. Those are store-reported strings, which is why the second screen's prices differ from the pricing page's numbers.
+- `src/lib/revenuecat.ts:215-251` maps `offerings.current.availablePackages` one-to-one and keeps the original SDK package in `raw`; `src/lib/revenuecat.ts:269-290` purchases exactly that `raw` object. This part is already correct and needs no change: identity is preserved, resolution is not positional, and cancellation is already classified separately.
 
-Evidence:
-- `src/lib/revenuecat.ts:220-229` reads only `offerings.current.availablePackages` and keeps the original SDK package as `raw`.
-- `src/lib/revenuecat.ts:241-246` sorts whole objects; it cannot mix fields between packages.
-- `src/components/subscription/PaywallModal.tsx:200-238` creates a per-item `p` binding and passes that exact object in `onClick`.
-- `src/lib/revenuecat.ts:278-280` submits that plan's original `raw` package.
-- The installed native bridge ultimately purchases by the submitted package identifier plus its presented-offering context; it does not use the card label.
+## Root cause
 
-## Diagnosis
+Two separate causes, one per symptom.
 
-There is no normal closure, index, sort, or package-copy path that substitutes Lifetime after a correctly bound Pro Monthly card is clicked.
+1. **Duplicate paywall**: the native branch on the pricing page is a stub that opens `PaywallModal` instead of purchasing the tapped tier. Nothing maps a pricing-page tier to a RevenueCat package yet.
+2. **Inconsistent prices**: two different price sources appear in one flow. The pricing page shows hardcoded AUD text; the modal shows RevenueCat/StoreKit `priceString`. Apple's final sheet is authoritative and shows A$4.99, and the console already confirmed the correct package/product (`pro_monthly` / `com.kookaflow.app.pro.monthly`) reaches `purchasePackage`. So the wrong "$2.99" is a display value from stale or fallback offering metadata, not a wrong product.
 
-There is one important distinction: the visible name is intentionally derived from the **package identifier**, not the Store product title. Therefore, if the current offering returns a package named `pro_monthly` that is attached to the Lifetime Store product, the code will display **Pro Monthly** while `purchasePackage()` correctly purchases the Lifetime product attached to that package. That exactly matches the reported symptom and is most likely an external current-offering/package mapping problem.
+### Why priceString can look US-shaped on an AU device
 
-A secondary UI risk exists because the React key is `p.productId || p.identifier`. If a bad offering returns duplicate `productId` values, React receives duplicate keys. That can make reconciliation unreliable after list refreshes. It does not explain or repair the underlying duplicate product attachment, and no code change should be made until the logs establish whether duplicate keys exist.
+`priceString` is whatever store metadata was attached to the package at fetch time. It becomes stale or non-AU when:
+- the offering/product metadata was cached before the AU price tiers or the product mapping were finalised, and the cached copy is still served to the app;
+- the StoreKit product fetch for one or more products did not resolve in this build, so a dashboard/server-side price is shown instead of the live storefront price;
+- the offering being served to the app is not the same clean offering that now backs the StoreKit sheet.
 
-The wrong currency/price is separate unless the Pro Monthly row itself reports the Lifetime price. A US sandbox storefront or an Xcode StoreKit configuration can explain US `$39.99`; region alone cannot turn Pro Monthly into Lifetime.
+The distinguishing evidence is the existing `[revenuecat] plans` log: if `pro_monthly` / `com.kookaflow.app.pro.monthly` logs `$2.99` while Apple's sheet for that same package shows A$4.99, the string is stale/fallback metadata rather than a mapping error. The fix is to stop rendering that string in this flow, not to hardcode prices.
 
-## Exact identifiers and product mapping
+## Expected mapping (resolved by identifier, never by position)
 
-The code expects these RevenueCat **package identifiers**:
-
-| Card | Package identifier | Display order |
-|---|---|---:|
-| Pro Yearly | `pro_yearly` | 1 |
-| Lifetime | `lifetime` | 2 |
-| Pro Monthly | `pro_monthly` | 3 |
-| Basic | `basic_monthly` | 4 |
-
-The repository and its history contain **no literal App Store product ID strings**. They are read dynamically from `pkg.product.identifier`, so they must be copied from the runtime log, RevenueCat dashboard, or App Store configuration rather than guessed.
-
-Expected semantic mapping:
-
-| RevenueCat package identifier | Required distinct App Store product |
+| Package identifier | App Store product ID |
 |---|---|
-| `basic_monthly` | the Basic monthly subscription product ID shown in the dashboard/console |
-| `pro_monthly` | the Pro monthly subscription product ID shown in the dashboard/console |
-| `pro_yearly` | the Pro yearly subscription product ID shown in the dashboard/console |
-| `lifetime` | the Lifetime non-consumable product ID shown in the dashboard/console |
+| `basic_monthly` | `com.kookaflow.app.basic.monthly` |
+| `pro_monthly` | `com.kookaflow.app.pro.monthly` |
+| `pro_yearly` | `com.kookaflow.app.pro.yearly` |
+| `lifetime` | `com.kookaflow.app.lifetime` |
 
-The entitlement identifiers are separate: Basic uses `basic`; the Pro Monthly, Pro Yearly, and Lifetime products use `pro`. These are not App Store product IDs.
+Entitlements stay as they are: `basic` for Basic, `pro` for the other three.
 
-## Console evidence decision tree
+## Implementation plan
 
-Use one paywall opening and one tap, then compare the complete `[revenuecat] plans` array with the immediately following `[paywall] native pick` object.
+### 1. `src/lib/revenuecat.ts` — add package lookup and a customer-info refresh
+- Add an exported map from the pricing page's tier keys to RevenueCat package identifiers and expected product IDs:
+  `basic → basic_monthly / com.kookaflow.app.basic.monthly`, `pro_monthly → pro_monthly / com.kookaflow.app.pro.monthly`, `pro_yearly → pro_yearly / com.kookaflow.app.pro.yearly`, `lifetime → lifetime / com.kookaflow.app.lifetime`.
+- Add `findRevenueCatPlan(tierKey)`: calls the existing `getRevenueCatPlans()`, then selects the plan whose `identifier` matches, falling back to a `productId` match. No index/position lookup, no synthesised package. Returns `null` when absent.
+- Add `refreshRevenueCatEntitlements()`: a thin wrapper over the existing `getRevenueCatEntitlements()` that first invalidates the customer-info cache, so entitlement state is re-read after a purchase.
+- Reuse `purchaseRevenueCatPlan()` unchanged: it already passes `plan.raw` straight to `Purchases.purchasePackage` and already returns `cancelled` distinctly.
 
-### A. Wrong current offering or package-to-product mapping
+### 2. `src/routes/pricing.tsx` — native buttons purchase directly
+- Replace the `if (IS_NATIVE_IAP) { setPaywallOpen(true); ... }` stub with a native branch that:
+  1. sets a per-tier busy state so the tapped button shows a spinner and all four buttons are disabled (prevents double purchase);
+  2. resolves the package with `findRevenueCatPlan(t.key)`;
+  3. if resolution fails, shows a single "plans unavailable, please try again" message and clears busy state;
+  4. otherwise calls `purchaseRevenueCatPlan(plan)`;
+  5. on `purchased`, calls the refresh helper, shows a success message, and lets the existing entitlement listener unlock gates;
+  6. on `cancelled`, silently clears busy state with no error surface;
+  7. on `error`, shows the returned message.
+- Keep the web branch byte-for-byte: sign-in check, `createCheckoutSession`, `window.location.assign(res.url)`.
+- Remove the `PaywallModal` render and its `paywallOpen` state from this route so no second all-plans screen can open from the pricing page.
+- Add a visible "Restore purchases" action on this page for native builds (calling the existing `restoreRevenueCatPurchases()`), so restore stays reachable once the modal is no longer opened from here.
+- Optional, native-only display consistency: where a resolved package's `priceString` is available and trustworthy it may be shown; otherwise the page keeps its existing text. Prices are never fabricated.
 
-Evidence:
-- `[revenuecat] plans` contains `identifier: "pro_monthly"`, but its `productId` is the Lifetime Store product ID and its `priceString` is the Lifetime price; or
-- two package rows share the same `productId`; or
-- the four expected identifiers are absent/replaced by entries from the older offering.
+### 3. `src/components/subscription/PaywallModal.tsx` — leave as the gate paywall
+- No change to its purchase logic. It remains the paywall reached from feature gates (`FeatureLock`, trial expiry), a separate entry point from the pricing page.
+- The temporary `[revenuecat] plans` and `[paywall] native pick` diagnostics stay until the price-source question is closed, then get removed.
 
-Interpretation:
-- The app is faithfully rendering what `offerings.current` returned.
-- If RevenueCat's current-offering screen shows the same mapping, the dashboard configuration is wrong.
-- If the clean offering is correct but is not marked current, the app is loading the older current offering.
+Untouched: SSR, Cloudflare server functions, auth, calendar, the Stripe server functions and webhook, and the public web build.
 
-### B. Stale RevenueCat/App Store metadata
+## Risks
 
-Evidence:
-- The RevenueCat dashboard confirms the clean offering is current and shows four distinct product attachments;
-- the logged plans still show an older package/product mapping or old prices after a network-connected cold launch; and
-- after uninstalling the simulator app, resetting StoreKit/sandbox state as applicable, reinstalling a freshly synced build, and reopening the paywall, the logged rows change to the dashboard mapping.
+- **Native detection**: everything hinges on `IS_NATIVE_IAP`. If a native build ever evaluated it false, the pricing page would fall through to Stripe. Verify on device before shipping.
+- **Package resolution failure**: if the current offering omits an identifier, that plan cannot be bought from the pricing page. Handled with an explicit unavailable message rather than a silent no-op.
+- **Entitlement timing**: store-side propagation can lag slightly; the refresh plus the existing listener cover it, but the first render after purchase may briefly show the old tier.
+- **Restore discoverability**: Apple requires a reachable restore action; it must be present on the pricing page for native, not only inside the modal.
+- **Stale price metadata**: removing the modal from this flow hides the inconsistent string but does not correct the underlying metadata; the offering/product price data still needs verifying before any future price display.
 
-Interpretation:
-- The pre-reset result was cached metadata or a stale native build.
-- A price/currency-only mismatch with otherwise correct, distinct product IDs points to the simulator sandbox storefront or an Xcode `.storekit` configuration, not React.
-- Logs alone cannot distinguish stale cache from a dashboard offering that is not actually current; the current-offering dashboard status must be checked first.
+## Test checklist (AU TestFlight device)
 
-### C. UI/React binding bug
-
-Evidence required:
-- `[revenuecat] plans` has a correct, distinct `pro_monthly` row;
-- the visible tapped card corresponds to that row;
-- `[paywall] native pick` immediately reports a **different** identifier/product ID than the tapped card.
-
-Interpretation:
-- Only this mismatch implicates rendering/click binding.
-- Check first for duplicate React keys caused by repeated `productId` values. With four unique product IDs, the current per-item closure and object flow provide no static code path for this mismatch.
-- If the pick log correctly says `pro_monthly` with the correct Pro Monthly product ID but Apple's sheet says Lifetime, the UI binding is exonerated; investigate stale native StoreKit/RevenueCat metadata or product configuration.
-
-## Minimal ordered resolution plan
-
-### 1. Capture evidence before changing anything
-1. Open the native paywall once and save the full four-row `[revenuecat] plans` output.
-2. Tap Pro Monthly once and save `[paywall] native pick`.
-3. Record the Apple sheet's product title and localized price.
-4. Compare identifier, product ID, and price across all three observations.
-
-### 2. RevenueCat dashboard actions
-1. Confirm the clean offering—not the older/tangled offering—is explicitly the project's **current** offering for this app/project.
-2. In that current offering, confirm the exact four package identifiers listed above.
-3. Confirm each package points to a different Store product ID and that `pro_monthly` points to the monthly Pro product, not Lifetime.
-4. Confirm Basic grants `basic`, while Pro Monthly, Pro Yearly, and Lifetime grant `pro`.
-5. Re-read the runtime logs after dashboard changes; do not infer success from the dashboard alone.
-
-### 3. Simulator and cache reset actions
-1. Ensure the Xcode run scheme is not selecting a local `.storekit` configuration unless that file is deliberately maintained with the same products and prices.
-2. Confirm the sandbox account/storefront uses the intended region.
-3. Terminate and uninstall the app from the simulator, then install a newly built and newly synced mobile bundle.
-4. If StoreKit state remains inconsistent, erase/reset the simulator's content and settings or use a fresh simulator, then retest online.
-5. Treat corrected logs after reset as confirmation of stale metadata; treat unchanged wrong logs as evidence that the selected current offering/configuration remains wrong.
-
-### 4. Code action only if the evidence requires it
-- Make **no speculative purchase-flow change**. The current object flow is correct.
-- If the logs reveal duplicate product IDs, correct the RevenueCat mapping first. Only afterward consider changing the React key to a guaranteed package-unique composite such as package identifier plus product ID; this is defensive UI hardening, not the purchase fix.
-- If unique correct plan rows produce a different native-pick row, capture that exact pair before altering the rendering code.
-- Remove the temporary diagnostics only after all four rows and all four purchase sheets have been verified.
-
-## Most likely cause
-
-The clean offering is either not actually selected as `current`, or the current offering still maps `pro_monthly` to the Lifetime Store product. The code would then label the card “Pro Monthly” from the package identifier while purchasing the Lifetime product attached to that package. The US price is likely an additional simulator storefront or StoreKit-configuration issue.
+1. Pricing page shows four plans and no second modal opens on any plan tap.
+2. Tapping Start Pro Monthly goes straight to Apple's sheet showing Pro Monthly at A$4.99.
+3. Each other button opens Apple's sheet for its own product: Basic A$2.99, Pro Yearly A$29.99, Lifetime A$59.99.
+4. `[revenuecat] plans` and `[paywall] native pick` logs confirm the tapped identifier and product ID match the sheet every time.
+5. Tapping a button disables all four and shows a spinner; rapid double taps produce only one sheet.
+6. Cancelling Apple's sheet returns to the pricing page with no error message and buttons re-enabled.
+7. A completed sandbox purchase unlocks gated features without restarting the app.
+8. Restore purchases works from the pricing page and reports "no purchases" cleanly on a fresh account.
+9. The feature-gate paywall still opens and purchases correctly from within the app.
+10. Web: pricing page still redirects to Stripe checkout for all four plans, signed in and signed out.
