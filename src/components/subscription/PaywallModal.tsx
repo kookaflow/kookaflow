@@ -225,7 +225,7 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
                       <div className="text-xs text-muted-foreground">{copy.description}</div>
                     )}
                     <div className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
-                      {nativeBusy === p.identifier ? (
+                      {nativeBusy === (p.productId || p.identifier) ? (
                         <>
                           <Loader2 className="h-3 w-3 animate-spin" /> Processing…
                         </>
