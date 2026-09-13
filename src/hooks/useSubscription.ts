@@ -206,6 +206,7 @@ export function useSubscription(): SubscriptionState {
       stripeSubscriptionId: row?.stripe_subscription_id ?? null,
       ...derived,
       nativeEntitlements: native,
+      nativeSubscription: nativeSubRef.current,
       refresh: load,
     });
   }, []);
