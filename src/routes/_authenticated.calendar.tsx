@@ -75,7 +75,12 @@ function CalendarPage() {
 function CalendarPageInner() {
   const [view, setView] = useState<ViewMode>("month");
   const [date, setDate] = useState<Date>(new Date());
-  const { events: rawEvents, isLoading: eventsLoading, setVisibleRange } = useEvents();
+  const {
+    events: rawEvents,
+    isLoading: eventsLoading,
+    hasAnyEvents,
+    setVisibleRange,
+  } = useEvents();
   const fetchGoogle = useServerFn(listGoogleEvents);
   const fetchStatus = useServerFn(getGoogleConnectionStatus);
   const runSync = useServerFn(triggerGoogleSync);
