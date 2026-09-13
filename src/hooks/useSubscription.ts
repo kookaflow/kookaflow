@@ -280,6 +280,7 @@ export function useSubscription(): SubscriptionState {
         void load();
         if (event === "SIGNED_OUT") {
           nativeRef.current = NO_ENTITLEMENTS;
+          nativeSubRef.current = null;
         } else {
           refreshNative();
         }
