@@ -59,6 +59,7 @@ const DEFAULT_STATE: SubscriptionState = {
   hasProAccess: false,
   isLocked: false,
   nativeEntitlements: NO_ENTITLEMENTS,
+  nativeSubscription: null,
   refresh: async () => {},
 };
 
