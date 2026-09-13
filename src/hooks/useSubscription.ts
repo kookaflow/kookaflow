@@ -164,6 +164,8 @@ export function useSubscription(): SubscriptionState {
   const [state, setState] = useState<SubscriptionState>(DEFAULT_STATE);
   /** Latest native entitlements; always NO_ENTITLEMENTS on web. */
   const nativeRef = useRef<RevenueCatEntitlements>(NO_ENTITLEMENTS);
+  /** Latest native store subscription detail; always null on web. */
+  const nativeSubRef = useRef<NativeSubscriptionInfo | null>(null);
 
   const load = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
