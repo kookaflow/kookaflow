@@ -4,7 +4,9 @@ import {
   IS_NATIVE_IAP,
   NO_ENTITLEMENTS,
   getRevenueCatEntitlements,
+  getRevenueCatSubscriptionInfo,
   onRevenueCatEntitlementsChange,
+  type NativeSubscriptionInfo,
   type RevenueCatEntitlements,
 } from "@/lib/revenuecat";
 
@@ -34,6 +36,9 @@ export interface SubscriptionState {
   isLocked: boolean;
   /** Native (RevenueCat) entitlements — always false on web */
   nativeEntitlements: RevenueCatEntitlements;
+  /** Native store subscription detail (store, cadence, renewal, management URL) — null on web */
+  nativeSubscription: NativeSubscriptionInfo | null;
+
 
   refresh: () => Promise<void>;
 }
@@ -54,6 +59,7 @@ const DEFAULT_STATE: SubscriptionState = {
   hasProAccess: false,
   isLocked: false,
   nativeEntitlements: NO_ENTITLEMENTS,
+  nativeSubscription: null,
   refresh: async () => {},
 };
 
@@ -158,6 +164,8 @@ export function useSubscription(): SubscriptionState {
   const [state, setState] = useState<SubscriptionState>(DEFAULT_STATE);
   /** Latest native entitlements; always NO_ENTITLEMENTS on web. */
   const nativeRef = useRef<RevenueCatEntitlements>(NO_ENTITLEMENTS);
+  /** Latest native store subscription detail; always null on web. */
+  const nativeSubRef = useRef<NativeSubscriptionInfo | null>(null);
 
   const load = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
@@ -198,6 +206,7 @@ export function useSubscription(): SubscriptionState {
       stripeSubscriptionId: row?.stripe_subscription_id ?? null,
       ...derived,
       nativeEntitlements: native,
+      nativeSubscription: nativeSubRef.current,
       refresh: load,
     });
   }, []);
@@ -226,6 +235,14 @@ export function useSubscription(): SubscriptionState {
     });
   }, []);
 
+  /** Store the latest native store detail (cadence, renewal, management URL). */
+  const applyNativeSubscription = useCallback((info: NativeSubscriptionInfo | null) => {
+    nativeSubRef.current = info;
+    setState((prev) =>
+      prev.nativeSubscription === info ? prev : { ...prev, nativeSubscription: info },
+    );
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     void load();
@@ -237,6 +254,10 @@ export function useSubscription(): SubscriptionState {
         if (cancelled) return;
         applyNative(native);
       });
+      void getRevenueCatSubscriptionInfo().then((info) => {
+        if (cancelled) return;
+        applyNativeSubscription(info);
+      });
     };
     refreshNative();
 
@@ -246,6 +267,10 @@ export function useSubscription(): SubscriptionState {
       detachNative = onRevenueCatEntitlementsChange((native) => {
         if (cancelled) return;
         applyNative(native);
+        void getRevenueCatSubscriptionInfo().then((info) => {
+          if (cancelled) return;
+          applyNativeSubscription(info);
+        });
       });
     }
 
@@ -255,6 +280,7 @@ export function useSubscription(): SubscriptionState {
         void load();
         if (event === "SIGNED_OUT") {
           nativeRef.current = NO_ENTITLEMENTS;
+          nativeSubRef.current = null;
         } else {
           refreshNative();
         }
@@ -310,7 +336,7 @@ export function useSubscription(): SubscriptionState {
       clearInterval(tick);
     };
 
-  }, [load, applyNative]);
+  }, [load, applyNative, applyNativeSubscription]);
 
   return state;
 }
