@@ -235,6 +235,14 @@ export function useSubscription(): SubscriptionState {
     });
   }, []);
 
+  /** Store the latest native store detail (cadence, renewal, management URL). */
+  const applyNativeSubscription = useCallback((info: NativeSubscriptionInfo | null) => {
+    nativeSubRef.current = info;
+    setState((prev) =>
+      prev.nativeSubscription === info ? prev : { ...prev, nativeSubscription: info },
+    );
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     void load();
@@ -245,6 +253,10 @@ export function useSubscription(): SubscriptionState {
       void getRevenueCatEntitlements().then((native) => {
         if (cancelled) return;
         applyNative(native);
+      });
+      void getRevenueCatSubscriptionInfo().then((info) => {
+        if (cancelled) return;
+        applyNativeSubscription(info);
       });
     };
     refreshNative();
