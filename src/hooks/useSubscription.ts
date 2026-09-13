@@ -267,6 +267,10 @@ export function useSubscription(): SubscriptionState {
       detachNative = onRevenueCatEntitlementsChange((native) => {
         if (cancelled) return;
         applyNative(native);
+        void getRevenueCatSubscriptionInfo().then((info) => {
+          if (cancelled) return;
+          applyNativeSubscription(info);
+        });
       });
     }
 
