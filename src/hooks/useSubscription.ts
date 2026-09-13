@@ -336,7 +336,7 @@ export function useSubscription(): SubscriptionState {
       clearInterval(tick);
     };
 
-  }, [load, applyNative]);
+  }, [load, applyNative, applyNativeSubscription]);
 
   return state;
 }
