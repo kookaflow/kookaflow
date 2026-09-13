@@ -25,6 +25,11 @@ const QK = ["events"] as const;
 interface Ctx {
   events: CalendarEvent[];
   isLoading: boolean;
+  /**
+   * True once any fetch has returned at least one event. Lets the UI tell
+   * "brand-new account" apart from "this month happens to be empty".
+   */
+  hasAnyEvents: boolean;
   /** Non-null when the events query failed (e.g. 401 / network / CORS). */
   error: Error | null;
   createEvent: (draft: EventDraft) => Promise<CalendarEvent>;
