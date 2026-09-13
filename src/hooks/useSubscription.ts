@@ -36,6 +36,9 @@ export interface SubscriptionState {
   isLocked: boolean;
   /** Native (RevenueCat) entitlements — always false on web */
   nativeEntitlements: RevenueCatEntitlements;
+  /** Native store subscription detail (store, cadence, renewal, management URL) — null on web */
+  nativeSubscription: NativeSubscriptionInfo | null;
+
 
   refresh: () => Promise<void>;
 }
