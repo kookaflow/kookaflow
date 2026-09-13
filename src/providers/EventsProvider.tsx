@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { addDays, endOfDay, startOfDay } from "date-fns";
@@ -25,6 +25,11 @@ const QK = ["events"] as const;
 interface Ctx {
   events: CalendarEvent[];
   isLoading: boolean;
+  /**
+   * True once any fetch has returned at least one event. Lets the UI tell
+   * "brand-new account" apart from "this month happens to be empty".
+   */
+  hasAnyEvents: boolean;
   /** Non-null when the events query failed (e.g. 401 / network / CORS). */
   error: Error | null;
   createEvent: (draft: EventDraft) => Promise<CalendarEvent>;
@@ -300,13 +305,22 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
-  const { data, isLoading, isFetching, error, status } = useQuery({
+  const { data, isLoading, error, status } = useQuery({
     queryKey: [...QK, range.from, range.to],
     // Reads can safely use the authenticated browser client: RLS still limits
     // results to the signed-in user, and this avoids cross-origin serverFn
     // transport differences in Capacitor WebViews.
     queryFn: () => listEventsForCurrentUser(range.from, range.to),
+    // Keep the previous month's rows on screen while the next range loads so
+    // moving between months never blanks the calendar.
+    placeholderData: (previous) => previous,
   });
+
+  // Sticky: once we've seen any event we know the account isn't empty, even if
+  // the month currently in view has nothing in it.
+  const seenEventsRef = useRef(false);
+  if ((data?.length ?? 0) > 0) seenEventsRef.current = true;
+  const hasAnyEvents = seenEventsRef.current;
 
   // Observability: this query previously failed silently (undefined data ->
   // empty array -> "Your calendar is empty"). Log every state change so the
@@ -382,7 +396,8 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
 
   const value: Ctx = {
     events,
-    isLoading: isLoading || isFetching,
+    isLoading,
+    hasAnyEvents,
     error:
       error instanceof Error
         ? error

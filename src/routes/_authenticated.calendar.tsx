@@ -75,7 +75,12 @@ function CalendarPage() {
 function CalendarPageInner() {
   const [view, setView] = useState<ViewMode>("month");
   const [date, setDate] = useState<Date>(new Date());
-  const { events: rawEvents, isLoading: eventsLoading, setVisibleRange } = useEvents();
+  const {
+    events: rawEvents,
+    isLoading: eventsLoading,
+    hasAnyEvents,
+    setVisibleRange,
+  } = useEvents();
   const fetchGoogle = useServerFn(listGoogleEvents);
   const fetchStatus = useServerFn(getGoogleConnectionStatus);
   const runSync = useServerFn(triggerGoogleSync);
@@ -374,11 +379,11 @@ function CalendarPageInner() {
         style={{ paddingBottom: panelOpen ? "28vh" : 0 }}
       >
         <main className="flex-1 overflow-hidden">
-          {events.length === 0 && eventsLoading ? (
+          {events.length === 0 && eventsLoading && !hasAnyEvents ? (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               Loading your calendar…
             </div>
-          ) : events.length === 0 ? (
+          ) : events.length === 0 && !hasAnyEvents ? (
             <EmptyState
               illustration={<KookaburraOnCalendar className="w-full h-auto" />}
               title="Your calendar is empty"

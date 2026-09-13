@@ -77,8 +77,15 @@ function computeDerived(
     ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now) / 86_400_000))
     : 0;
 
+  // Auto-renew turned off or a billing retry in progress: the period already
+  // paid for still runs to subscription_end_date, so keep access until then.
+  const inPaidGracePeriod =
+    (status === "canceled" || status === "past_due") &&
+    !!subscriptionEndDate &&
+    subscriptionEndDate.getTime() > now;
+
   const proActive =
-    (tier === "pro" && (status === "active" || status === "trialling")) ||
+    (tier === "pro" && (status === "active" || status === "trialling" || inPaidGracePeriod)) ||
     tier === "lifetime";
   const basicActive = tier === "basic";
   // RevenueCat can only ever ADD access — never downgrade Stripe-derived access.
