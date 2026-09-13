@@ -4,7 +4,9 @@ import {
   IS_NATIVE_IAP,
   NO_ENTITLEMENTS,
   getRevenueCatEntitlements,
+  getRevenueCatSubscriptionInfo,
   onRevenueCatEntitlementsChange,
+  type NativeSubscriptionInfo,
   type RevenueCatEntitlements,
 } from "@/lib/revenuecat";
 
