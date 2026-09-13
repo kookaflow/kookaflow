@@ -199,17 +199,10 @@ function inputToInsert(data: z.infer<typeof EventInputSchema>, userId: string) {
   };
 }
 
-export const listEvents = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabase } = context;
-    const { data, error } = await supabase
-      .from("events")
-      .select(ROW_COLS)
-      .order("start_time", { ascending: true });
-    if (error) throw new Error(error.message);
-    return ((data ?? []) as unknown as EventRow[]).map(rowToDTO);
-  });
+// NOTE: the unbounded "list every event for the user" endpoint was removed.
+// Reads go through EventsProvider, which queries a bounded visible date range.
+
+
 
 export const createEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
