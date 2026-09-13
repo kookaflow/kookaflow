@@ -379,11 +379,11 @@ function CalendarPageInner() {
         style={{ paddingBottom: panelOpen ? "28vh" : 0 }}
       >
         <main className="flex-1 overflow-hidden">
-          {events.length === 0 && eventsLoading ? (
+          {events.length === 0 && eventsLoading && !hasAnyEvents ? (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               Loading your calendar…
             </div>
-          ) : events.length === 0 ? (
+          ) : events.length === 0 && !hasAnyEvents ? (
             <EmptyState
               illustration={<KookaburraOnCalendar className="w-full h-auto" />}
               title="Your calendar is empty"
