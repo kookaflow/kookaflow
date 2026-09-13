@@ -385,3 +385,105 @@ export async function restoreRevenueCatPurchases(): Promise<
     };
   }
 }
+
+/* -------------------------------------------------------------------------
+ * Native subscription details (for the account screen's Manage Subscription).
+ * ---------------------------------------------------------------------- */
+
+/** Apple's official subscription-management page (fallback). */
+export const APPLE_SUBSCRIPTIONS_URL = "https://apps.apple.com/account/subscriptions";
+
+export interface NativeSubscriptionInfo {
+  /** Active entitlement, pro wins when both are active. */
+  entitlement: "pro" | "basic";
+  /** Store that unlocked it: APP_STORE, STRIPE, PROMOTIONAL, … */
+  store: string;
+  productId: string;
+  /** "monthly" | "yearly" | "lifetime" | "" */
+  periodLabel: string;
+  expirationDate: Date | null;
+  willRenew: boolean;
+  isLifetime: boolean;
+  managementURL: string | null;
+}
+
+function cadenceFor(productId: string): string {
+  const map = NATIVE_PACKAGE_MAP;
+  if (productId === map.lifetime.productId) return "lifetime";
+  if (productId === map.pro_yearly.productId) return "yearly";
+  if (productId === map.pro_monthly.productId || productId === map.basic.productId) {
+    return "monthly";
+  }
+  if (/year|annual/i.test(productId)) return "yearly";
+  if (/month/i.test(productId)) return "monthly";
+  if (/lifetime/i.test(productId)) return "lifetime";
+  return "";
+}
+
+/**
+ * Read the active entitlement's store/renewal detail plus Apple's management
+ * URL. Returns null on web, when nothing is active, or on any failure.
+ */
+export async function getRevenueCatSubscriptionInfo(): Promise<NativeSubscriptionInfo | null> {
+  if (!enabled()) return null;
+  try {
+    if (!(await configureRevenueCat())) return null;
+    const { Purchases } = await loadSdk();
+    const { customerInfo } = await Purchases.getCustomerInfo();
+    const active = (customerInfo?.entitlements?.active ?? {}) as Record<
+      string,
+      {
+        store?: string;
+        productIdentifier?: string;
+        expirationDateMillis?: number | null;
+        willRenew?: boolean;
+      }
+    >;
+    const key = active["pro"] ? "pro" : active["basic"] ? "basic" : null;
+    if (!key) return null;
+    const ent = active[key]!;
+    const productId = ent.productIdentifier ?? "";
+    const periodLabel = cadenceFor(productId);
+    const expirationDate = ent.expirationDateMillis
+      ? new Date(ent.expirationDateMillis)
+      : null;
+    return {
+      entitlement: key,
+      store: ent.store ?? "UNKNOWN_STORE",
+      productId,
+      periodLabel,
+      expirationDate,
+      willRenew: ent.willRenew === true,
+      isLifetime: periodLabel === "lifetime" || expirationDate === null,
+      managementURL: (customerInfo as { managementURL?: string | null })?.managementURL ?? null,
+    };
+  } catch (err) {
+    console.warn("[revenuecat] subscription info failed", err);
+    return null;
+  }
+}
+
+/**
+ * Open Apple's subscription-management screen. Uses the customer's
+ * managementURL when available, otherwise Apple's generic page. Prefers the
+ * Capacitor Browser plugin because a plain window.open often does nothing
+ * inside the WKWebView.
+ */
+export async function openNativeSubscriptionManagement(
+  managementURL?: string | null,
+): Promise<boolean> {
+  const url = managementURL || APPLE_SUBSCRIPTIONS_URL;
+  try {
+    const { Browser } = await import("@capacitor/browser");
+    await Browser.open({ url });
+    return true;
+  } catch (err) {
+    console.warn("[revenuecat] Browser.open failed, falling back", err);
+    try {
+      window.open(url, "_blank");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
