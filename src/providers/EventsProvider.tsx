@@ -396,7 +396,8 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
 
   const value: Ctx = {
     events,
-    isLoading: isLoading || isFetching,
+    isLoading,
+    hasAnyEvents,
     error:
       error instanceof Error
         ? error
