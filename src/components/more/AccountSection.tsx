@@ -62,7 +62,25 @@ export function AccountSection() {
         ? "monthly"
         : null;
 
+  /**
+   * On native iOS, a live Apple/RevenueCat paid entitlement wins over stale
+   * database trial fields for display purposes. Access gating in
+   * useSubscription is unchanged — this only affects what the Account row
+   * shows (badge, subtitle, upgrade visibility).
+   */
+  const nativeEntKey: "pro" | "basic" | null = sub.nativeEntitlements.pro
+    ? "pro"
+    : sub.nativeEntitlements.basic
+      ? "basic"
+      : null;
+  const nativePaid = IS_NATIVE_IAP && nativeEntKey !== null;
+
   const tierLabel =
+    nativePaid && isNativeLifetime ? "Lifetime Pro" :
+    nativePaid && nativeEntKey === "pro"
+      ? (cadenceLabel === "yearly" ? "Pro Yearly" : cadenceLabel === "monthly" ? "Pro Monthly" : "Pro") :
+    nativePaid && nativeEntKey === "basic"
+      ? (cadenceLabel === "monthly" ? "Basic Monthly" : "Basic") :
     sub.tier === "lifetime" ? "Lifetime Pro" :
     sub.tier === "pro" ? "Pro" :
     sub.tier === "basic" ? "Basic" :
@@ -70,11 +88,13 @@ export function AccountSection() {
     sub.isTrialing ? "Free trial" : "Trial";
 
   const tierBadgeClass =
-    sub.tier === "pro" || sub.tier === "lifetime"
+    (nativePaid && (nativeEntKey === "pro" || isNativeLifetime)) ||
+    (!nativePaid && (sub.tier === "pro" || sub.tier === "lifetime"))
       ? "bg-primary/15 text-primary"
-      : sub.tier === "basic"
+      : (nativePaid && nativeEntKey === "basic") ||
+          (!nativePaid && sub.tier === "basic")
         ? "bg-accent/30 text-accent-foreground"
-        : sub.tier === "expired"
+        : (!nativePaid && sub.tier === "expired")
           ? "bg-destructive/15 text-destructive"
           : "bg-muted text-muted-foreground";
 
@@ -88,11 +108,15 @@ export function AccountSection() {
       : "14-day trial";
 
   const subSubtitle =
-    isNativeLifetime && sub.tier !== "basic"
+    nativePaid && isNativeLifetime
       ? "Lifetime access — thanks for your support"
-      : cadenceLabel && (sub.tier === "pro" || sub.tier === "basic")
-        ? `${sub.tier === "pro" ? "Pro" : "Basic"} — ${cadenceLabel}`
-        : baseSubtitle;
+      : nativePaid
+        ? "Active"
+        : isNativeLifetime && sub.tier !== "basic"
+          ? "Lifetime access — thanks for your support"
+          : cadenceLabel && (sub.tier === "pro" || sub.tier === "basic")
+            ? `${sub.tier === "pro" ? "Pro" : "Basic"} — ${cadenceLabel}`
+            : baseSubtitle;
 
   /** Renewal line, only when the store gave us a reliable date. */
   const renewalLine =
@@ -107,8 +131,11 @@ export function AccountSection() {
     !IS_NATIVE_IAP &&
     (sub.tier === "pro" || sub.tier === "basic") &&
     !!sub.stripeCustomerId;
-  const showUpgrade =
-    sub.tier === "trial" || sub.tier === "basic" || sub.tier === "expired";
+  // A native paid Pro/Lifetime subscriber has nothing to upgrade to.
+  // A native Basic subscriber still sees Upgrade to Pro.
+  const showUpgrade = nativePaid
+    ? nativeEntKey === "basic" && !isNativeLifetime
+    : sub.tier === "trial" || sub.tier === "basic" || sub.tier === "expired";
   const upgradeLabel =
     sub.tier === "basic"
       ? "Upgrade to Pro"
