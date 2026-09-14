@@ -493,10 +493,11 @@ export async function openNativeSubscriptionManagement(
 ): Promise<boolean> {
   if (!enabled()) return false;
   try {
-    const { KookaflowSubscriptionManagement } = await import(
-      "@kookaflow/native-subscription-management"
-    );
-    await KookaflowSubscriptionManagement.showManageSubscriptions();
+    const { registerPlugin } = await import("@capacitor/core");
+    const plugin = registerPlugin<{
+      showManageSubscriptions(): Promise<void>;
+    }>("KookaflowSubscriptionManagement");
+    await plugin.showManageSubscriptions();
     return true;
   } catch (err) {
     console.warn("[revenuecat] native subscription management failed", err);
