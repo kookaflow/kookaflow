@@ -289,6 +289,8 @@ export async function purchaseRevenueCatPlan(
     if (!(await configureRevenueCat())) {
       return { status: "error", message: "Purchases are unavailable." };
     }
+    // Never buy while the RevenueCat user is still anonymous.
+    await awaitRevenueCatIdentity();
     const { Purchases } = await loadSdk();
     const res = await Purchases.purchasePackage({
       aPackage: plan.raw as Parameters<typeof Purchases.purchasePackage>[0]["aPackage"],
