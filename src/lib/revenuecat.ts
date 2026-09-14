@@ -61,20 +61,45 @@ export async function configureRevenueCat(): Promise<boolean> {
  * Tie the RevenueCat app user to the Supabase user id, so entitlements land on
  * the same account the rest of the app keys off.
  */
+let identifying: Promise<void> | null = null;
+let identifiedUserId: string | null = null;
+
 export async function identifyRevenueCatUser(userId: string): Promise<void> {
   if (!enabled() || !userId) return;
+  if (identifiedUserId === userId) return;
+
+  identifying = (async () => {
+    try {
+      if (!(await configureRevenueCat())) return;
+      const { Purchases } = await loadSdk();
+      await Purchases.logIn({ appUserID: userId });
+      identifiedUserId = userId;
+    } catch (err) {
+      console.warn("[revenuecat] logIn failed", err);
+    }
+  })();
+
+  await identifying;
+}
+
+/**
+ * Wait for any in-flight identification to finish so a purchase can never be
+ * attributed to an anonymous RevenueCat user.
+ */
+export async function awaitRevenueCatIdentity(): Promise<void> {
+  if (!enabled()) return;
   try {
-    if (!(await configureRevenueCat())) return;
-    const { Purchases } = await loadSdk();
-    await Purchases.logIn({ appUserID: userId });
-  } catch (err) {
-    console.warn("[revenuecat] logIn failed", err);
+    if (identifying) await identifying;
+  } catch {
+    /* identification already logs its own failures */
   }
 }
 
 /** Drop back to an anonymous RevenueCat user on sign-out. */
 export async function logOutRevenueCatUser(): Promise<void> {
   if (!enabled() || !configured) return;
+  identifiedUserId = null;
+  identifying = null;
   try {
     const { Purchases } = await loadSdk();
     await Purchases.logOut();
@@ -264,6 +289,8 @@ export async function purchaseRevenueCatPlan(
     if (!(await configureRevenueCat())) {
       return { status: "error", message: "Purchases are unavailable." };
     }
+    // Never buy while the RevenueCat user is still anonymous.
+    await awaitRevenueCatIdentity();
     const { Purchases } = await loadSdk();
     const res = await Purchases.purchasePackage({
       aPackage: plan.raw as Parameters<typeof Purchases.purchasePackage>[0]["aPackage"],

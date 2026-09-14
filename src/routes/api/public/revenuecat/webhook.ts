@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
+  fetchRevenueCatSubscriber,
   reconcile,
+  resolveTransferTarget,
   resolveUserId,
   timingSafeEqualStrings,
+  updateFromSubscriber,
   type ProfileSubscription,
   type RevenueCatWebhookBody,
 } from "@/lib/revenuecat.server";
@@ -34,9 +37,14 @@ export const Route = createFileRoute("/api/public/revenuecat/webhook")({
         const event = body.event;
         if (!event) return new Response("ok", { status: 200 });
 
-        const userId = resolveUserId(event);
+        const isTransfer = (event.type ?? "").toUpperCase() === "TRANSFER";
+        const userId = isTransfer ? resolveTransferTarget(event) : resolveUserId(event);
         if (!userId) {
-          console.warn("[revenuecat] event without a usable app_user_id", event.type);
+          console.warn(
+            "[revenuecat] event without a usable app_user_id",
+            event.type,
+            event.app_user_id,
+          );
           return new Response("ok", { status: 200 });
         }
 
@@ -55,7 +63,19 @@ export const Route = createFileRoute("/api/public/revenuecat/webhook")({
             return new Response("ok", { status: 200 });
           }
 
-          const update = reconcile(event, profile as ProfileSubscription);
+          let update = null as ReturnType<typeof reconcile>;
+          if (isTransfer) {
+            // A transfer payload does not reliably carry product / entitlement /
+            // expiry, so read the authoritative state for the destination user.
+            const subscriber = await fetchRevenueCatSubscriber(userId);
+            if (!subscriber) {
+              console.warn("[revenuecat] transfer without subscriber state", userId);
+              return new Response("ok", { status: 200 });
+            }
+            update = updateFromSubscriber(subscriber, profile as ProfileSubscription);
+          } else {
+            update = reconcile(event, profile as ProfileSubscription);
+          }
           if (!update) return new Response("ok", { status: 200 });
 
           const { error: updateError } = await supabaseAdmin

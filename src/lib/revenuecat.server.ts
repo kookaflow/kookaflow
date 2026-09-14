@@ -13,6 +13,9 @@ export interface RevenueCatEvent {
   type?: string;
   app_user_id?: string;
   original_app_user_id?: string;
+  aliases?: string[] | null;
+  transferred_to?: string[] | null;
+  transferred_from?: string[] | null;
   product_id?: string;
   entitlement_id?: string | null;
   entitlement_ids?: string[] | null;
@@ -68,11 +71,35 @@ export function timingSafeEqualStrings(a: string, b: string): boolean {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export function resolveUserId(event: RevenueCatEvent): string | null {
-  for (const candidate of [event.app_user_id, event.original_app_user_id]) {
+function firstUuid(
+  candidates: Array<string | null | undefined>,
+): string | null {
+  for (const candidate of candidates) {
     if (candidate && UUID_RE.test(candidate)) return candidate;
   }
   return null;
+}
+
+/**
+ * Identity comes only from a Supabase UUID present in the event's id fields or
+ * alias list. Anonymous RevenueCat ids, emails and product ids are never
+ * treated as identity.
+ */
+export function resolveUserId(event: RevenueCatEvent): string | null {
+  return firstUuid([
+    event.app_user_id,
+    event.original_app_user_id,
+    ...(event.aliases ?? []),
+  ]);
+}
+
+/** Destination Supabase user of a TRANSFER event, when it is one of ours. */
+export function resolveTransferTarget(event: RevenueCatEvent): string | null {
+  return firstUuid([
+    ...(event.transferred_to ?? []),
+    ...(event.aliases ?? []),
+    event.app_user_id,
+  ]);
 }
 
 function isLifetimeProduct(productId: string | null | undefined): boolean {
@@ -168,7 +195,8 @@ export function reconcile(
     }
 
     default:
-      // TRANSFER, TEST, SUBSCRIBER_ALIAS, and anything unknown: acknowledge only.
+      // TRANSFER (handled separately via subscriber lookup), TEST, and anything
+      // unknown: acknowledge only.
       return null;
   }
 }
@@ -204,4 +232,124 @@ function applyGrant(
   }
 
   return Object.keys(update).length > 0 ? update : null;
+}
+
+/* -------------------------------------------------------------------------
+ * Authoritative subscriber lookup (used by TRANSFER, whose payload does not
+ * reliably carry product / entitlement / expiry fields).
+ * ---------------------------------------------------------------------- */
+
+interface RevenueCatEntitlementRecord {
+  expires_date?: string | null;
+  product_identifier?: string | null;
+}
+
+interface RevenueCatSubscriptionRecord {
+  expires_date?: string | null;
+  unsubscribe_detected_at?: string | null;
+  billing_issues_detected_at?: string | null;
+}
+
+export interface RevenueCatSubscriber {
+  entitlements?: Record<string, RevenueCatEntitlementRecord> | null;
+  subscriptions?: Record<string, RevenueCatSubscriptionRecord> | null;
+  non_subscriptions?: Record<string, unknown[]> | null;
+}
+
+/**
+ * Fetch the current RevenueCat state for an already-resolved Supabase user id.
+ * Server-only: the secret key must never reach client code. Returns null on any
+ * missing secret, non-200 response, or network error — a failed lookup never
+ * changes access.
+ */
+export async function fetchRevenueCatSubscriber(
+  userId: string,
+): Promise<RevenueCatSubscriber | null> {
+  const key = process.env.REVENUECAT_SECRET_API_KEY;
+  if (!key) {
+    console.warn("[revenuecat] REVENUECAT_SECRET_API_KEY is not configured");
+    return null;
+  }
+  if (!UUID_RE.test(userId)) return null;
+
+  try {
+    const res = await fetch(
+      `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`,
+      { headers: { Authorization: `Bearer ${key}`, Accept: "application/json" } },
+    );
+    if (!res.ok) {
+      console.warn("[revenuecat] subscriber lookup failed", res.status);
+      return null;
+    }
+    const body = (await res.json()) as { subscriber?: RevenueCatSubscriber };
+    return body.subscriber ?? null;
+  } catch (err) {
+    console.warn("[revenuecat] subscriber lookup error", err);
+    return null;
+  }
+}
+
+function isActiveEntitlement(
+  entitlement: RevenueCatEntitlementRecord | undefined,
+): boolean {
+  if (!entitlement) return false;
+  // A null expiry means a non-expiring (lifetime) grant.
+  if (!entitlement.expires_date) return true;
+  return Date.parse(entitlement.expires_date) > Date.now();
+}
+
+/**
+ * Derive tier / status / end date from the authoritative subscriber record and
+ * pass it through applyGrant, so never-downgrade, lifetime protection, Stripe
+ * protection and idempotency all still apply. Returns null when the subscriber
+ * has no active paid entitlement — a transfer never removes access.
+ */
+export function updateFromSubscriber(
+  subscriber: RevenueCatSubscriber,
+  profile: ProfileSubscription,
+): SubscriptionUpdate | null {
+  const entitlements = subscriber.entitlements ?? {};
+
+  const lifetime = entitlements["lifetime"];
+  const pro = entitlements["pro"];
+  const basic = entitlements["basic"];
+
+  let tier: Tier | null = null;
+  let active: RevenueCatEntitlementRecord | undefined;
+
+  if (isActiveEntitlement(lifetime)) {
+    tier = "lifetime";
+    active = lifetime;
+  } else if (isActiveEntitlement(pro)) {
+    tier = "pro";
+    active = pro;
+  } else if (isActiveEntitlement(basic)) {
+    tier = "basic";
+    active = basic;
+  }
+
+  if (!tier || !active) return null;
+
+  const productId = active.product_identifier ?? null;
+
+  // A non-expiring entitlement, or a lifetime-shaped product, is lifetime.
+  if (tier !== "lifetime" && (!active.expires_date || isLifetimeProduct(productId))) {
+    return applyGrant("lifetime", "active", null, profile);
+  }
+  if (tier === "lifetime") {
+    return applyGrant("lifetime", "active", null, profile);
+  }
+
+  const subscription = productId
+    ? (subscriber.subscriptions ?? {})[productId]
+    : undefined;
+
+  let status: Status = "active";
+  if (subscription?.billing_issues_detected_at) status = "past_due";
+  else if (subscription?.unsubscribe_detected_at) status = "canceled";
+
+  const expiry = subscription?.expires_date ?? active.expires_date ?? null;
+  const expiryIsoValue = expiry ? new Date(expiry).toISOString() : null;
+
+  return applyGrant(tier, status, expiryIsoValue, profile);
 }
