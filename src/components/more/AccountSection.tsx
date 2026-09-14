@@ -104,7 +104,9 @@ export function AccountSection() {
 
   const showAppleManage = isAppleSubscriber && !isNativeLifetime;
   const showStripeManage =
-    (sub.tier === "pro" || sub.tier === "basic") && !!sub.stripeCustomerId;
+    !IS_NATIVE_IAP &&
+    (sub.tier === "pro" || sub.tier === "basic") &&
+    !!sub.stripeCustomerId;
   const showUpgrade =
     sub.tier === "trial" || sub.tier === "basic" || sub.tier === "expired";
   const upgradeLabel =
