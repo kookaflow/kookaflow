@@ -98,6 +98,8 @@ export async function awaitRevenueCatIdentity(): Promise<void> {
 /** Drop back to an anonymous RevenueCat user on sign-out. */
 export async function logOutRevenueCatUser(): Promise<void> {
   if (!enabled() || !configured) return;
+  identifiedUserId = null;
+  identifying = null;
   try {
     const { Purchases } = await loadSdk();
     await Purchases.logOut();
