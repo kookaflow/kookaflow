@@ -510,9 +510,13 @@ export async function openNativeSubscriptionManagement(
   managementURL?: string | null,
 ): Promise<boolean> {
   if (enabled()) {
+    // Capacitor's WKWebView hands "_system" window.open calls to iOS, which
+    // resolves itms-apps:// to the App Store subscription screen. No plugin
+    // needed — this is built into Capacitor core.
     try {
-      const { App } = await import("@capacitor/app");
-      await App.openUrl({ url: ITMS_SUBSCRIPTIONS_URL });
+      const w = window.open(ITMS_SUBSCRIPTIONS_URL, "_system");
+      if (w) return true;
+      window.location.href = ITMS_SUBSCRIPTIONS_URL;
       return true;
     } catch (err) {
       console.warn("[revenuecat] itms-apps open failed, falling back", err);
