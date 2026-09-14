@@ -37,9 +37,14 @@ export const Route = createFileRoute("/api/public/revenuecat/webhook")({
         const event = body.event;
         if (!event) return new Response("ok", { status: 200 });
 
-        const userId = resolveUserId(event);
+        const isTransfer = (event.type ?? "").toUpperCase() === "TRANSFER";
+        const userId = isTransfer ? resolveTransferTarget(event) : resolveUserId(event);
         if (!userId) {
-          console.warn("[revenuecat] event without a usable app_user_id", event.type);
+          console.warn(
+            "[revenuecat] event without a usable app_user_id",
+            event.type,
+            event.app_user_id,
+          );
           return new Response("ok", { status: 200 });
         }
 
