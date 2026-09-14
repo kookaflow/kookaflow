@@ -417,16 +417,6 @@ export async function restoreRevenueCatPurchases(): Promise<
  * Native subscription details (for the account screen's Manage Subscription).
  * ---------------------------------------------------------------------- */
 
-/** Apple's official subscription-management page (fallback). */
-export const APPLE_SUBSCRIPTIONS_URL = "https://apps.apple.com/account/subscriptions";
-
-/**
- * Deep link to Apple's native subscription-management screen. Unlike the
- * https page, this is resolved by iOS itself and opens the App Store
- * subscription list for the signed-in Apple Account with no web login.
- */
-const ITMS_SUBSCRIPTIONS_URL = "itms-apps://apps.apple.com/account/subscriptions";
-
 export interface NativeSubscriptionInfo {
   /** Active entitlement, pro wins when both are active. */
   entitlement: "pro" | "basic";
@@ -497,44 +487,19 @@ export async function getRevenueCatSubscriptionInfo(): Promise<NativeSubscriptio
   }
 }
 
-/**
- * Open Apple's subscription-management screen. On native iOS we hand the
- * itms-apps:// deep link straight to iOS (Capacitor core forwards "_system"
- * window.open calls to the OS), which opens the App Store subscription screen
- * for the signed-in Apple Account with no web sign-in. The RevenueCat
- * managementURL is deliberately not used for App Store customers: it is
- * Apple's generic https page, and opening it in an in-app browser has no App
- * Store session, so Apple forces a login. The https Browser open remains as
- * the fallback, with window.open last.
- */
+/** Open Apple's native StoreKit subscription-management sheet on iOS. */
 export async function openNativeSubscriptionManagement(
-  managementURL?: string | null,
+  _managementURL?: string | null,
 ): Promise<boolean> {
-  if (enabled()) {
-    // Capacitor's WKWebView hands "_system" window.open calls to iOS, which
-    // resolves itms-apps:// to the App Store subscription screen. No plugin
-    // needed — this is built into Capacitor core.
-    try {
-      const w = window.open(ITMS_SUBSCRIPTIONS_URL, "_system");
-      if (w) return true;
-      window.location.href = ITMS_SUBSCRIPTIONS_URL;
-      return true;
-    } catch (err) {
-      console.warn("[revenuecat] itms-apps open failed, falling back", err);
-    }
-  }
-  const url = managementURL || APPLE_SUBSCRIPTIONS_URL;
+  if (!enabled()) return false;
   try {
-    const { Browser } = await import("@capacitor/browser");
-    await Browser.open({ url });
+    const { KookaflowSubscriptionManagement } = await import(
+      "@kookaflow/native-subscription-management"
+    );
+    await KookaflowSubscriptionManagement.showManageSubscriptions();
     return true;
   } catch (err) {
-    console.warn("[revenuecat] Browser.open failed, falling back", err);
-    try {
-      window.open(url, "_blank");
-      return true;
-    } catch {
-      return false;
-    }
+    console.warn("[revenuecat] native subscription management failed", err);
+    return false;
   }
 }
