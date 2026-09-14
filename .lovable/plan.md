@@ -1,81 +1,53 @@
-# Fix: Account section shows "Free trial" while Apple reports active Pro Monthly
+# Fix: Apple purchases not reconciling to the Supabase profile
 
-Diagnosis only was requested — here is the root cause, the evidence, and the minimal fix.
+## What is happening
+
+Apple and RevenueCat both agree the test account has an active Pro Monthly subscription, but the stored account record still says "trial". The app's Account screen now reads the live Apple state, so the user sees the right thing — but the stored record is what powers email reminders, web sign-in, and anything outside the iPhone app. It needs to be correct too.
 
 ## Root cause
 
-Every label in the Account subscription row is derived **only** from the database row
-(`sub.tier` / `sub.isTrialing`), never from the live Apple/RevenueCat state.
+The purchase notification from RevenueCat is arriving with an **anonymous purchaser ID**, not the account's real ID, and our handler deliberately drops anything that isn't a real account ID.
 
-In `src/components/more/AccountSection.tsx`:
+Confirmed in code:
 
-- `tierLabel` falls through to `"Free trial"` whenever `sub.tier` is not pro/basic/lifetime/expired.
-- `baseSubtitle` prints `"N days left in your free trial"` from the trial countdown.
-- The native store detail (`sub.nativeSubscription`) is used only for the cadence suffix,
-  the renewal line, and the Manage button — it can never change the badge or the tier label.
+- `resolveUserId()` in `src/lib/revenuecat.server.ts` only accepts `app_user_id` or `original_app_user_id` when the value looks like a Supabase UUID. Anything else returns `null`.
+- The webhook route (`src/routes/api/public/revenuecat/webhook.ts`, lines 37-41) then logs "event without a usable app_user_id" and answers OK without writing anything. RevenueCat sees success and never retries.
+- `RevenueCatProvider.tsx` configures RevenueCat first and only *then* signs the RevenueCat user in (`identifyRevenueCatUser`). Between app launch and that call completing, RevenueCat is an anonymous user. A purchase in that window is recorded against the anonymous ID.
+- When sign-in later happens, RevenueCat transfers the purchase onto the real account ID and emits `TRANSFER` / `SUBSCRIBER_ALIAS` events. `reconcile()` (line 170-172) treats both as "acknowledge only", so nothing is written then either.
+- `RevenueCatEvent` has no `aliases` field, so even when RevenueCat includes the real ID in the alias list, we never look at it.
 
-In `src/hooks/useSubscription.ts`, `computeDerived()` deliberately lets RevenueCat *add access*
-(`hasProAccess = trialActive || proActive || native.pro`) but never lets it change `tier` or
-`status`. That was the correct choice for gating; the display layer simply has nothing else to read.
+The stored record confirms this: no Pro grant was ever written, no Apple/Stripe ids, and the only recent change is the manual trial reset made earlier today.
 
-So on the test iPhone: Apple says Pro Monthly renewing 15 Sep, access is correctly unlocked
-(via `native.pro`), yet the badge and subtitle still describe the database's trial row.
+So: (2) yes, the purchase was almost certainly made under an anonymous ID; (3) yes, RevenueCat later links it to the real account but the event we received carried the anonymous ID; (4) the handler only accepts a UUID and ignores aliases and transfers entirely.
 
-## Are the DB trial fields stale?
+Secondary check that is not code (worth confirming in the RevenueCat dashboard): the webhook must be enabled and pointed at the production URL with the Authorization secret set. If it was never firing, the same symptom appears. The fix below is needed regardless.
 
-Yes — and they are not merely displayed wrongly, they were never updated.
+## The fix (smallest safe change)
 
-The signed-in test account (`hello@kookaflow.com`) currently reads:
+Two files, no change to secret validation, gating, purchase/restore flows, Stripe/web behaviour, or the Account screen.
 
-```text
-subscription_tier   = trial
-subscription_status = trialling
-trial_ends_at       = 25 Sep 2026
-stripe_customer_id  = null
-```
+1. **`src/lib/revenuecat.ts` — identify before anything else can be bought.**
+   Make sign-in part of the setup handshake so a purchase can never happen while anonymous: have the purchase entry point await the pending identify call, and keep a module-level "identified user id" promise that `purchaseRevenueCatPlan` awaits before calling `purchasePackage`. No change to which package is bought or to entitlement checks.
 
-`trial_ends_at` 25 Sep vs today gives exactly the "12 days left" the app shows, confirming this is
-the row being rendered. No `pro` grant was ever written, so the RevenueCat webhook either did not
-fire for this purchase or arrived with a non-UUID `app_user_id` (`resolveUserId()` in
-`src/lib/revenuecat.server.ts` returns `null` and the webhook acknowledges as a no-op — which
-happens when the purchase was made before the RevenueCat user was identified with the Supabase id).
+2. **`src/lib/revenuecat.server.ts` — accept the account ID wherever RevenueCat puts it.**
+   - Add `aliases?: string[]` to `RevenueCatEvent`.
+   - `resolveUserId()` scans `app_user_id`, `original_app_user_id`, then `aliases`, returning the first valid UUID. Still strictly UUID-only — an anonymous ID is never trusted, and no fallback to email or product lookups.
+   - Handle `TRANSFER` in `reconcile()`: when a transfer names a real account, re-grant based on the event's entitlement/product exactly like `INITIAL_PURCHASE`, going through the same `applyGrant()` so never-downgrade, lifetime protection, Stripe protection, and idempotency all still apply.
+   - Keep the "no usable id" branch answering 200, but log the raw id so a future anonymous-only event is visible.
 
-The UI fix below makes the app correct regardless of webhook timing; the webhook gap is tracked
-separately and needs no code change to make this display right.
+Nothing about the never-downgrade rules changes: every write still flows through `applyGrant()`.
 
-## Minimal fix
+## One-time manual reconciliation
 
-One file: `src/components/more/AccountSection.tsx`. Presentation only.
+Yes — the existing purchase will not resend its original event. After the code change, do both:
 
-Add a native-first display resolution, used before the existing database-derived labels:
-
-- Compute `nativePaid` = there is a `nativeSubscription` whose entitlement is `pro` or `basic`
-  (equivalently `sub.nativeEntitlements.pro || sub.nativeEntitlements.basic`).
-- When `IS_NATIVE_IAP && nativePaid`:
-  - `tierLabel` becomes `"Lifetime Pro"` when `isLifetime`, otherwise
-    `"Pro Monthly"` / `"Pro Yearly"` / `"Basic Monthly"` from the entitlement + `periodLabel`
-    (plain `"Pro"` / `"Basic"` when the store gave no reliable cadence).
-  - badge class uses the pro/basic styling rather than the muted trial styling.
-  - subtitle becomes `"Active"` (or `"Lifetime access — thanks for your support"` for lifetime),
-    never the trial countdown.
-  - `showUpgrade` is suppressed for an active native **pro** entitlement (an active Basic
-    subscriber still sees Upgrade to Pro).
-- When there is no active paid native entitlement, everything falls through to today's exact
-  behaviour, so a genuine trial still shows "Free trial" and the countdown, and web is untouched.
-
-The existing renewal line already comes from `nativeSubscription.expirationDate` and stays as is.
-
-## Not changed
-
-Purchase, restore and entitlement logic; `useSubscription`'s `computeDerived` access gating;
-`src/lib/revenuecat.ts`; the RevenueCat webhook; Stripe checkout and the Stripe billing portal;
-web behaviour; auth; SSR; calendar. No new dependencies.
+- Ask the tester to open the app and tap **Restore Purchases**, which links the Apple purchase to the account and makes RevenueCat emit a transfer the new handler can act on.
+- If the record still reads trial afterwards, set `hello@kookaflow.com` directly to `pro` / `active` with the end date Apple reports (15 Sep 2026) as a one-off correction.
 
 ## Test checklist
 
-- TestFlight, active Pro Monthly: badge "Pro Monthly", subtitle "Active", renewal 15 Sep, Manage Subscription present, no trial text, no Upgrade.
-- Pro Yearly: badge "Pro Yearly".
-- Lifetime: "Lifetime Pro" / "Lifetime access", no Manage, Restore present.
-- Native account with no purchase, trial active: unchanged "Free trial" + countdown + Upgrade.
-- Web Stripe Pro and web trial: byte-identical to today.
-- `bunx tsgo --noEmit`, `bun run build`, `bun run build:mobile` clean.
+- Fresh TestFlight install, sign in, buy Pro Monthly: stored record becomes pro/active with the Apple renewal date.
+- Buy immediately on launch before the account finishes loading: purchase still lands on the right account.
+- Existing lifetime account receiving a monthly event: stays lifetime.
+- Web Stripe subscriber: unchanged, still managed through the billing portal.
+- Cancel in Apple: status becomes canceled, access continues to the paid-through date.
