@@ -498,14 +498,26 @@ export async function getRevenueCatSubscriptionInfo(): Promise<NativeSubscriptio
 }
 
 /**
- * Open Apple's subscription-management screen. Uses the customer's
- * managementURL when available, otherwise Apple's generic page. Prefers the
- * Capacitor Browser plugin because a plain window.open often does nothing
- * inside the WKWebView.
+ * Open Apple's subscription-management screen. On native iOS we hand the
+ * itms-apps:// deep link straight to iOS via the Capacitor App plugin, which
+ * opens the App Store subscription screen for the signed-in Apple Account
+ * with no web sign-in. The RevenueCat managementURL is deliberately not used
+ * for App Store customers: it is Apple's generic https page, and opening it
+ * in an in-app browser has no App Store session, so Apple forces a login.
+ * The https Browser open remains as the fallback, with window.open last.
  */
 export async function openNativeSubscriptionManagement(
   managementURL?: string | null,
 ): Promise<boolean> {
+  if (enabled()) {
+    try {
+      const { App } = await import("@capacitor/app");
+      await App.openUrl({ url: ITMS_SUBSCRIPTIONS_URL });
+      return true;
+    } catch (err) {
+      console.warn("[revenuecat] itms-apps open failed, falling back", err);
+    }
+  }
   const url = managementURL || APPLE_SUBSCRIPTIONS_URL;
   try {
     const { Browser } = await import("@capacitor/browser");
