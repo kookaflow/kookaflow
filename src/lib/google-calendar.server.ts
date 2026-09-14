@@ -199,16 +199,20 @@ export async function syncUserCalendar(userId: string): Promise<{
   let removed = 0;
   let fullSync = !conn.sync_token;
 
+  // Full sync window: 30 days back, 180 days forward
+  const windowMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const windowMax = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+  // IDs Google still returns during a full sync — anything cached outside this
+  // set (within the window) was deleted in Google and must be dropped locally.
+  let seenIds = new Set<string>();
+
   const baseParams = (): URLSearchParams => {
     const p = new URLSearchParams();
     if (conn.sync_token && !fullSync) {
       p.set("syncToken", conn.sync_token);
     } else {
-      // Full sync window: 30 days back, 180 days forward
-      const timeMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const timeMax = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
-      p.set("timeMin", timeMin);
-      p.set("timeMax", timeMax);
+      p.set("timeMin", windowMin);
+      p.set("timeMax", windowMax);
       p.set("singleEvents", "true");
     }
     p.set("maxResults", "250");
