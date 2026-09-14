@@ -199,16 +199,20 @@ export async function syncUserCalendar(userId: string): Promise<{
   let removed = 0;
   let fullSync = !conn.sync_token;
 
+  // Full sync window: 30 days back, 180 days forward
+  const windowMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const windowMax = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+  // IDs Google still returns during a full sync — anything cached outside this
+  // set (within the window) was deleted in Google and must be dropped locally.
+  let seenIds = new Set<string>();
+
   const baseParams = (): URLSearchParams => {
     const p = new URLSearchParams();
     if (conn.sync_token && !fullSync) {
       p.set("syncToken", conn.sync_token);
     } else {
-      // Full sync window: 30 days back, 180 days forward
-      const timeMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const timeMax = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
-      p.set("timeMin", timeMin);
-      p.set("timeMax", timeMax);
+      p.set("timeMin", windowMin);
+      p.set("timeMax", windowMax);
       p.set("singleEvents", "true");
     }
     p.set("maxResults", "250");
@@ -232,6 +236,7 @@ export async function syncUserCalendar(userId: string): Promise<{
         .eq("user_id", userId);
       fullSync = true;
       pageToken = undefined;
+      seenIds = new Set<string>();
       continue;
     }
     if (!res.ok) {
@@ -257,6 +262,7 @@ export async function syncUserCalendar(userId: string): Promise<{
       const start = parseEventTime(item.start);
       const end = parseEventTime(item.end);
       if (!start || !end) continue;
+      seenIds.add(item.id);
       await supabaseAdmin
         .from("google_events_cache")
         .upsert(
@@ -284,6 +290,32 @@ export async function syncUserCalendar(userId: string): Promise<{
     }
     nextSyncToken = data.nextSyncToken;
     break;
+  }
+
+  // A full sync lists everything Google currently has in the window. Anything
+  // cached in that window that Google no longer returns was deleted in Google,
+  // so drop it locally (deletions never show up as "cancelled" in a full sync).
+  if (fullSync) {
+    const { data: cached } = await supabaseAdmin
+      .from("google_events_cache")
+      .select("google_event_id")
+      .eq("user_id", userId)
+      .lt("start_time", windowMax)
+      .gt("end_time", windowMin);
+
+    const stale = (cached ?? [])
+      .map((r) => r.google_event_id)
+      .filter((id) => !seenIds.has(id));
+
+    for (let i = 0; i < stale.length; i += 100) {
+      const batch = stale.slice(i, i + 100);
+      const { error } = await supabaseAdmin
+        .from("google_events_cache")
+        .delete()
+        .eq("user_id", userId)
+        .in("google_event_id", batch);
+      if (!error) removed += batch.length;
+    }
   }
 
   await supabaseAdmin
