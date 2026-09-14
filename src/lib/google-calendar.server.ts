@@ -262,6 +262,7 @@ export async function syncUserCalendar(userId: string): Promise<{
       const start = parseEventTime(item.start);
       const end = parseEventTime(item.end);
       if (!start || !end) continue;
+      seenIds.add(item.id);
       await supabaseAdmin
         .from("google_events_cache")
         .upsert(
