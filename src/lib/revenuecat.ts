@@ -499,12 +499,13 @@ export async function getRevenueCatSubscriptionInfo(): Promise<NativeSubscriptio
 
 /**
  * Open Apple's subscription-management screen. On native iOS we hand the
- * itms-apps:// deep link straight to iOS via the Capacitor App plugin, which
- * opens the App Store subscription screen for the signed-in Apple Account
- * with no web sign-in. The RevenueCat managementURL is deliberately not used
- * for App Store customers: it is Apple's generic https page, and opening it
- * in an in-app browser has no App Store session, so Apple forces a login.
- * The https Browser open remains as the fallback, with window.open last.
+ * itms-apps:// deep link straight to iOS (Capacitor core forwards "_system"
+ * window.open calls to the OS), which opens the App Store subscription screen
+ * for the signed-in Apple Account with no web sign-in. The RevenueCat
+ * managementURL is deliberately not used for App Store customers: it is
+ * Apple's generic https page, and opening it in an in-app browser has no App
+ * Store session, so Apple forces a login. The https Browser open remains as
+ * the fallback, with window.open last.
  */
 export async function openNativeSubscriptionManagement(
   managementURL?: string | null,
