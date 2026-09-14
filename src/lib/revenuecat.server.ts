@@ -71,11 +71,35 @@ export function timingSafeEqualStrings(a: string, b: string): boolean {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export function resolveUserId(event: RevenueCatEvent): string | null {
-  for (const candidate of [event.app_user_id, event.original_app_user_id]) {
+function firstUuid(
+  candidates: Array<string | null | undefined>,
+): string | null {
+  for (const candidate of candidates) {
     if (candidate && UUID_RE.test(candidate)) return candidate;
   }
   return null;
+}
+
+/**
+ * Identity comes only from a Supabase UUID present in the event's id fields or
+ * alias list. Anonymous RevenueCat ids, emails and product ids are never
+ * treated as identity.
+ */
+export function resolveUserId(event: RevenueCatEvent): string | null {
+  return firstUuid([
+    event.app_user_id,
+    event.original_app_user_id,
+    ...(event.aliases ?? []),
+  ]);
+}
+
+/** Destination Supabase user of a TRANSFER event, when it is one of ours. */
+export function resolveTransferTarget(event: RevenueCatEvent): string | null {
+  return firstUuid([
+    ...(event.transferred_to ?? []),
+    ...(event.aliases ?? []),
+    event.app_user_id,
+  ]);
 }
 
 function isLifetimeProduct(productId: string | null | undefined): boolean {
