@@ -63,7 +63,19 @@ export const Route = createFileRoute("/api/public/revenuecat/webhook")({
             return new Response("ok", { status: 200 });
           }
 
-          const update = reconcile(event, profile as ProfileSubscription);
+          let update = null as ReturnType<typeof reconcile>;
+          if (isTransfer) {
+            // A transfer payload does not reliably carry product / entitlement /
+            // expiry, so read the authoritative state for the destination user.
+            const subscriber = await fetchRevenueCatSubscriber(userId);
+            if (!subscriber) {
+              console.warn("[revenuecat] transfer without subscriber state", userId);
+              return new Response("ok", { status: 200 });
+            }
+            update = updateFromSubscriber(subscriber, profile as ProfileSubscription);
+          } else {
+            update = reconcile(event, profile as ProfileSubscription);
+          }
           if (!update) return new Response("ok", { status: 200 });
 
           const { error: updateError } = await supabaseAdmin
