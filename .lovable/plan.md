@@ -1,41 +1,81 @@
-# Manage Subscription — native iOS diagnosis
+# Fix: Account section shows "Free trial" while Apple reports active Pro Monthly
 
-## Finding: this is already built
+Diagnosis only was requested — here is the root cause, the evidence, and the minimal fix.
 
-The Apple-aware Manage Subscription behaviour was implemented in an earlier session and is present in the current code. The button no longer routes native Apple subscribers to Stripe.
+## Root cause
 
-### 1. Where it lives
-`src/components/more/AccountSection.tsx` (the Subscription row):
-- `showAppleManage` (line 105) → renders the "Manage Subscription" button, `handleAppleManage()` (line 130) calls `openNativeSubscriptionManagement(native?.managementURL)`.
-- `showStripeManage` (line 107) → renders "Billing portal", `handlePortal()` (line 117) creates/opens the Stripe portal. Unchanged.
+Every label in the Account subscription row is derived **only** from the database row
+(`sub.tier` / `sub.isTrialing`), never from the live Apple/RevenueCat state.
 
-### 2. How native is distinguished
-Via the existing single flag `IS_NATIVE_IAP` in `src/lib/revenuecat.ts` (line 16), used by `useSubscription`, `pricing.tsx`, `PaywallModal` and `AccountSection`. No second mechanism exists or is needed.
+In `src/components/more/AccountSection.tsx`:
 
-Store attribution is not assumed from the flag alone: `getRevenueCatSubscriptionInfo()` reads the active entitlement's `store` field, and `AccountSection` gates the Apple button on `APP_STORE`/`MAC_APP_STORE`. Stripe's button stays gated on `stripe_customer_id`.
+- `tierLabel` falls through to `"Free trial"` whenever `sub.tier` is not pro/basic/lifetime/expired.
+- `baseSubtitle` prints `"N days left in your free trial"` from the trial countdown.
+- The native store detail (`sub.nativeSubscription`) is used only for the cadence suffix,
+  the renewal line, and the Manage button — it can never change the badge or the tier label.
 
-### 3. How Apple's page is opened
-`openNativeSubscriptionManagement()` in `src/lib/revenuecat.ts` (line 472) opens RevenueCat's `customerInfo.managementURL` when present, falling back to `APPLE_SUBSCRIPTIONS_URL` = `https://apps.apple.com/account/subscriptions`. It uses the already-installed `@capacitor/browser` with a `window.open` fallback. No new dependency needed.
+In `src/hooks/useSubscription.ts`, `computeDerived()` deliberately lets RevenueCat *add access*
+(`hasProAccess = trialActive || proActive || native.pro`) but never lets it change `tier` or
+`status`. That was the correct choice for gating; the display layer simply has nothing else to read.
 
-### 4. Lifetime
-`isNativeLifetime` suppresses the Manage button (`showAppleManage = isAppleSubscriber && !isNativeLifetime`), the row shows "Lifetime access — thanks for your support", no renewal line, and Restore purchases stays available.
+So on the test iPhone: Apple says Pro Monthly renewing 15 Sep, access is correctly unlocked
+(via `native.pro`), yet the badge and subtitle still describe the database's trial row.
 
-### 5. RevenueCat API vs Apple URL
-`@revenuecat/purchases-capacitor@13.4.2` does expose `customerInfo.managementURL`, which is the preferred source because it deep-links to the exact subscription. It is often `null` in sandbox/TestFlight, so Apple's official URL is kept as the fallback. Both paths are already implemented; Customer Center is not configured and is not required.
+## Are the DB trial fields stale?
 
-## Proposed change (only remaining gap)
+Yes — and they are not merely displayed wrongly, they were never updated.
 
-One edge case: a user who previously subscribed on the web and later bought through Apple keeps a `stripe_customer_id`, so both buttons can appear on the native build.
+The signed-in test account (`hello@kookaflow.com`) currently reads:
 
-Minimal fix in `src/components/more/AccountSection.tsx` only:
-
+```text
+subscription_tier   = trial
+subscription_status = trialling
+trial_ends_at       = 25 Sep 2026
+stripe_customer_id  = null
 ```
-const showStripeManage =
-  !IS_NATIVE_IAP && (sub.tier === "pro" || sub.tier === "basic") && !!sub.stripeCustomerId;
-```
 
-Nothing else changes. Purchase, restore, entitlement, webhook, Stripe checkout, SSR, auth and calendar logic untouched. Web behaviour is byte-identical because `IS_NATIVE_IAP` is false there.
+`trial_ends_at` 25 Sep vs today gives exactly the "12 days left" the app shows, confirming this is
+the row being rendered. No `pro` grant was ever written, so the RevenueCat webhook either did not
+fire for this purchase or arrived with a non-UUID `app_user_id` (`resolveUserId()` in
+`src/lib/revenuecat.server.ts` returns `null` and the webhook acknowledges as a no-op — which
+happens when the purchase was made before the RevenueCat user was identified with the Supabase id).
 
-## Verification
-- `bunx tsgo --noEmit`, `bun run build`, `bun run build:mobile`.
-- TestFlight on a physical iPhone: Pro Monthly shows cadence + renewal + Manage Subscription; tapping it opens Apple's sheet; Lifetime shows "Lifetime access" with no Manage; Restore works; web Pro still shows only the Stripe billing portal.
+The UI fix below makes the app correct regardless of webhook timing; the webhook gap is tracked
+separately and needs no code change to make this display right.
+
+## Minimal fix
+
+One file: `src/components/more/AccountSection.tsx`. Presentation only.
+
+Add a native-first display resolution, used before the existing database-derived labels:
+
+- Compute `nativePaid` = there is a `nativeSubscription` whose entitlement is `pro` or `basic`
+  (equivalently `sub.nativeEntitlements.pro || sub.nativeEntitlements.basic`).
+- When `IS_NATIVE_IAP && nativePaid`:
+  - `tierLabel` becomes `"Lifetime Pro"` when `isLifetime`, otherwise
+    `"Pro Monthly"` / `"Pro Yearly"` / `"Basic Monthly"` from the entitlement + `periodLabel`
+    (plain `"Pro"` / `"Basic"` when the store gave no reliable cadence).
+  - badge class uses the pro/basic styling rather than the muted trial styling.
+  - subtitle becomes `"Active"` (or `"Lifetime access — thanks for your support"` for lifetime),
+    never the trial countdown.
+  - `showUpgrade` is suppressed for an active native **pro** entitlement (an active Basic
+    subscriber still sees Upgrade to Pro).
+- When there is no active paid native entitlement, everything falls through to today's exact
+  behaviour, so a genuine trial still shows "Free trial" and the countdown, and web is untouched.
+
+The existing renewal line already comes from `nativeSubscription.expirationDate` and stays as is.
+
+## Not changed
+
+Purchase, restore and entitlement logic; `useSubscription`'s `computeDerived` access gating;
+`src/lib/revenuecat.ts`; the RevenueCat webhook; Stripe checkout and the Stripe billing portal;
+web behaviour; auth; SSR; calendar. No new dependencies.
+
+## Test checklist
+
+- TestFlight, active Pro Monthly: badge "Pro Monthly", subtitle "Active", renewal 15 Sep, Manage Subscription present, no trial text, no Upgrade.
+- Pro Yearly: badge "Pro Yearly".
+- Lifetime: "Lifetime Pro" / "Lifetime access", no Manage, Restore present.
+- Native account with no purchase, trial active: unchanged "Free trial" + countdown + Upgrade.
+- Web Stripe Pro and web trial: byte-identical to today.
+- `bunx tsgo --noEmit`, `bun run build`, `bun run build:mobile` clean.
