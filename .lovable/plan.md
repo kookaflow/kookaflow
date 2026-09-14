@@ -1,55 +1,41 @@
-# Remove the temporary RevenueCat diagnostic log before TestFlight
+# Manage Subscription — native iOS diagnosis
 
-## What the code currently does (verified by reading the files)
+## Finding: this is already built
 
-The `[revenuecat] plans = [...]` log you remember was already removed from `getRevenueCatPlans()` in an earlier session — the current `src/lib/revenuecat.ts` contains only permanent `console.warn("[revenuecat] … failed", …)` error handlers, no plans dump.
+The Apple-aware Manage Subscription behaviour was implemented in an earlier session and is present in the current code. The button no longer routes native Apple subscribers to Stripe.
 
-The surviving diagnostic from the same paywall investigation lives one call-site up the chain. In `src/components/subscription/PaywallModal.tsx`, `handleNativePick()` opens with a temporary log that prints the tapped package's identifier, product id, and price string to the device console:
+### 1. Where it lives
+`src/components/more/AccountSection.tsx` (the Subscription row):
+- `showAppleManage` (line 105) → renders the "Manage Subscription" button, `handleAppleManage()` (line 130) calls `openNativeSubscriptionManagement(native?.managementURL)`.
+- `showStripeManage` (line 107) → renders "Billing portal", `handlePortal()` (line 117) creates/opens the Stripe portal. Unchanged.
 
-```ts
-  async function handleNativePick(plan: RevenueCatPlan) {
-    // TEMPORARY diagnostic — confirm which package was actually tapped.
-    console.log("[paywall] native pick", {
-      identifier: plan.identifier,
-      productId: plan.productId,
-      priceString: plan.priceString,
-    });
-    const busyKey = plan.productId || plan.identifier;
-    ...
+### 2. How native is distinguished
+Via the existing single flag `IS_NATIVE_IAP` in `src/lib/revenuecat.ts` (line 16), used by `useSubscription`, `pricing.tsx`, `PaywallModal` and `AccountSection`. No second mechanism exists or is needed.
+
+Store attribution is not assumed from the flag alone: `getRevenueCatSubscriptionInfo()` reads the active entitlement's `store` field, and `AccountSection` gates the Apple button on `APP_STORE`/`MAC_APP_STORE`. Stripe's button stays gated on `stripe_customer_id`.
+
+### 3. How Apple's page is opened
+`openNativeSubscriptionManagement()` in `src/lib/revenuecat.ts` (line 472) opens RevenueCat's `customerInfo.managementURL` when present, falling back to `APPLE_SUBSCRIPTIONS_URL` = `https://apps.apple.com/account/subscriptions`. It uses the already-installed `@capacitor/browser` with a `window.open` fallback. No new dependency needed.
+
+### 4. Lifetime
+`isNativeLifetime` suppresses the Manage button (`showAppleManage = isAppleSubscriber && !isNativeLifetime`), the row shows "Lifetime access — thanks for your support", no renewal line, and Restore purchases stays available.
+
+### 5. RevenueCat API vs Apple URL
+`@revenuecat/purchases-capacitor@13.4.2` does expose `customerInfo.managementURL`, which is the preferred source because it deep-links to the exact subscription. It is often `null` in sandbox/TestFlight, so Apple's official URL is kept as the fallback. Both paths are already implemented; Customer Center is not configured and is not required.
+
+## Proposed change (only remaining gap)
+
+One edge case: a user who previously subscribed on the web and later bought through Apple keeps a `stripe_customer_id`, so both buttons can appear on the native build.
+
+Minimal fix in `src/components/more/AccountSection.tsx` only:
+
+```
+const showStripeManage =
+  !IS_NATIVE_IAP && (sub.tier === "pro" || sub.tier === "basic") && !!sub.stripeCustomerId;
 ```
 
-It is marked `// TEMPORARY diagnostic` in the source. It runs on every native paywall tap during TestFlight and has no production purpose.
+Nothing else changes. Purchase, restore, entitlement, webhook, Stripe checkout, SSR, auth and calendar logic untouched. Web behaviour is byte-identical because `IS_NATIVE_IAP` is false there.
 
-## Exact removal
-
-**File:** `src/components/subscription/PaywallModal.tsx`
-**Lines to remove:** 146–151 (the comment + the entire `console.log("[paywall] native pick", { … });` block), i.e.
-
-```ts
-    // TEMPORARY diagnostic — confirm which package was actually tapped.
-    console.log("[paywall] native pick", {
-      identifier: plan.identifier,
-      productId: plan.productId,
-      priceString: plan.priceString,
-    });
-```
-
-After removal, `handleNativePick` begins directly at `const busyKey = plan.productId || plan.identifier;`. No other line changes.
-
-## What is NOT touched (per your instructions)
-
-- `getRevenueCatPlans()` behaviour, package identifiers, ordering — unchanged.
-- `NATIVE_PACKAGE_MAP`, `findRevenueCatPlan`, `purchaseRevenueCatPlan`, restore purchases, entitlement handling — unchanged.
-- RevenueCat configuration / SDK key / log level — unchanged.
-- Stripe/web branch, the RevenueCat webhook, SSR, auth, calendar — unchanged.
-- The server-side `console.log("[revenuecat] applied", …)` in `src/routes/api/public/revenuecat/webhook.ts` is a separate server log (not client-facing, not in/around `getRevenueCatPlans`), so it is left as-is.
-
-## Note on the built bundle
-
-`dist-mobile/client/assets/PaywallModal-B9n0TtBa.js` still contains the minified log because it predates this cleanup. It will be regenerated clean on the next `bun run build:mobile` + `npx cap sync ios` after the source edit.
-
-## Test checklist
-
-- `bunx tsgo --noEmit` clean.
-- `bun run build` + `bun run build:mobile` succeed.
-- On TestFlight: open the paywall, tap a plan — purchase flow still works; device console no longer prints `[paywall] native pick`.
+## Verification
+- `bunx tsgo --noEmit`, `bun run build`, `bun run build:mobile`.
+- TestFlight on a physical iPhone: Pro Monthly shows cadence + renewal + Manage Subscription; tapping it opens Apple's sheet; Lifetime shows "Lifetime access" with no Manage; Restore works; web Pro still shows only the Stripe billing portal.
