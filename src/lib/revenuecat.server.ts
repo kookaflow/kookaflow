@@ -195,7 +195,8 @@ export function reconcile(
     }
 
     default:
-      // TRANSFER, TEST, SUBSCRIBER_ALIAS, and anything unknown: acknowledge only.
+      // TRANSFER (handled separately via subscriber lookup), TEST, and anything
+      // unknown: acknowledge only.
       return null;
   }
 }
