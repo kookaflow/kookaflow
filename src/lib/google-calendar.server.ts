@@ -292,6 +292,32 @@ export async function syncUserCalendar(userId: string): Promise<{
     break;
   }
 
+  // A full sync lists everything Google currently has in the window. Anything
+  // cached in that window that Google no longer returns was deleted in Google,
+  // so drop it locally (deletions never show up as "cancelled" in a full sync).
+  if (fullSync) {
+    const { data: cached } = await supabaseAdmin
+      .from("google_events_cache")
+      .select("google_event_id")
+      .eq("user_id", userId)
+      .lt("start_time", windowMax)
+      .gt("end_time", windowMin);
+
+    const stale = (cached ?? [])
+      .map((r) => r.google_event_id)
+      .filter((id) => !seenIds.has(id));
+
+    for (let i = 0; i < stale.length; i += 100) {
+      const batch = stale.slice(i, i + 100);
+      const { error } = await supabaseAdmin
+        .from("google_events_cache")
+        .delete()
+        .eq("user_id", userId)
+        .in("google_event_id", batch);
+      if (!error) removed += batch.length;
+    }
+  }
+
   await supabaseAdmin
     .from("google_calendar_connections")
     .update({
