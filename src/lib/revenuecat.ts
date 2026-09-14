@@ -420,6 +420,13 @@ export async function restoreRevenueCatPurchases(): Promise<
 /** Apple's official subscription-management page (fallback). */
 export const APPLE_SUBSCRIPTIONS_URL = "https://apps.apple.com/account/subscriptions";
 
+/**
+ * Deep link to Apple's native subscription-management screen. Unlike the
+ * https page, this is resolved by iOS itself and opens the App Store
+ * subscription list for the signed-in Apple Account with no web login.
+ */
+const ITMS_SUBSCRIPTIONS_URL = "itms-apps://apps.apple.com/account/subscriptions";
+
 export interface NativeSubscriptionInfo {
   /** Active entitlement, pro wins when both are active. */
   entitlement: "pro" | "basic";
