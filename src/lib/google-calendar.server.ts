@@ -236,6 +236,7 @@ export async function syncUserCalendar(userId: string): Promise<{
         .eq("user_id", userId);
       fullSync = true;
       pageToken = undefined;
+      seenIds = new Set<string>();
       continue;
     }
     if (!res.ok) {
