@@ -143,12 +143,6 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
   }
 
   async function handleNativePick(plan: RevenueCatPlan) {
-    // TEMPORARY diagnostic — confirm which package was actually tapped.
-    console.log("[paywall] native pick", {
-      identifier: plan.identifier,
-      productId: plan.productId,
-      priceString: plan.priceString,
-    });
     const busyKey = plan.productId || plan.identifier;
     setNativeBusy(busyKey);
     const res = await purchaseRevenueCatPlan(plan);
