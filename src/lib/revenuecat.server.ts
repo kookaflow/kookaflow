@@ -13,6 +13,9 @@ export interface RevenueCatEvent {
   type?: string;
   app_user_id?: string;
   original_app_user_id?: string;
+  aliases?: string[] | null;
+  transferred_to?: string[] | null;
+  transferred_from?: string[] | null;
   product_id?: string;
   entitlement_id?: string | null;
   entitlement_ids?: string[] | null;
