@@ -201,7 +201,7 @@ function CalendarPageInner() {
         : format(date, "EEEE, MMM d, yyyy");
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-background text-foreground overflow-hidden">
+    <div className="flex h-[calc(100dvh-3rem-env(safe-area-inset-bottom))] min-h-0 min-w-0 flex-col overflow-hidden bg-background text-foreground md:h-[100dvh]">
       {/* Compact mobile header (under md) */}
       {!panelOpen && (
         <header
@@ -375,10 +375,10 @@ function CalendarPageInner() {
 
       {/* Body */}
       <div
-        className="flex flex-1 overflow-hidden transition-[padding] duration-200"
+        className="flex min-h-0 min-w-0 flex-1 overflow-hidden transition-[padding] duration-200"
         style={{ paddingBottom: panelOpen ? "28vh" : 0 }}
       >
-        <main className="flex-1 overflow-hidden">
+        <main className="min-w-0 flex-1 overflow-hidden">
           {events.length === 0 && eventsLoading && !hasAnyEvents ? (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               Loading your calendar…

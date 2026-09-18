@@ -42,14 +42,14 @@ export function DaySummaryDialog({ open, onOpenChange, date, events, onEventClic
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md p-0 gap-0">
+      <DialogContent className="max-w-md gap-0 overflow-hidden p-0">
         <DialogHeader className="p-5 pb-3">
           <DialogTitle className="text-xl">{format(date, "EEEE, MMM d")}</DialogTitle>
           <DialogDescription>
             {dayEvents.length === 0 ? "No events" : `${dayEvents.length} event${dayEvents.length > 1 ? "s" : ""} · ${total.toFixed(1)}h scheduled`}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[60vh] px-5">
+        <ScrollArea className="min-w-0 max-h-[60dvh] px-5">
           <div className="flex flex-col gap-4 pb-4">
             {chart.length > 0 && (
               <div className="rounded-xl border border-border bg-card p-3">
@@ -61,9 +61,9 @@ export function DaySummaryDialog({ open, onOpenChange, date, events, onEventClic
                 </div>
                 <ul className="mt-2 grid grid-cols-2 gap-1 text-[11px]">
                   {chart.map((d) => (
-                    <li key={d.id} className="flex items-center gap-1.5">
+                    <li key={d.id} className="flex min-w-0 items-center gap-1.5">
                       <span className="size-2 rounded-full" style={{ backgroundColor: d.color }} />
-                      <span className="text-muted-foreground">{d.name}</span>
+                      <span className="min-w-0 truncate text-muted-foreground">{d.name}</span>
                       <span className="ml-auto font-medium">{d.value}h</span>
                     </li>
                   ))}

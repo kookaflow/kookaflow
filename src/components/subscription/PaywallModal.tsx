@@ -175,7 +175,7 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl overflow-x-hidden pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl">
             <Sparkles className="h-6 w-6 text-primary" />
@@ -190,7 +190,7 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
               <Loader2 className="h-4 w-4 animate-spin" /> Loading plans…
             </div>
           ) : nativePlans && nativePlans.length > 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-3 sm:grid-cols-2">
               {nativePlans.map((p) => {
                 const copy = NATIVE_COPY[p.identifier];
                 return (
@@ -199,18 +199,18 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
                     type="button"
                     disabled={nativeBusy !== null || restoring}
                     onClick={() => void handleNativePick(p)}
-                    className="group relative flex flex-col items-start gap-1 rounded-lg border border-border bg-card p-4 text-left transition hover:border-primary hover:bg-accent/40 disabled:opacity-60"
+                    className="group relative flex min-w-0 flex-col items-start gap-1 rounded-lg border border-border bg-card p-4 text-left transition hover:border-primary hover:bg-accent/40 disabled:opacity-60"
                   >
                     {copy?.highlight && (
                       <span className="absolute right-3 top-3 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
                         {copy.highlight}
                       </span>
                     )}
-                    <div className="text-sm font-medium text-foreground">
+                    <div className="max-w-full break-words text-sm font-medium text-foreground">
                       {copy?.name ?? p.title}
                     </div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-semibold text-foreground">{p.priceString}</span>
+                      <span className="min-w-0 break-words text-2xl font-semibold text-foreground">{p.priceString}</span>
                       {p.periodLabel && (
                         <span className="text-xs text-muted-foreground">{p.periodLabel}</span>
                       )}
@@ -258,14 +258,14 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
             </div>
           )
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
             {PLANS.map((p) => (
               <button
                 key={p.key}
                 type="button"
                 disabled={loadingPlan !== null}
                 onClick={() => handlePick(p.key)}
-                className="group relative flex flex-col items-start gap-1 rounded-lg border border-border bg-card p-4 text-left transition hover:border-primary hover:bg-accent/40 disabled:opacity-60"
+                className="group relative flex min-w-0 flex-col items-start gap-1 rounded-lg border border-border bg-card p-4 text-left transition hover:border-primary hover:bg-accent/40 disabled:opacity-60"
               >
                 {p.highlight && (
                   <span className="absolute right-3 top-3 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">

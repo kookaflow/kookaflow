@@ -176,12 +176,12 @@ function AppLayout() {
   if (!showNav) return <Outlet />;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh min-w-0 overflow-x-hidden bg-background">
       <OfflineBanner />
       <SyncBanner />
       <AppNav />
-      <div className="md:pl-56">
-        <div className="pb-16 md:pb-0">
+      <div className="min-w-0 md:pl-56">
+        <div className="min-w-0 pb-[calc(3rem+env(safe-area-inset-bottom))] md:pb-0">
           <Outlet />
         </div>
       </div>

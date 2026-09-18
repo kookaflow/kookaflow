@@ -144,8 +144,21 @@
   }
 
   html, body {
-    overflow-x: clip;
+    min-width: 0;
+    overflow-x: hidden;
     width: 100%;
+    max-width: 100%;
+    overscroll-behavior-x: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body {
+    min-height: 100dvh;
+    touch-action: pan-y;
+  }
+
+  #root {
+    min-width: 0;
     max-width: 100%;
   }
 
