@@ -201,7 +201,7 @@ function CalendarPageInner() {
         : format(date, "EEEE, MMM d, yyyy");
 
   return (
-    <div className="flex h-[calc(100dvh-3rem-env(safe-area-inset-bottom))] min-h-0 min-w-0 flex-col overflow-hidden bg-background text-foreground md:h-[100dvh]">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background text-foreground">
       {/* Compact mobile header (under md) */}
       {!panelOpen && (
         <header
