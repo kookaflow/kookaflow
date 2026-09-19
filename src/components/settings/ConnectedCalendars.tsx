@@ -49,6 +49,7 @@ export function ConnectedCalendars() {
   const triggerSync = useServerFn(triggerGoogleSync);
   const fetchAuthUrl = useServerFn(getGoogleAuthUrl);
   const [connecting, setConnecting] = useState(false);
+  const { requirePro, upgradeModal } = useUpgradePrompt();
 
   const { data: status, isLoading } = useQuery({
     queryKey: ["google-connection-status"],
@@ -106,6 +107,7 @@ export function ConnectedCalendars() {
   });
 
   const handleConnect = async () => {
+    if (!requirePro("Google Calendar sync")) return;
     setConnecting(true);
     try {
       const { url } = await fetchAuthUrl();
