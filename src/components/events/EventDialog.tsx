@@ -65,7 +65,7 @@ export function EventDialog({ open, onOpenChange, eventId, defaultStart, default
         open={confirmingDelete}
         onOpenChange={setConfirmingDelete}
         itemLabel={initial?.title ? `“${initial.title}”` : "this event"}
-        warning={initial?.is_recurring ? "This is a recurring event — all future occurrences will be removed." : undefined}
+        warning={initial?.recurrencePattern ? "This is a recurring event — all future occurrences will be removed." : undefined}
         onConfirm={confirmDelete}
         busy={deleting}
       />

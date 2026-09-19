@@ -10,6 +10,7 @@ import type { ShiftTemplateDTO } from "@/lib/shift-templates.functions";
 import { getIcon } from "@/components/events/IconPicker";
 import { Sparkles } from "lucide-react";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
 import { BriefcaseEmpty } from "@/components/shared/empty-illustrations";
 
 export const Route = createFileRoute("/_authenticated/shifts")({
