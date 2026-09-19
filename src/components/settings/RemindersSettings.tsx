@@ -10,6 +10,7 @@ import OneSignal from "react-onesignal";
 import { useServerFn } from "@tanstack/react-start";
 import { getPushStatus, updatePushPrefs } from "@/lib/push.functions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useUpgradePrompt } from "@/components/subscription/useUpgradePrompt";
 
 type Channel = "email" | "push" | "both";
 type WeekDay = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
