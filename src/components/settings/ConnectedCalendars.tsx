@@ -18,6 +18,7 @@ import {
 import { CalendarCheck2, RefreshCw, Unplug, AlertTriangle, Coffee } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { useUpgradePrompt } from "@/components/subscription/useUpgradePrompt";
 
 function GoogleLogo({ className }: { className?: string }) {
   return (
@@ -217,6 +218,7 @@ export function ConnectedCalendars() {
           )}
         </CardContent>
       </Card>
+      {upgradeModal}
     </section>
   );
 }
