@@ -105,6 +105,7 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
 }
 
 export function RemindersSettings() {
+  const { requirePro, upgradeModal } = useUpgradePrompt();
   // Daily reminder state
   const [dailyEnabled, setDailyEnabled] = useState(false);
   const [dailyTime, setDailyTime] = useState("08:00");
@@ -141,6 +142,7 @@ Take a breath—you've got this.`;
 
   return (
     <div className="flex flex-col gap-6">
+      {upgradeModal}
       <NotificationStatusCard />
 
       {/* Daily Reminder */}
@@ -156,7 +158,7 @@ Take a breath—you've got this.`;
                 <CardDescription>Get a summary of your day every morning</CardDescription>
               </div>
             </div>
-            <Switch checked={dailyEnabled} onCheckedChange={setDailyEnabled} />
+            <Switch checked={dailyEnabled} onCheckedChange={(v) => { if (v && !requirePro("Daily reminders")) return; setDailyEnabled(v); }} />
           </div>
         </CardHeader>
         {dailyEnabled && (
@@ -201,7 +203,7 @@ Take a breath—you've got this.`;
                 <CardDescription>Review your week and plan ahead</CardDescription>
               </div>
             </div>
-            <Switch checked={weeklyEnabled} onCheckedChange={setWeeklyEnabled} />
+            <Switch checked={weeklyEnabled} onCheckedChange={(v) => { if (v && !requirePro("Weekly reminders")) return; setWeeklyEnabled(v); }} />
           </div>
         </CardHeader>
         {weeklyEnabled && (
