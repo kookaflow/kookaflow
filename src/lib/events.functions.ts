@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const CategorySchema = z.enum([
   "work",
+  "business",
   "rest",
   "wellness",
   "exercise",

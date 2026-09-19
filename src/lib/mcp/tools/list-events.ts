@@ -15,7 +15,7 @@ export default defineTool({
       .string()
       .describe("End of range, ISO 8601 datetime."),
     category: z
-      .enum(["work", "rest", "wellness", "exercise", "social", "family", "personal", "travel"])
+      .enum(["work", "business", "rest", "wellness", "exercise", "social", "family", "personal", "travel"])
       .optional()
       .describe("Optional category filter."),
     limit: z.number().int().min(1).max(200).optional().describe("Max rows (default 100)."),
