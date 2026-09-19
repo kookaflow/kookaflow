@@ -113,7 +113,9 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
     reason === "trial-expired"
       ? "Your 14-day trial has ended"
       : reason === "basic-locked"
-        ? "This feature is part of Pro"
+        ? feature
+          ? `Upgrade to Pro for ${feature}`
+          : "This feature is part of Pro"
         : feature
           ? `Unlock ${feature}`
           : "Upgrade to keep going";

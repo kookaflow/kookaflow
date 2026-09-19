@@ -10,6 +10,7 @@ import type { ShiftTemplateDTO } from "@/lib/shift-templates.functions";
 import { getIcon } from "@/components/events/IconPicker";
 import { Sparkles } from "lucide-react";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
 import { BriefcaseEmpty } from "@/components/shared/empty-illustrations";
 
 export const Route = createFileRoute("/_authenticated/shifts")({
@@ -37,6 +38,7 @@ function ShiftsPage() {
   const [search, setSearch] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<ShiftTemplateDTO | null>(null);
+  const [deleting, setDeleting] = useState<ShiftTemplateDTO | null>(null);
 
   const filter = (label: string) => label.toLowerCase().includes(search.toLowerCase());
 
@@ -105,7 +107,7 @@ function ShiftsPage() {
               key={t.id}
               template={t}
               onEdit={() => { setEditing(t); setEditorOpen(true); }}
-              onDelete={() => remove(t.id)}
+              onDelete={() => setDeleting(t)}
             />
           ))}
         </Section>
@@ -114,7 +116,7 @@ function ShiftsPage() {
           {groupedCustom.leave.map((t) => (
             <CustomRow key={t.id} template={t}
               onEdit={() => { setEditing(t); setEditorOpen(true); }}
-              onDelete={() => remove(t.id)} />
+              onDelete={() => setDeleting(t)} />
           ))}
         </Section>
         <Section title="NON-WORKING">
@@ -122,7 +124,7 @@ function ShiftsPage() {
           {groupedCustom.non_working.map((t) => (
             <CustomRow key={t.id} template={t}
               onEdit={() => { setEditing(t); setEditorOpen(true); }}
-              onDelete={() => remove(t.id)} />
+              onDelete={() => setDeleting(t)} />
           ))}
         </Section>
       </main>
@@ -130,6 +132,15 @@ function ShiftsPage() {
         open={editorOpen}
         onOpenChange={setEditorOpen}
         template={editing}
+      />
+      <ConfirmDeleteDialog
+        open={deleting !== null}
+        onOpenChange={(o) => { if (!o) setDeleting(null); }}
+        itemLabel={deleting ? `“${deleting.name}”` : "this shift"}
+        onConfirm={() => {
+          if (deleting) remove(deleting.id);
+          setDeleting(null);
+        }}
       />
     </div>
   );

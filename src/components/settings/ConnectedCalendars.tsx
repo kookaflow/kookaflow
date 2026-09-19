@@ -18,6 +18,7 @@ import {
 import { CalendarCheck2, RefreshCw, Unplug, AlertTriangle, Coffee } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { useUpgradePrompt } from "@/components/subscription/useUpgradePrompt";
 
 function GoogleLogo({ className }: { className?: string }) {
   return (
@@ -49,6 +50,7 @@ export function ConnectedCalendars() {
   const triggerSync = useServerFn(triggerGoogleSync);
   const fetchAuthUrl = useServerFn(getGoogleAuthUrl);
   const [connecting, setConnecting] = useState(false);
+  const { requirePro, upgradeModal } = useUpgradePrompt();
 
   const { data: status, isLoading } = useQuery({
     queryKey: ["google-connection-status"],
@@ -106,6 +108,7 @@ export function ConnectedCalendars() {
   });
 
   const handleConnect = async () => {
+    if (!requirePro("Google Calendar sync")) return;
     setConnecting(true);
     try {
       const { url } = await fetchAuthUrl();
@@ -215,6 +218,7 @@ export function ConnectedCalendars() {
           )}
         </CardContent>
       </Card>
+      {upgradeModal}
     </section>
   );
 }

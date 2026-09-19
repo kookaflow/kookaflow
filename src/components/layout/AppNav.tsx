@@ -10,6 +10,14 @@ const NAV_ITEMS = [
   { to: "/more", label: "More", icon: LayoutGrid },
 ] as const;
 
+/** Settings and other utility pages live under the "More" section. */
+function isItemActive(pathname: string, to: string): boolean {
+  if (to === "/more") {
+    return pathname.startsWith("/more") || pathname.startsWith("/settings");
+  }
+  return pathname.startsWith(to);
+}
+
 export function AppNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -28,12 +36,13 @@ export function AppNav() {
         </div>
         <nav className="flex flex-1 flex-col gap-1 px-3">
           {NAV_ITEMS.map((item) => {
-            const active = pathname.startsWith(item.to);
+            const active = isItemActive(pathname, item.to);
             const Icon = item.icon;
             return (
               <Link
                 key={item.to}
                 to={item.to}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   active
@@ -56,25 +65,33 @@ export function AppNav() {
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {NAV_ITEMS.map((item) => {
-          const active = pathname.startsWith(item.to);
+          const active = isItemActive(pathname, item.to);
           const Icon = item.icon;
           return (
             <Link
               key={item.to}
               to={item.to}
+              aria-current={active ? "page" : undefined}
               className={cn(
                 "flex min-w-0 flex-1 flex-col items-center justify-center gap-1 py-2 min-h-12 text-[10px] font-medium transition-colors",
                 active ? "text-primary" : "text-muted-foreground",
               )}
             >
-              <Icon
-                size={22}
-                strokeWidth={active ? 2.5 : 2}
-                fill={active ? "currentColor" : "none"}
-                fillOpacity={active ? 0.15 : 0}
-                className={cn(active && "text-primary")}
-              />
-              <span>{item.label}</span>
+              <span
+                className={cn(
+                  "flex items-center justify-center rounded-full px-4 py-0.5 transition-colors",
+                  active && "bg-primary/15",
+                )}
+              >
+                <Icon
+                  size={22}
+                  strokeWidth={active ? 2.5 : 2}
+                  fill={active ? "currentColor" : "none"}
+                  fillOpacity={active ? 0.15 : 0}
+                  className={cn(active && "text-primary")}
+                />
+              </span>
+              <span className={cn(active && "font-semibold")}>{item.label}</span>
             </Link>
           );
         })}
