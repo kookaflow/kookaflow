@@ -10,6 +10,7 @@ import type { CalendarEvent } from "@/types/event";
 
 const CATEGORY_LABEL: Record<string, string> = {
   work: "Work",
+  business: "Business",
   rest: "Rest",
   wellness: "Wellness",
   exercise: "Exercise",

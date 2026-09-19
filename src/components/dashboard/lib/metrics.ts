@@ -167,7 +167,7 @@ export function categoryCard(
 }
 
 export const DASHBOARD_CARD_CATEGORIES: CategoryId[] = [
-  "work", "rest", "wellness", "exercise", "social", "family", "travel",
+  "work", "business", "rest", "wellness", "exercise", "social", "family", "travel",
 ];
 
 export interface BalanceScore {

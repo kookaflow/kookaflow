@@ -4,6 +4,7 @@ const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 
 const CATEGORY_LABELS: Record<string, string> = {
   work: "Work",
+  business: "Business",
   rest: "Rest",
   wellness: "Wellness",
   exercise: "Exercise",

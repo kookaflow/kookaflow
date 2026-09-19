@@ -10,7 +10,7 @@ export default defineTool({
   inputSchema: {
     title: z.string().min(1).max(200).describe("Event title."),
     category: z
-      .enum(["work", "rest", "wellness", "exercise", "social", "family", "personal", "travel"])
+      .enum(["work", "business", "rest", "wellness", "exercise", "social", "family", "personal", "travel"])
       .describe("Life category for the event."),
     start: z.string().describe("Start datetime, ISO 8601."),
     end: z.string().describe("End datetime, ISO 8601."),
