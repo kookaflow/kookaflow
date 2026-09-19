@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EventForm } from "./EventForm";
 import { useEvents } from "@/providers/EventsProvider";
+import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
 import type { CategoryId, EventDraft } from "@/types/event";
 import { toast } from "sonner";
 
@@ -15,6 +17,8 @@ interface Props {
 export function EventDialog({ open, onOpenChange, eventId, defaultStart, defaultCategory }: Props) {
   const { getEvent, createEvent, updateEvent, deleteEvent } = useEvents();
   const initial = eventId ? getEvent(eventId) : undefined;
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleSubmit = async (draft: EventDraft) => {
     try {
@@ -26,32 +30,45 @@ export function EventDialog({ open, onOpenChange, eventId, defaultStart, default
     }
   };
 
-  const handleDelete = initial
-    ? async () => {
-        try {
-          await deleteEvent(initial.id);
-          onOpenChange(false);
-        } catch (error) {
-          toast.error(error instanceof Error ? error.message : "Could not delete event");
-        }
-      }
-    : undefined;
+  const confirmDelete = async () => {
+    if (!initial) return;
+    setDeleting(true);
+    try {
+      await deleteEvent(initial.id);
+      setConfirmingDelete(false);
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete event");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{initial ? "Edit event" : "New event"}</DialogTitle>
-        </DialogHeader>
-        <EventForm
-          initial={initial}
-          defaultStart={defaultStart}
-          defaultCategory={defaultCategory}
-          onSubmit={handleSubmit}
-          onDelete={handleDelete}
-          onCancel={() => onOpenChange(false)}
-        />
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{initial ? "Edit event" : "New event"}</DialogTitle>
+          </DialogHeader>
+          <EventForm
+            initial={initial}
+            defaultStart={defaultStart}
+            defaultCategory={defaultCategory}
+            onSubmit={handleSubmit}
+            onDelete={initial ? () => setConfirmingDelete(true) : undefined}
+            onCancel={() => onOpenChange(false)}
+          />
+        </DialogContent>
+      </Dialog>
+      <ConfirmDeleteDialog
+        open={confirmingDelete}
+        onOpenChange={setConfirmingDelete}
+        itemLabel={initial?.title ? `“${initial.title}”` : "this event"}
+        warning={initial?.is_recurring ? "This is a recurring event — all future occurrences will be removed." : undefined}
+        onConfirm={confirmDelete}
+        busy={deleting}
+      />
+    </>
   );
 }
