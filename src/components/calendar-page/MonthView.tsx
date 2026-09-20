@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { GOOGLE_DEFAULT_COLOR } from "@/lib/googleColors";
 import {
   startOfMonth,
   endOfMonth,

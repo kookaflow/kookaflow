@@ -4,6 +4,7 @@ import { type MockEvent } from "./constants";
 import { getCategoryConfig, getShiftConfig, ensureReadableBadgeColour } from "@/lib/shiftConfig";
 import { ICON_MAP } from "@/components/events/IconPicker";
 import { cn } from "@/lib/utils";
+import { GOOGLE_DEFAULT_COLOR } from "@/lib/googleColors";
 
 const HOUR_HEIGHT = 56;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
