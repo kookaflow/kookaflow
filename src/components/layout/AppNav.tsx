@@ -80,15 +80,15 @@ export function AppNav() {
               <span
                 className={cn(
                   "flex items-center justify-center rounded-full px-4 py-0.5 transition-colors",
-                  active && "bg-primary/15",
+                  active && "bg-primary text-primary-foreground shadow-sm",
                 )}
               >
                 <Icon
                   size={22}
                   strokeWidth={active ? 2.5 : 2}
                   fill={active ? "currentColor" : "none"}
-                  fillOpacity={active ? 0.15 : 0}
-                  className={cn(active && "text-primary")}
+                  fillOpacity={active ? 0.2 : 0}
+                  className={cn(active && "text-primary-foreground")}
                 />
               </span>
               <span className={cn(active && "font-semibold")}>{item.label}</span>
