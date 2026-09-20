@@ -138,6 +138,7 @@ function CalendarPageInner() {
       location: g.location ?? undefined,
       source: "google" as const,
       externalUrl: g.htmlLink ?? undefined,
+      googleColor: g.color ?? undefined,
     }));
     return [...local, ...google];
   }, [rawEvents, googleEvents]);
