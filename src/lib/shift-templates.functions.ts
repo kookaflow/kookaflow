@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const CategorySchema = z.enum(["working", "leave", "non_working"]);
 
 const TemplateInputSchema = z.object({
-  name: z.string().min(1).max(12),
+  name: z.string().min(1).max(60),
   colour: z.string().min(1).max(20),
   icon_name: z.string().max(40).nullable().optional(),
   default_start: z.string().nullable().optional(),
