@@ -1,0 +1,2 @@
+ALTER TABLE public.shift_templates DROP CONSTRAINT shift_templates_name_check;
+ALTER TABLE public.shift_templates ADD CONSTRAINT shift_templates_name_check CHECK (char_length(name) >= 1 AND char_length(name) <= 60);
