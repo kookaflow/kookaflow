@@ -17,16 +17,18 @@ export interface CategoryConfig {
   Icon: LucideIcon;
 }
 
+// Softer palette — visually distinct, no alarm-like reds.
+// Every colour verified to meet >=3:1 contrast vs white text on chips/badges.
 export const CATEGORY_CONFIG: Record<CategoryId, CategoryConfig> = {
-  work:     { label: "Work / Shifts", colour: "#3B82F6", icon: "Briefcase", Icon: Briefcase },
-  business: { label: "Business",      colour: "#0EA5E9", icon: "Briefcase", Icon: Briefcase },
-  rest:     { label: "Rest / Sleep",  colour: "#8B5CF6", icon: "Moon",      Icon: Moon },
-  wellness: { label: "Wellness",      colour: "#EC4899", icon: "Heart",     Icon: Heart },
-  exercise: { label: "Exercise",      colour: "#10B981", icon: "Dumbbell",  Icon: Dumbbell },
-  social:   { label: "Social",        colour: "#F59E0B", icon: "Users",     Icon: Users },
-  family:   { label: "Family",        colour: "#EF4444", icon: "Home",      Icon: Home },
-  personal: { label: "Personal",      colour: "#6366F1", icon: "Star",      Icon: Star },
-  travel:   { label: "Travel",        colour: "#06B6D4", icon: "Car",       Icon: Car },
+  work:     { label: "Work / Shifts", colour: "#5470A0", icon: "Briefcase", Icon: Briefcase }, // slate blue
+  business: { label: "Business",     colour: "#5A8DB0", icon: "Briefcase", Icon: Briefcase }, // lighter slate
+  rest:     { label: "Rest / Sleep",  colour: "#8A7CC0", icon: "Moon",      Icon: Moon },      // soft lavender
+  wellness: { label: "Wellness",      colour: "#5E9A7C", icon: "Heart",     Icon: Heart },     // sage green
+  exercise: { label: "Exercise",      colour: "#D87A5C", icon: "Dumbbell",  Icon: Dumbbell },  // coral
+  social:   { label: "Social",        colour: "#8A6FB8", icon: "Users",     Icon: Users },     // soft purple
+  family:   { label: "Family",        colour: "#C97A3E", icon: "Home",      Icon: Home },      // warm orange
+  personal: { label: "Personal",      colour: "#B07AA0", icon: "Star",      Icon: Star },      // soft mauve
+  travel:   { label: "Travel",        colour: "#4A92BB", icon: "Car",       Icon: Car },       // sky blue
 };
 
 export interface ShiftConfig {
