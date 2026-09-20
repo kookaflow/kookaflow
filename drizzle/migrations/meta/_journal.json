@@ -15,6 +15,13 @@
       "when": 1789915336760,
       "tag": "0001_add_google_event_colors",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789923352293,
+      "tag": "0002_widen_shift_templates_name_length",
+      "breakpoints": true
     }
   ]
 }
