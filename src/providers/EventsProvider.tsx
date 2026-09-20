@@ -1,11 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { addDays, endOfDay, startOfDay } from "date-fns";
+import { addDays, endOfDay, format, startOfDay } from "date-fns";
 import {
   createEvent as createEventFn,
   updateEvent as updateEventFn,
   deleteEvent as deleteEventFn,
+  updateRecurrenceScope as updateRecurrenceScopeFn,
   type EventDTO,
 } from "@/lib/events.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +19,7 @@ import type {
   EventDraft,
   ShiftType,
   RecurrencePattern,
+  RecurringDeleteMode,
 } from "@/types/event";
 
 const QK = ["events"] as const;
@@ -35,6 +37,12 @@ interface Ctx {
   createEvent: (draft: EventDraft) => Promise<CalendarEvent>;
   updateEvent: (id: string, patch: Partial<EventDraft>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
+  /**
+   * Delete an occurrence of a recurring event with Google/Apple-style scope:
+   * "single" skips just that date, "future" ends the series before that date,
+   * "all" removes the whole series.
+   */
+  deleteRecurringEvent: (id: string, mode: RecurringDeleteMode) => Promise<void>;
   getEvent: (id: string) => CalendarEvent | undefined;
   setVisibleRange: (from: Date, to: Date) => void;
   loadAllEvents: () => Promise<CalendarEvent[]>;
@@ -43,7 +51,7 @@ interface Ctx {
 const EventsContext = createContext<Ctx | null>(null);
 
 const EVENT_COLUMNS =
-  "id,title,category,start_time,end_time,is_all_day,is_payday,shift_type,shift_role,location,notes,icon_name,icon_color,split_shift_first_start,split_shift_first_end,split_shift_break_duration,split_shift_second_start,split_shift_second_end,travel_duration_minutes,hourly_rate,calculated_earnings,is_recurring,recurrence_pattern,recurrence_days,recurrence_end_date,recurrence_group_id";
+  "id,title,category,start_time,end_time,is_all_day,is_payday,shift_type,shift_role,location,notes,icon_name,icon_color,split_shift_first_start,split_shift_first_end,split_shift_break_duration,split_shift_second_start,split_shift_second_end,travel_duration_minutes,hourly_rate,calculated_earnings,is_recurring,recurrence_pattern,recurrence_days,recurrence_end_date,recurrence_excluded_dates,recurrence_group_id";
 
 function rowsToDtos(data: Awaited<ReturnType<typeof queryEvents>>["data"]): EventDTO[] {
   return (data ?? []).map((row) => ({
@@ -72,6 +80,7 @@ function rowsToDtos(data: Awaited<ReturnType<typeof queryEvents>>["data"]): Even
     recurrencePattern: row.recurrence_pattern,
     recurrenceDays: row.recurrence_days,
     recurrenceEndDate: row.recurrence_end_date,
+    recurrenceExcludedDates: row.recurrence_excluded_dates,
     recurrenceGroupId: row.recurrence_group_id,
   }));
 }
@@ -161,6 +170,7 @@ function dtoToCalendarEvent(d: EventDTO): CalendarEvent {
     recurrencePattern: (d.recurrencePattern as RecurrencePattern | null) ?? null,
     recurrenceDays: d.recurrenceDays ?? null,
     recurrenceEndDate: d.recurrenceEndDate ?? null,
+    recurrenceExcludedDates: d.recurrenceExcludedDates ?? null,
     createdAt: d.start,
     updatedAt: d.start,
   };
@@ -198,6 +208,7 @@ function draftToInput(draft: EventDraft) {
     recurrencePattern: draft.recurrencePattern ?? null,
     recurrenceDays: draft.recurrenceDays ?? null,
     recurrenceEndDate: draft.recurrenceEndDate ?? null,
+    recurrenceExcludedDates: draft.recurrenceExcludedDates ?? null,
   };
 }
 
@@ -229,8 +240,11 @@ function expandRecurring(base: CalendarEvent): CalendarEvent[] {
     : addDays(startDate, 365);
 
   const out: CalendarEvent[] = [];
+  // Dates the user removed via "delete this event only" never materialise.
+  const excluded = new Set(base.recurrenceExcludedDates ?? []);
   const pushAt = (d: Date, idx: number) => {
     const s = new Date(d);
+    if (excluded.has(format(s, "yyyy-MM-dd"))) return;
     const e = new Date(s.getTime() + durationMs);
     out.push(
       idx === 0
@@ -281,7 +295,9 @@ function expandRecurring(base: CalendarEvent): CalendarEvent[] {
     }
   }
 
-  return out.length > 0 ? out : [base];
+  // No fallback to [base] here: an empty list is valid when every occurrence
+  // was excluded or the series end date precedes its start.
+  return out;
 }
 
 export function EventsProvider({ children }: { children: React.ReactNode }) {
@@ -289,6 +305,7 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const create = useServerFn(createEventFn);
   const update = useServerFn(updateEventFn);
   const remove = useServerFn(deleteEventFn);
+  const updateRecurrenceScope = useServerFn(updateRecurrenceScopeFn);
   const scheduleAlert = useServerFn(scheduleShiftAlert);
   const cancelAlert = useServerFn(cancelShiftAlert);
   const [range, setRange] = useState(() => ({
@@ -413,6 +430,37 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
     },
     deleteEvent: async (id) => {
       await deleteMut.mutateAsync(id);
+    },
+    deleteRecurringEvent: async (id, mode) => {
+      const occurrence = events.find((e) => e.id === id);
+      if (!occurrence) throw new Error("Event not found");
+      const realId = baseEventId(id);
+      if (mode === "all") {
+        await deleteMut.mutateAsync(id);
+        return;
+      }
+      // "This and future" starting from the very first occurrence is
+      // equivalent to deleting the whole series.
+      const isFirstOccurrence = !id.includes("::rec-");
+      if (mode === "future" && isFirstOccurrence) {
+        await deleteMut.mutateAsync(id);
+        return;
+      }
+      const occDate = format(new Date(occurrence.start), "yyyy-MM-dd");
+      if (mode === "single") {
+        await updateRecurrenceScope({
+          data: { id: realId, mode: "exclude_date", date: occDate },
+        });
+      } else {
+        const endDate = format(
+          addDays(new Date(occurrence.start), -1),
+          "yyyy-MM-dd",
+        );
+        await updateRecurrenceScope({
+          data: { id: realId, mode: "end_before", date: endDate },
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: QK });
     },
     getEvent: (id) => events.find((e) => e.id === id),
     setVisibleRange,

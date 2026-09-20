@@ -56,6 +56,7 @@ const EventInputSchema = z.object({
   recurrencePattern: RecurrencePatternSchema,
   recurrenceDays: z.array(z.string().max(3)).nullable().optional(),
   recurrenceEndDate: z.string().nullable().optional(),
+  recurrenceExcludedDates: z.array(z.string().max(10)).nullable().optional(),
 });
 
 export type EventDTO = {
@@ -84,11 +85,12 @@ export type EventDTO = {
   recurrencePattern: string | null;
   recurrenceDays: string[] | null;
   recurrenceEndDate: string | null;
+  recurrenceExcludedDates: string[] | null;
   recurrenceGroupId: string | null;
 };
 
 const ROW_COLS =
-  "id,title,category,start_time,end_time,is_all_day,is_payday,shift_type,shift_role,location,notes,icon_name,icon_color,split_shift_first_start,split_shift_first_end,split_shift_break_duration,split_shift_second_start,split_shift_second_end,travel_duration_minutes,hourly_rate,calculated_earnings,is_recurring,recurrence_pattern,recurrence_days,recurrence_end_date,recurrence_group_id";
+  "id,title,category,start_time,end_time,is_all_day,is_payday,shift_type,shift_role,location,notes,icon_name,icon_color,split_shift_first_start,split_shift_first_end,split_shift_break_duration,split_shift_second_start,split_shift_second_end,travel_duration_minutes,hourly_rate,calculated_earnings,is_recurring,recurrence_pattern,recurrence_days,recurrence_end_date,recurrence_excluded_dates,recurrence_group_id";
 
 type EventRow = {
   id: string;
@@ -116,6 +118,7 @@ type EventRow = {
   recurrence_pattern: string | null;
   recurrence_days: string[] | null;
   recurrence_end_date: string | null;
+  recurrence_excluded_dates: string[] | null;
   recurrence_group_id: string | null;
 };
 
@@ -146,6 +149,7 @@ function rowToDTO(r: EventRow): EventDTO {
     recurrencePattern: r.recurrence_pattern,
     recurrenceDays: r.recurrence_days,
     recurrenceEndDate: r.recurrence_end_date,
+    recurrenceExcludedDates: r.recurrence_excluded_dates,
     recurrenceGroupId: r.recurrence_group_id,
   };
 }
@@ -197,6 +201,7 @@ function inputToInsert(data: z.infer<typeof EventInputSchema>, userId: string) {
     recurrence_pattern: data.recurrencePattern ?? null,
     recurrence_days: data.recurrenceDays ?? null,
     recurrence_end_date: data.recurrenceEndDate ?? null,
+    recurrence_excluded_dates: data.recurrenceExcludedDates ?? null,
   };
 }
 
@@ -239,6 +244,45 @@ export const updateEvent = createServerFn({ method: "POST" })
       .single();
     if (error || !row) throw new Error(error?.message ?? "Failed to update event");
     return rowToDTO(row as unknown as EventRow);
+  });
+
+// Scoped recurring-series updates used by the three-option delete dialog:
+// exclude a single occurrence date, or end the series before a date.
+export const updateRecurrenceScope = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        mode: z.enum(["exclude_date", "end_before"]),
+        date: z.string().min(8).max(10),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    if (data.mode === "exclude_date") {
+      const { data: row, error } = await supabase
+        .from("events")
+        .select("recurrence_excluded_dates")
+        .eq("id", data.id)
+        .single();
+      if (error) throw new Error(error.message);
+      const dates: string[] = (row?.recurrence_excluded_dates as string[] | null) ?? [];
+      if (!dates.includes(data.date)) dates.push(data.date);
+      const { error: upErr } = await supabase
+        .from("events")
+        .update({ recurrence_excluded_dates: dates })
+        .eq("id", data.id);
+      if (upErr) throw new Error(upErr.message);
+    } else {
+      const { error: upErr } = await supabase
+        .from("events")
+        .update({ recurrence_end_date: data.date })
+        .eq("id", data.id);
+      if (upErr) throw new Error(upErr.message);
+    }
+    return { ok: true as const };
   });
 
 export const deleteEvent = createServerFn({ method: "POST" })
