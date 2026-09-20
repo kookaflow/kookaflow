@@ -68,6 +68,8 @@ export interface CalendarEvent {
   recurrencePattern?: RecurrencePattern | null;
   recurrenceDays?: string[] | null;
   recurrenceEndDate?: string | null;
+  /** Local dates (yyyy-MM-dd) of individual occurrences the user deleted. */
+  recurrenceExcludedDates?: string[] | null;
   createdAt: string;
   updatedAt: string;
 }
