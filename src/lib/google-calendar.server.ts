@@ -228,12 +228,11 @@ export async function syncUserCalendar(userId: string): Promise<{
     );
 
     if (res.status === 410) {
-      // sync token invalid — restart full sync
+      // stale paging/sync state — clear it and restart the listing
       await supabaseAdmin
         .from("google_calendar_connections")
         .update({ sync_token: null })
         .eq("user_id", userId);
-      fullSync = true;
       pageToken = undefined;
       seenIds = new Set<string>();
       continue;
