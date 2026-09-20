@@ -17,7 +17,7 @@ export const GOOGLE_EVENT_COLORS: Record<string, string> = {
 };
 
 /** Google's default calendar colour when nothing else is known. */
-export const GOOGLE_DEFAULT_COLOR = "#DCDCE8";
+export const GOOGLE_DEFAULT_COLOR = "#0B0BDE";
 
 /**
  * Resolve the colour to paint a synced Google event with:
