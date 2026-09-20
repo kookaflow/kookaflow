@@ -123,6 +123,8 @@ export interface GoogleEventLite {
   start: string;
   end: string;
   isAllDay: boolean;
+  /** Google Calendar colour for this event (event colour, else calendar colour). */
+  color: string | null;
 }
 
 export const listGoogleEvents = createServerFn({ method: "GET" })
@@ -144,7 +146,7 @@ export const listGoogleEvents = createServerFn({ method: "GET" })
     const { data: rows } = await supabaseAdmin
       .from("google_events_cache")
       .select(
-        "id, google_event_id, summary, location, html_link, start_time, end_time, is_all_day",
+        "id, google_event_id, summary, location, html_link, start_time, end_time, is_all_day, color_id, color_hex",
       )
       .eq("user_id", userId)
       .gte("start_time", from)
@@ -159,6 +161,7 @@ export const listGoogleEvents = createServerFn({ method: "GET" })
       start: r.start_time,
       end: r.end_time,
       isAllDay: r.is_all_day,
+      color: resolveGoogleEventColor(r.color_id, r.color_hex),
     }));
   });
 

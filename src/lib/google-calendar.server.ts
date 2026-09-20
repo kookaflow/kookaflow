@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { resolveGoogleEventColor } from "./googleColors";
 
 function getSigningKey(): string {
   const key =
