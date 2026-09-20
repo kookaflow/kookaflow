@@ -65,6 +65,7 @@ export type Database = {
           notes: string | null
           recurrence_days: string[] | null
           recurrence_end_date: string | null
+          recurrence_excluded_dates: string[] | null
           recurrence_group_id: string | null
           recurrence_pattern: string | null
           shift_role: string | null
@@ -98,6 +99,7 @@ export type Database = {
           notes?: string | null
           recurrence_days?: string[] | null
           recurrence_end_date?: string | null
+          recurrence_excluded_dates?: string[] | null
           recurrence_group_id?: string | null
           recurrence_pattern?: string | null
           shift_role?: string | null
@@ -131,6 +133,7 @@ export type Database = {
           notes?: string | null
           recurrence_days?: string[] | null
           recurrence_end_date?: string | null
+          recurrence_excluded_dates?: string[] | null
           recurrence_group_id?: string | null
           recurrence_pattern?: string | null
           shift_role?: string | null
