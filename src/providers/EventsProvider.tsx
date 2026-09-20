@@ -240,8 +240,11 @@ function expandRecurring(base: CalendarEvent): CalendarEvent[] {
     : addDays(startDate, 365);
 
   const out: CalendarEvent[] = [];
+  // Dates the user removed via "delete this event only" never materialise.
+  const excluded = new Set(base.recurrenceExcludedDates ?? []);
   const pushAt = (d: Date, idx: number) => {
     const s = new Date(d);
+    if (excluded.has(format(s, "yyyy-MM-dd"))) return;
     const e = new Date(s.getTime() + durationMs);
     out.push(
       idx === 0
@@ -292,7 +295,9 @@ function expandRecurring(base: CalendarEvent): CalendarEvent[] {
     }
   }
 
-  return out.length > 0 ? out : [base];
+  // No fallback to [base] here: an empty list is valid when every occurrence
+  // was excluded or the series end date precedes its start.
+  return out;
 }
 
 export function EventsProvider({ children }: { children: React.ReactNode }) {
