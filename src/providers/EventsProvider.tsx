@@ -305,6 +305,7 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const create = useServerFn(createEventFn);
   const update = useServerFn(updateEventFn);
   const remove = useServerFn(deleteEventFn);
+  const updateRecurrenceScope = useServerFn(updateRecurrenceScopeFn);
   const scheduleAlert = useServerFn(scheduleShiftAlert);
   const cancelAlert = useServerFn(cancelShiftAlert);
   const [range, setRange] = useState(() => ({
@@ -429,6 +430,37 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
     },
     deleteEvent: async (id) => {
       await deleteMut.mutateAsync(id);
+    },
+    deleteRecurringEvent: async (id, mode) => {
+      const occurrence = events.find((e) => e.id === id);
+      if (!occurrence) throw new Error("Event not found");
+      const realId = baseEventId(id);
+      if (mode === "all") {
+        await deleteMut.mutateAsync(id);
+        return;
+      }
+      // "This and future" starting from the very first occurrence is
+      // equivalent to deleting the whole series.
+      const isFirstOccurrence = !id.includes("::rec-");
+      if (mode === "future" && isFirstOccurrence) {
+        await deleteMut.mutateAsync(id);
+        return;
+      }
+      const occDate = format(new Date(occurrence.start), "yyyy-MM-dd");
+      if (mode === "single") {
+        await updateRecurrenceScope({
+          data: { id: realId, mode: "exclude_date", date: occDate },
+        });
+      } else {
+        const endDate = format(
+          addDays(new Date(occurrence.start), -1),
+          "yyyy-MM-dd",
+        );
+        await updateRecurrenceScope({
+          data: { id: realId, mode: "end_before", date: endDate },
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: QK });
     },
     getEvent: (id) => events.find((e) => e.id === id),
     setVisibleRange,
