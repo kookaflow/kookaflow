@@ -218,6 +218,7 @@ export async function syncUserCalendar(userId: string): Promise<{
   if (!accessToken) throw new Error("Cannot obtain access token");
 
   const calendarId = encodeURIComponent(conn.google_calendar_id || "primary");
+  const calendarColor = await fetchCalendarColor(accessToken, calendarId);
   let pageToken: string | undefined;
   let nextSyncToken: string | undefined;
   let imported = 0;
