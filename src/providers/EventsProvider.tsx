@@ -1,11 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { addDays, endOfDay, startOfDay } from "date-fns";
+import { addDays, endOfDay, format, startOfDay } from "date-fns";
 import {
   createEvent as createEventFn,
   updateEvent as updateEventFn,
   deleteEvent as deleteEventFn,
+  updateRecurrenceScope as updateRecurrenceScopeFn,
   type EventDTO,
 } from "@/lib/events.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +19,7 @@ import type {
   EventDraft,
   ShiftType,
   RecurrencePattern,
+  RecurringDeleteMode,
 } from "@/types/event";
 
 const QK = ["events"] as const;
@@ -35,6 +37,12 @@ interface Ctx {
   createEvent: (draft: EventDraft) => Promise<CalendarEvent>;
   updateEvent: (id: string, patch: Partial<EventDraft>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
+  /**
+   * Delete an occurrence of a recurring event with Google/Apple-style scope:
+   * "single" skips just that date, "future" ends the series before that date,
+   * "all" removes the whole series.
+   */
+  deleteRecurringEvent: (id: string, mode: RecurringDeleteMode) => Promise<void>;
   getEvent: (id: string) => CalendarEvent | undefined;
   setVisibleRange: (from: Date, to: Date) => void;
   loadAllEvents: () => Promise<CalendarEvent[]>;
