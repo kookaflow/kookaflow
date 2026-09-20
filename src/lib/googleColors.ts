@@ -21,13 +21,14 @@ export const GOOGLE_DEFAULT_COLOR = "#DCDCE8";
 
 /**
  * Resolve the colour to paint a synced Google event with:
- * the event's own colour, else the calendar's colour, else Google's default.
+ * the event's own explicit Google colour, else Google's default synced colour.
+ * The calendar's own colour is intentionally NOT used as a fallback, so events
+ * without an explicit colour always render in the default synced colour.
  */
 export function resolveGoogleEventColor(
   colorId?: string | null,
-  calendarColor?: string | null,
+  _calendarColor?: string | null,
 ): string {
   if (colorId && GOOGLE_EVENT_COLORS[colorId]) return GOOGLE_EVENT_COLORS[colorId];
-  if (calendarColor && /^#[0-9a-fA-F]{6}$/.test(calendarColor)) return calendarColor;
   return GOOGLE_DEFAULT_COLOR;
 }
