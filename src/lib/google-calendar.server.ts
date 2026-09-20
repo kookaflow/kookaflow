@@ -162,8 +162,33 @@ interface GoogleEventResource {
   description?: string;
   location?: string;
   htmlLink?: string;
+  colorId?: string;
   start?: { dateTime?: string; date?: string; timeZone?: string };
   end?: { dateTime?: string; date?: string; timeZone?: string };
+}
+
+/**
+ * Reads the colour the user assigned to this calendar in Google Calendar.
+ * Returns null when it cannot be determined (we then fall back to Google's default).
+ */
+async function fetchCalendarColor(
+  accessToken: string,
+  calendarId: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/users/me/calendarList/${calendarId}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      backgroundColor?: string;
+      colorId?: string;
+    };
+    return data.backgroundColor ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function parseEventTime(t?: { dateTime?: string; date?: string }) {
