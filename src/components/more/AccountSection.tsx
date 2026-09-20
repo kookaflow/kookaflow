@@ -182,11 +182,11 @@ export function AccountSection() {
   }
 
   return (
-    <section className="mb-6">
+    <section className="mb-6 min-w-0 max-w-full">
       <h2 className="mb-2 px-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         Account
       </h2>
-      <Card className="p-0 overflow-hidden">
+      <Card className="min-w-0 max-w-full overflow-hidden p-0">
         <Link
           to="/settings"
           className="flex items-center gap-3 p-4 transition-colors hover:bg-accent/40"
@@ -216,7 +216,7 @@ export function AccountSection() {
               <p className="truncate text-xs text-muted-foreground">{renewalLine}</p>
             )}
           </div>
-          <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${tierBadgeClass}`}>
+          <span className={`max-w-full shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${tierBadgeClass}`}>
             {tierLabel}
           </span>
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">

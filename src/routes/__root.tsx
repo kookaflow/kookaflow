@@ -180,8 +180,8 @@ function AppLayout() {
       <OfflineBanner />
       <SyncBanner />
       <AppNav />
-      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] md:pl-56">
-        <div className="h-full min-w-0 pb-[calc(3rem+env(safe-area-inset-bottom))] md:pb-0">
+      <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] md:pl-56">
+        <div className="h-full w-full min-w-0 max-w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0">
           <Outlet />
         </div>
       </div>
