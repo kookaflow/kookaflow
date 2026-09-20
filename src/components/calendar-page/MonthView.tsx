@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { GOOGLE_DEFAULT_COLOR } from "@/lib/googleColors";
 import {
   startOfMonth,
   endOfMonth,
@@ -164,7 +165,7 @@ export function MonthView({
                     onEventClick?.(e);
                   }}
                   className="flex w-full shrink-0 items-center gap-1 truncate rounded-sm px-1 py-px text-[9px] font-medium text-white hover:brightness-110"
-                  style={{ backgroundColor: "#94A3B8" }}
+                  style={{ backgroundColor: e.googleColor ?? GOOGLE_DEFAULT_COLOR }}
                   title={`${e.title} (Google Calendar)`}
                 >
                   <svg viewBox="0 0 24 24" className="size-2.5 shrink-0" fill="currentColor" aria-hidden="true">

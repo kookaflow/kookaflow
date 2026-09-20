@@ -17,6 +17,8 @@ export interface MockEvent {
   isPayday?: boolean;
   source?: "shiftsync" | "google";
   externalUrl?: string;
+  /** Google Calendar colour for synced events. */
+  googleColor?: string;
 }
 
 export type Recurrence =

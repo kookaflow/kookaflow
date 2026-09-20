@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { resolveGoogleEventColor } from "./googleColors";
 
 function getSigningKey(): string {
   const key =
@@ -162,8 +163,33 @@ interface GoogleEventResource {
   description?: string;
   location?: string;
   htmlLink?: string;
+  colorId?: string;
   start?: { dateTime?: string; date?: string; timeZone?: string };
   end?: { dateTime?: string; date?: string; timeZone?: string };
+}
+
+/**
+ * Reads the colour the user assigned to this calendar in Google Calendar.
+ * Returns null when it cannot be determined (we then fall back to Google's default).
+ */
+async function fetchCalendarColor(
+  accessToken: string,
+  calendarId: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/users/me/calendarList/${calendarId}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      backgroundColor?: string;
+      colorId?: string;
+    };
+    return data.backgroundColor ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function parseEventTime(t?: { dateTime?: string; date?: string }) {
@@ -193,6 +219,7 @@ export async function syncUserCalendar(userId: string): Promise<{
   if (!accessToken) throw new Error("Cannot obtain access token");
 
   const calendarId = encodeURIComponent(conn.google_calendar_id || "primary");
+  const calendarColor = await fetchCalendarColor(accessToken, calendarId);
   let pageToken: string | undefined;
   let nextSyncToken: string | undefined;
   let imported = 0;
@@ -276,6 +303,8 @@ export async function syncUserCalendar(userId: string): Promise<{
             end_time: end.iso,
             is_all_day: start.allDay,
             status: item.status ?? null,
+            color_id: item.colorId ?? null,
+            color_hex: resolveGoogleEventColor(item.colorId, calendarColor),
           },
           { onConflict: "user_id,google_event_id" },
         );
