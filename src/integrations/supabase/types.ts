@@ -210,6 +210,8 @@ export type Database = {
       }
       google_events_cache: {
         Row: {
+          color_hex: string | null
+          color_id: string | null
           created_at: string
           description: string | null
           end_time: string
@@ -226,6 +228,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          color_hex?: string | null
+          color_id?: string | null
           created_at?: string
           description?: string | null
           end_time: string
@@ -242,6 +246,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          color_hex?: string | null
+          color_id?: string | null
           created_at?: string
           description?: string | null
           end_time?: string
