@@ -16,8 +16,8 @@ export const GOOGLE_EVENT_COLORS: Record<string, string> = {
   "11": "#D50000", // Tomato
 };
 
-/** Google's default calendar colour (Peacock) when nothing else is known. */
-export const GOOGLE_DEFAULT_COLOR = "#039BE5";
+/** Google's default calendar colour when nothing else is known. */
+export const GOOGLE_DEFAULT_COLOR = "#DCDCE8";
 
 /**
  * Resolve the colour to paint a synced Google event with:
