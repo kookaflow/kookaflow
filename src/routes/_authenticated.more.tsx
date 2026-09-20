@@ -34,9 +34,9 @@ export const Route = createFileRoute("/_authenticated/more")({
 
 function MorePage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen w-full min-w-0 max-w-full overflow-x-hidden bg-background text-foreground">
       <MoreHero />
-      <main className="mx-auto max-w-3xl p-4 sm:p-6">
+      <main className="mx-auto w-full min-w-0 max-w-3xl overflow-x-hidden p-4 sm:p-6">
         <AccountSection />
         <CalendarPreferences />
         <ConnectedCalendars />

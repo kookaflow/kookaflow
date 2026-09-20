@@ -11,7 +11,7 @@ export function SignOutSection() {
   }
 
   return (
-    <div className="mt-8 border-t border-border pt-6">
+    <div className="mt-8 min-w-0 border-t border-border pt-6">
       <button
         type="button"
         onClick={handleSignOut}

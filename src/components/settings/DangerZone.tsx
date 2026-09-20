@@ -38,16 +38,16 @@ export function DangerZone() {
   const canDelete = confirmText.trim() === "DELETE" && !mut.isPending;
 
   return (
-    <section className="mb-10">
+    <section className="mb-10 min-w-0 max-w-full">
       <h2 className="mb-2 px-1 text-sm font-semibold uppercase tracking-wider text-destructive">
         Danger Zone
       </h2>
       <div className="rounded-xl border-2 border-destructive/40 bg-destructive/5 p-4">
-        <div className="flex items-start gap-3">
+        <div className="flex min-w-0 items-start gap-3">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
             <AlertOctagon size={18} />
           </div>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-foreground">Delete Account</p>
             <p className="mt-1 text-xs text-muted-foreground">
               This permanently deletes your account and all your data including shifts,
