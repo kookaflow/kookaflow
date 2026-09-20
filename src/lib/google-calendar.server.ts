@@ -302,6 +302,8 @@ export async function syncUserCalendar(userId: string): Promise<{
             end_time: end.iso,
             is_all_day: start.allDay,
             status: item.status ?? null,
+            color_id: item.colorId ?? null,
+            color_hex: resolveGoogleEventColor(item.colorId, calendarColor),
           },
           { onConflict: "user_id,google_event_id" },
         );
