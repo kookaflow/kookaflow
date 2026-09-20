@@ -80,11 +80,13 @@ export function EventDialog({ open, onOpenChange, eventId, defaultStart, default
           />
         </DialogContent>
       </Dialog>
-      {initial?.recurrencePattern ? (
+      {/* Expanded occurrences carry `::rec-N`; treat them as recurring even if
+          the pattern field is somehow missing, so the 3-option picker shows. */}
+      {initial?.recurrencePattern || (eventId?.includes("::rec-") ?? false) ? (
         <RecurringDeleteDialog
           open={confirmingDelete}
           onOpenChange={setConfirmingDelete}
-          itemLabel={initial.title ? `“${initial.title}”` : "this event"}
+          itemLabel={initial?.title ? `“${initial.title}”` : "this event"}
           onConfirm={confirmRecurringDelete}
           busy={deleting}
         />
