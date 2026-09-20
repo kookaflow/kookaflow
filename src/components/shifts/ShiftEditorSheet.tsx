@@ -112,8 +112,8 @@ export function ShiftEditorSheet({ open, onOpenChange, template }: Props) {
             <Input
               id="shift-name"
               value={name}
-              onChange={(e) => setName(e.target.value.slice(0, 12))}
-              maxLength={12}
+              onChange={(e) => setName(e.target.value.slice(0, 60))}
+              maxLength={60}
               placeholder="e.g. Long Day"
             />
           </div>
