@@ -49,6 +49,9 @@ export type GradientId =
 
 export type RecurrencePattern = "daily" | "weekly" | "fortnightly" | "custom";
 
+/** Scope choices when deleting an occurrence of a recurring event. */
+export type RecurringDeleteMode = "single" | "future" | "all";
+
 export interface CalendarEvent {
   id: string;
   title: string;

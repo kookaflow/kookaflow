@@ -246,6 +246,45 @@ export const updateEvent = createServerFn({ method: "POST" })
     return rowToDTO(row as unknown as EventRow);
   });
 
+// Scoped recurring-series updates used by the three-option delete dialog:
+// exclude a single occurrence date, or end the series before a date.
+export const updateRecurrenceScope = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        mode: z.enum(["exclude_date", "end_before"]),
+        date: z.string().min(8).max(10),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    if (data.mode === "exclude_date") {
+      const { data: row, error } = await supabase
+        .from("events")
+        .select("recurrence_excluded_dates")
+        .eq("id", data.id)
+        .single();
+      if (error) throw new Error(error.message);
+      const dates: string[] = (row?.recurrence_excluded_dates as string[] | null) ?? [];
+      if (!dates.includes(data.date)) dates.push(data.date);
+      const { error: upErr } = await supabase
+        .from("events")
+        .update({ recurrence_excluded_dates: dates })
+        .eq("id", data.id);
+      if (upErr) throw new Error(upErr.message);
+    } else {
+      const { error: upErr } = await supabase
+        .from("events")
+        .update({ recurrence_end_date: data.date })
+        .eq("id", data.id);
+      if (upErr) throw new Error(upErr.message);
+    }
+    return { ok: true as const };
+  });
+
 export const deleteEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
