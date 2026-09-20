@@ -56,6 +56,7 @@ const EventInputSchema = z.object({
   recurrencePattern: RecurrencePatternSchema,
   recurrenceDays: z.array(z.string().max(3)).nullable().optional(),
   recurrenceEndDate: z.string().nullable().optional(),
+  recurrenceExcludedDates: z.array(z.string().max(10)).nullable().optional(),
 });
 
 export type EventDTO = {
@@ -84,11 +85,12 @@ export type EventDTO = {
   recurrencePattern: string | null;
   recurrenceDays: string[] | null;
   recurrenceEndDate: string | null;
+  recurrenceExcludedDates: string[] | null;
   recurrenceGroupId: string | null;
 };
 
 const ROW_COLS =
-  "id,title,category,start_time,end_time,is_all_day,is_payday,shift_type,shift_role,location,notes,icon_name,icon_color,split_shift_first_start,split_shift_first_end,split_shift_break_duration,split_shift_second_start,split_shift_second_end,travel_duration_minutes,hourly_rate,calculated_earnings,is_recurring,recurrence_pattern,recurrence_days,recurrence_end_date,recurrence_group_id";
+  "id,title,category,start_time,end_time,is_all_day,is_payday,shift_type,shift_role,location,notes,icon_name,icon_color,split_shift_first_start,split_shift_first_end,split_shift_break_duration,split_shift_second_start,split_shift_second_end,travel_duration_minutes,hourly_rate,calculated_earnings,is_recurring,recurrence_pattern,recurrence_days,recurrence_end_date,recurrence_excluded_dates,recurrence_group_id";
 
 type EventRow = {
   id: string;
@@ -116,6 +118,7 @@ type EventRow = {
   recurrence_pattern: string | null;
   recurrence_days: string[] | null;
   recurrence_end_date: string | null;
+  recurrence_excluded_dates: string[] | null;
   recurrence_group_id: string | null;
 };
 
@@ -146,6 +149,7 @@ function rowToDTO(r: EventRow): EventDTO {
     recurrencePattern: r.recurrence_pattern,
     recurrenceDays: r.recurrence_days,
     recurrenceEndDate: r.recurrence_end_date,
+    recurrenceExcludedDates: r.recurrence_excluded_dates,
     recurrenceGroupId: r.recurrence_group_id,
   };
 }
@@ -197,6 +201,7 @@ function inputToInsert(data: z.infer<typeof EventInputSchema>, userId: string) {
     recurrence_pattern: data.recurrencePattern ?? null,
     recurrence_days: data.recurrenceDays ?? null,
     recurrence_end_date: data.recurrenceEndDate ?? null,
+    recurrence_excluded_dates: data.recurrenceExcludedDates ?? null,
   };
 }
 
