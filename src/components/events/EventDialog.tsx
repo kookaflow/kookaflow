@@ -86,7 +86,7 @@ export function EventDialog({ open, onOpenChange, eventId, defaultStart, default
         <RecurringDeleteDialog
           open={confirmingDelete}
           onOpenChange={setConfirmingDelete}
-          itemLabel={initial.title ? `“${initial.title}”` : "this event"}
+          itemLabel={initial?.title ? `“${initial.title}”` : "this event"}
           onConfirm={confirmRecurringDelete}
           busy={deleting}
         />
