@@ -21,14 +21,14 @@ export interface CategoryConfig {
 // Every colour verified to meet >=3:1 contrast vs white text on chips/badges.
 export const CATEGORY_CONFIG: Record<CategoryId, CategoryConfig> = {
   work:     { label: "Work / Shifts", colour: "#2563EB", icon: "Briefcase", Icon: Briefcase }, // electric blue
-  business: { label: "Business",     colour: "#4F46E5", icon: "Briefcase", Icon: Briefcase }, // indigo
+  business: { label: "Business",     colour: "#59FCFF", icon: "Briefcase", Icon: Briefcase }, // cyan
   rest:     { label: "Rest / Sleep",  colour: "#7C3AED", icon: "Moon",      Icon: Moon },      // vibrant purple
   wellness: { label: "Wellness",      colour: "#059669", icon: "Heart",     Icon: Heart },     // emerald
   exercise: { label: "Exercise",      colour: "#EA580C", icon: "Dumbbell",  Icon: Dumbbell },  // hot orange
   social:   { label: "Social",        colour: "#EC4899", icon: "Users",     Icon: Users },     // magenta pink
-  family:   { label: "Family",        colour: "#D97706", icon: "Home",      Icon: Home },      // warm gold
+  family:   { label: "Family",        colour: "#DD59FF", icon: "Home",      Icon: Home },      // magenta-purple
   personal: { label: "Personal",      colour: "#0891B2", icon: "Star",      Icon: Star },      // turquoise
-  travel:   { label: "Travel",        colour: "#3B82F6", icon: "Car",       Icon: Car },       // sky blue
+  travel:   { label: "Travel",        colour: "#FCFF59", icon: "Car",       Icon: Car },       // yellow-green
 };
 
 export interface ShiftConfig {
