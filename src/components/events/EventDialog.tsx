@@ -3,6 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { EventForm } from "./EventForm";
 import { useEvents } from "@/providers/EventsProvider";
 import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
+import {
+  RecurringDeleteDialog,
+  type RecurringDeleteMode,
+} from "./RecurringDeleteDialog";
 import type { CategoryId, EventDraft } from "@/types/event";
 import { toast } from "sonner";
 
@@ -15,7 +19,8 @@ interface Props {
 }
 
 export function EventDialog({ open, onOpenChange, eventId, defaultStart, defaultCategory }: Props) {
-  const { getEvent, createEvent, updateEvent, deleteEvent } = useEvents();
+  const { getEvent, createEvent, updateEvent, deleteEvent, deleteRecurringEvent } =
+    useEvents();
   const initial = eventId ? getEvent(eventId) : undefined;
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -44,6 +49,20 @@ export function EventDialog({ open, onOpenChange, eventId, defaultStart, default
     }
   };
 
+  const confirmRecurringDelete = async (mode: RecurringDeleteMode) => {
+    if (!initial) return;
+    setDeleting(true);
+    try {
+      await deleteRecurringEvent(initial.id, mode);
+      setConfirmingDelete(false);
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete event");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -61,14 +80,23 @@ export function EventDialog({ open, onOpenChange, eventId, defaultStart, default
           />
         </DialogContent>
       </Dialog>
-      <ConfirmDeleteDialog
-        open={confirmingDelete}
-        onOpenChange={setConfirmingDelete}
-        itemLabel={initial?.title ? `“${initial.title}”` : "this event"}
-        warning={initial?.recurrencePattern ? "This is a recurring event — all future occurrences will be removed." : undefined}
-        onConfirm={confirmDelete}
-        busy={deleting}
-      />
+      {initial?.recurrencePattern ? (
+        <RecurringDeleteDialog
+          open={confirmingDelete}
+          onOpenChange={setConfirmingDelete}
+          itemLabel={initial.title ? `“${initial.title}”` : "this event"}
+          onConfirm={confirmRecurringDelete}
+          busy={deleting}
+        />
+      ) : (
+        <ConfirmDeleteDialog
+          open={confirmingDelete}
+          onOpenChange={setConfirmingDelete}
+          itemLabel={initial?.title ? `“${initial.title}”` : "this event"}
+          onConfirm={confirmDelete}
+          busy={deleting}
+        />
+      )}
     </>
   );
 }
