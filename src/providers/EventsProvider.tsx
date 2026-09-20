@@ -43,7 +43,7 @@ interface Ctx {
 const EventsContext = createContext<Ctx | null>(null);
 
 const EVENT_COLUMNS =
-  "id,title,category,start_time,end_time,is_all_day,is_payday,shift_type,shift_role,location,notes,icon_name,icon_color,split_shift_first_start,split_shift_first_end,split_shift_break_duration,split_shift_second_start,split_shift_second_end,travel_duration_minutes,hourly_rate,calculated_earnings,is_recurring,recurrence_pattern,recurrence_days,recurrence_end_date,recurrence_group_id";
+  "id,title,category,start_time,end_time,is_all_day,is_payday,shift_type,shift_role,location,notes,icon_name,icon_color,split_shift_first_start,split_shift_first_end,split_shift_break_duration,split_shift_second_start,split_shift_second_end,travel_duration_minutes,hourly_rate,calculated_earnings,is_recurring,recurrence_pattern,recurrence_days,recurrence_end_date,recurrence_excluded_dates,recurrence_group_id";
 
 function rowsToDtos(data: Awaited<ReturnType<typeof queryEvents>>["data"]): EventDTO[] {
   return (data ?? []).map((row) => ({
@@ -72,6 +72,7 @@ function rowsToDtos(data: Awaited<ReturnType<typeof queryEvents>>["data"]): Even
     recurrencePattern: row.recurrence_pattern,
     recurrenceDays: row.recurrence_days,
     recurrenceEndDate: row.recurrence_end_date,
+    recurrenceExcludedDates: row.recurrence_excluded_dates,
     recurrenceGroupId: row.recurrence_group_id,
   }));
 }
@@ -161,6 +162,7 @@ function dtoToCalendarEvent(d: EventDTO): CalendarEvent {
     recurrencePattern: (d.recurrencePattern as RecurrencePattern | null) ?? null,
     recurrenceDays: d.recurrenceDays ?? null,
     recurrenceEndDate: d.recurrenceEndDate ?? null,
+    recurrenceExcludedDates: d.recurrenceExcludedDates ?? null,
     createdAt: d.start,
     updatedAt: d.start,
   };
@@ -198,6 +200,7 @@ function draftToInput(draft: EventDraft) {
     recurrencePattern: draft.recurrencePattern ?? null,
     recurrenceDays: draft.recurrenceDays ?? null,
     recurrenceEndDate: draft.recurrenceEndDate ?? null,
+    recurrenceExcludedDates: draft.recurrenceExcludedDates ?? null,
   };
 }
 
