@@ -68,7 +68,7 @@ export function PushPermissionPrompt() {
           <X className="h-4 w-4" />
         </button>
         <div className="flex items-center gap-3">
-          <img src={logoUrl} alt="Kookaflow" className="h-10 w-auto" />
+          <img src={logoUrl} alt="Kookaflow" className="h-10 w-auto overflow-hidden rounded-[22%]" />
         </div>
         <div className="mt-3 flex items-start gap-3">
           <div className="rounded-full bg-amber-500/15 p-2">

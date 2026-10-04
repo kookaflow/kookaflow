@@ -30,7 +30,7 @@ export function AppNav() {
             src={logo}
             alt="Kookaflow"
             style={{ height: 48, width: "auto" }}
-            className="object-contain"
+            className="overflow-hidden rounded-[22%] object-contain"
           />
           <span className="text-lg font-bold tracking-tight">Kookaflow</span>
         </div>

@@ -27,7 +27,7 @@ export function LegalPage({
               src={logo}
               alt="Kookaflow"
               style={{ height: 36, width: "auto" }}
-              className="object-contain"
+              className="overflow-hidden rounded-[22%] object-contain"
             />
           </Link>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>

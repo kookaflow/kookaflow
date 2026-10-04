@@ -30,7 +30,7 @@ export function SplashScreen({ duration = 1500 }: { duration?: number }) {
         src={logo}
         alt="Kookaflow"
         style={{ height: 140, width: "auto" }}
-        className="object-contain"
+        className="overflow-hidden rounded-[22%] object-contain"
       />
       <div className="mt-4 text-3xl font-bold tracking-tight text-white">
         Kookaflow

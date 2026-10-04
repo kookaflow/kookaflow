@@ -30,7 +30,7 @@ export function PageHeader({ title, subtitle, right, children }: PageHeaderProps
             src={logo}
             alt="Kookaflow"
             style={{ height: 36, width: "auto" }}
-            className="object-contain"
+            className="overflow-hidden rounded-[22%] object-contain"
           />
         </Link>
         {children ? <div className="flex items-center gap-2">{children}</div> : null}

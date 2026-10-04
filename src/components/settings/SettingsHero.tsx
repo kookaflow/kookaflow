@@ -22,7 +22,7 @@ export function SettingsHero() {
         src={logo}
         alt="Kookaflow"
         style={{ height: 60, width: "auto" }}
-        className="relative z-10 object-contain drop-shadow"
+        className="relative z-10 overflow-hidden rounded-[22%] object-contain drop-shadow"
       />
       <p className="relative z-10 mt-3 px-4 text-sm font-medium text-white/95 sm:text-base">
         Find your flow, whatever your hours

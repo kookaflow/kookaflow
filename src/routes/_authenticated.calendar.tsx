@@ -213,7 +213,7 @@ function CalendarPageInner() {
               "radial-gradient(ellipse at 80% 20%, #ffc338 0%, #fb862a 25%, #7e294d 60%, #251074 100%)",
           }}
         >
-          <img src={logo} alt="Kookaflow" style={{ height: 32, width: "auto" }} className="object-contain" />
+          <img src={logo} alt="Kookaflow" style={{ height: 32, width: "auto" }} className="overflow-hidden rounded-[22%] object-contain" />
           <span className="text-sm font-bold truncate">{format(date, "MMM yyyy")}</span>
           <ThemeToggle />
         </header>
