@@ -8,4 +8,4 @@
 - [x] One-time correction for hello@kookaflow.com applied manually (pro/active, end 2026-09-15); REVENUECAT_SECRET_API_KEY saved.
 - [x] Native Manage Subscription: present Apple's StoreKit 2 management sheet through a dedicated Capacitor iOS bridge; never open account.apple.com.
 - [x] Remove horizontal overflow and improve bottom-edge scrolling across mobile paywalls and signed-in views.
-- [ ] Replace all Kookaflow logo, favicon, Apple touch, and PWA artwork with the Build 8 icon; round only in-app displays through styling.
+- [x] Replace all Kookaflow logo, favicon, Apple touch, and PWA artwork with the Build 8 icon; round only in-app displays through styling.
