@@ -26,7 +26,7 @@ export function MoreHero() {
         src={logo}
         alt="Kookaflow"
         style={{ height: 52, width: "auto" }}
-        className="relative z-10 object-contain drop-shadow"
+        className="relative z-10 overflow-hidden rounded-[22%] object-contain drop-shadow"
       />
       <p
         className="relative z-10 mt-2 px-4 text-white/95"

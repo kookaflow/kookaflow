@@ -86,7 +86,7 @@ function LandingPage() {
           <img
             src={logo}
             alt="Kookaflow"
-            className="mb-6 h-28 w-auto object-contain drop-shadow-lg sm:h-32"
+            className="mb-6 h-28 w-auto overflow-hidden rounded-[22%] object-contain drop-shadow-lg sm:h-32"
           />
           <h1
             className="text-5xl font-bold leading-tight tracking-tight sm:text-6xl md:text-7xl"

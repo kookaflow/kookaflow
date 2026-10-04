@@ -79,7 +79,7 @@ function OnboardingPage() {
         className="relative flex flex-col items-center gap-3 px-6 pb-16 pt-10 text-center text-white"
         style={{ background: "var(--brand-gradient)" }}
       >
-        <img src={logo} alt="Kookaflow" style={{ height: 80, width: "auto" }} className="object-contain" />
+        <img src={logo} alt="Kookaflow" style={{ height: 80, width: "auto" }} className="overflow-hidden rounded-[22%] object-contain" />
         <h1 className="text-2xl font-bold tracking-tight">Welcome to Kookaflow</h1>
         <p className="text-sm text-white/80">Find your flow, whatever your hours</p>
         <div className="mt-2 flex items-center justify-center gap-2">

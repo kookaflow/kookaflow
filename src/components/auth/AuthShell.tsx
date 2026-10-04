@@ -40,7 +40,7 @@ export function AuthShell({
             src={logo}
             alt="Kookaflow"
             style={{ height: 100, width: "auto" }}
-            className="mb-4 object-contain"
+            className="mb-4 overflow-hidden rounded-[22%] object-contain"
           />
           <h1
             className="font-bold leading-tight tracking-tight text-white"
