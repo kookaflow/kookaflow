@@ -19,19 +19,21 @@ Use the attached `Kookaburra_Clock_Sunset_Icon_for_build_8.png` (1254 × 1254, s
 The square source already fills its canvas, so resizing will preserve its proportions without stretching or adding padding.
 
 ## Every source file that references the old in-app logo
-These files all import `@/assets/kookaflow-logo.png`. They will show the new artwork through the replacement above; their code will **not** be edited.
+These files all import `@/assets/kookaflow-logo.png`. Each existing logo `<img>` receives only `rounded-[22%] overflow-hidden` in its `className`, giving the square source the corner treatment of an iOS app icon without changing the image file itself. Existing sizing, positioning, shadows, links, behavior, and all other code remain unchanged.
 
-- `src/routes/index.tsx`
-- `src/routes/_authenticated.calendar.tsx`
-- `src/routes/_authenticated.onboarding.tsx`
-- `src/components/layout/SplashScreen.tsx`
-- `src/components/layout/PageHeader.tsx`
-- `src/components/layout/AppNav.tsx`
-- `src/components/auth/AuthShell.tsx`
-- `src/components/legal/LegalPage.tsx`
-- `src/components/more/MoreHero.tsx`
-- `src/components/settings/SettingsHero.tsx`
-- `src/components/notifications/PushPermissionPrompt.tsx`
+| File | Exact styling-only change |
+|---|---|
+| `src/routes/index.tsx` | Add `rounded-[22%] overflow-hidden` to the landing-page logo image. |
+| `src/routes/_authenticated.calendar.tsx` | Add `rounded-[22%] overflow-hidden` to the mobile calendar-header logo image. |
+| `src/routes/_authenticated.onboarding.tsx` | Add `rounded-[22%] overflow-hidden` to the onboarding logo image. |
+| `src/components/layout/SplashScreen.tsx` | Add `rounded-[22%] overflow-hidden` to the splash-screen logo image. |
+| `src/components/layout/PageHeader.tsx` | Add `rounded-[22%] overflow-hidden` to the shared page-header logo image. |
+| `src/components/layout/AppNav.tsx` | Add `rounded-[22%] overflow-hidden` to the desktop navigation logo image. |
+| `src/components/auth/AuthShell.tsx` | Add `rounded-[22%] overflow-hidden` to the authentication-shell logo image. |
+| `src/components/legal/LegalPage.tsx` | Add `rounded-[22%] overflow-hidden` to the legal-page logo image. |
+| `src/components/more/MoreHero.tsx` | Add `rounded-[22%] overflow-hidden` to the More-page logo image. |
+| `src/components/settings/SettingsHero.tsx` | Add `rounded-[22%] overflow-hidden` to the Settings logo image. |
+| `src/components/notifications/PushPermissionPrompt.tsx` | Add `rounded-[22%] overflow-hidden` to the notification-prompt logo image. |
 
 ## Every source file that references the public icons
 
@@ -66,10 +68,11 @@ Currently references:
 - Subscriptions and purchases
 - Stripe
 - Capacitor and native plugin code
-- Components, routes, styling, copy, metadata, and Open Graph images
+- Component and route code other than the eleven logo `className` additions above
+- All other styling, copy, metadata, and Open Graph images
 
 ## Verification
 - Confirm the master and every generated PNG/ICO visually use the final sunset kookaburra-clock artwork.
 - Confirm each output has the intended dimensions and the ICO contains all three sizes.
-- Confirm the landing page, authentication page, splash, signed-in header/navigation, and installed-PWA metadata resolve the new image.
+- Confirm the landing page, authentication page, splash, signed-in header/navigation, and notification prompt resolve the new image with consistent 22% rounded corners.
 - Confirm there are no source references to any removed old-logo filename and the preview build remains clean.
