@@ -1,54 +1,75 @@
-# Replace Kookaflow logo and app icon everywhere
+# Replace every Kookaflow logo and icon
 
-## Source asset
-- The final icon file: the one re-uploaded in chat (arrives in `/mnt/user-uploads/`). No implementation starts until it is present.
-- All derived sizes are generated from that single file with ImageMagick. Nothing else in the code changes.
+## Final source
+Use the attached `Kookaburra_Clock_Sunset_Icon_for_build_8.png` (1254 × 1254, square RGB image) as the sole master artwork.
 
-## What changes
+## Files that will be changed
 
-### 1. In-app logo — one file, zero code edits
-Every screen imports the same path `@/assets/kookaflow-logo.png`, so replacing that file updates all of them at once. No imports or components are touched.
+| File | Exact change |
+|---|---|
+| `src/assets/kookaflow-logo.png` | Replace the old rounded-square kookaburra artwork with a 512 × 512 optimized PNG generated from the final icon. Keep the path unchanged so all existing imports update automatically. |
+| `public/favicon.ico` | Replace with a multi-resolution ICO generated from the final icon (16, 32, and 48 px). |
+| `public/favicon-16x16.png` | Replace with a 16 × 16 PNG generated from the final icon. |
+| `public/favicon-32x32.png` | Replace with a 32 × 32 PNG generated from the final icon. |
+| `public/apple-touch-icon.png` | Replace with a 180 × 180 PNG generated from the final icon. |
+| `public/pwa-icon-192.png` | Replace with a 192 × 192 PNG generated from the final icon. |
+| `public/pwa-icon-512.png` | Replace with a 512 × 512 PNG generated from the final icon. |
+| `public/favicon.svg` | Delete the unreferenced hand-drawn old kookaburra favicon so the old artwork is not available at `/favicon.svg`. |
 
-Files that display it (reference list only — no edits needed):
-- `src/routes/index.tsx` (landing page)
+The square source already fills its canvas, so resizing will preserve its proportions without stretching or adding padding.
+
+## Every source file that references the old in-app logo
+These files all import `@/assets/kookaflow-logo.png`. They will show the new artwork through the replacement above; their code will **not** be edited.
+
+- `src/routes/index.tsx`
 - `src/routes/_authenticated.calendar.tsx`
 - `src/routes/_authenticated.onboarding.tsx`
-- `src/components/layout/SplashScreen.tsx` (app-launch splash)
-- `src/components/layout/PageHeader.tsx` (signed-in page header band)
+- `src/components/layout/SplashScreen.tsx`
+- `src/components/layout/PageHeader.tsx`
 - `src/components/layout/AppNav.tsx`
-- `src/components/auth/AuthShell.tsx` (sign-in / sign-up shells)
-- `src/components/legal/LegalPage.tsx` (privacy, terms, support, EULA)
+- `src/components/auth/AuthShell.tsx`
+- `src/components/legal/LegalPage.tsx`
 - `src/components/more/MoreHero.tsx`
 - `src/components/settings/SettingsHero.tsx`
 - `src/components/notifications/PushPermissionPrompt.tsx`
 
-Action: downscale the uploaded icon to 512x512 (it renders at 36–140px; keeps the app bundle light), keep the exact filename `kookaflow-logo.png`, preserve transparency.
+## Every source file that references the public icons
 
-### 2. Browser + PWA icons in `/public` — regenerated from the same icon
-| File | Action |
-|---|---|
-| `public/favicon.ico` | Regenerate (16/32/48 multi-size) |
-| `public/favicon-16x16.png` | Regenerate at 16x16 |
-| `public/favicon-32x32.png` | Regenerate at 32x32 |
-| `public/apple-touch-icon.png` | Regenerate at 180x180 |
-| `public/pwa-icon-192.png` | Regenerate at 192x192 |
-| `public/pwa-icon-512.png` | Regenerate at 512x512, full-bleed version so Android maskable icons aren't cropped |
+### `src/routes/__root.tsx`
+Currently links to:
+- `/favicon.ico`
+- `/favicon-32x32.png`
+- `/favicon-16x16.png`
+- `/apple-touch-icon.png`
+- `/manifest.json`
 
-Filenames stay identical, so `src/routes/__root.tsx` head links and `public/manifest.json` need no edits.
+**Change:** none. The referenced files keep the same names and are replaced in place.
 
-### 3. Stale hand-drawn favicon
-- `public/favicon.svg` is a hand-drawn kookaburra sketch that no code references. Delete it so the old brand never gets served at `/favicon.svg`.
+### `public/manifest.json`
+Currently references:
+- `/favicon-16x16.png`
+- `/favicon-32x32.png`
+- `/apple-touch-icon.png`
+- `/pwa-icon-192.png`
+- `/pwa-icon-512.png`
 
-### 4. Regenerated automatically (not hand-edited)
-- `dist-mobile/` build output — refreshed next time `bun run build:mobile` runs.
-- The iPhone home-screen icon lives in the Xcode asset catalog, outside this web project; it gets the new icon when you prepare Build 6. Flagged here so it isn't forgotten — no Capacitor code is touched.
+**Change:** none. The paths, dimensions, MIME types, and existing maskable declaration remain valid.
 
-## What will NOT change
-- No RevenueCat, paywall, subscription, Stripe, or Capacitor code.
-- No component code, imports, routes, manifest entries, or head links.
-- The og:image meta tags keep pointing at the existing preview screenshot URL.
+## Generated output and native scope
+- `dist-mobile/` contains generated copies of the old artwork. It will not be hand-edited; it is refreshed only by the normal later mobile-build process.
+- No iOS asset catalog exists in this repository, so there is no native App Store icon file here to replace.
+- No Capacitor files or configuration will be touched.
+
+## Explicitly out of scope
+- RevenueCat
+- Paywall and pricing
+- Subscriptions and purchases
+- Stripe
+- Capacitor and native plugin code
+- Components, routes, styling, copy, metadata, and Open Graph images
 
 ## Verification
-- Confirm every regenerated file exists at the right dimensions.
-- Load the landing page, sign-in shell, and a signed-in page at phone width and screenshot to confirm the new logo renders in the splash, header, and nav.
-- Confirm no build errors after the swap.
+- Confirm the master and every generated PNG/ICO visually use the final sunset kookaburra-clock artwork.
+- Confirm each output has the intended dimensions and the ICO contains all three sizes.
+- Confirm the landing page, authentication page, splash, signed-in header/navigation, and installed-PWA metadata resolve the new image.
+- Confirm there are no source references to any removed old-logo filename and the preview build remains clean.
