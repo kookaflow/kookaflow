@@ -9,78 +9,47 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SupportRouteImport } from './routes/support'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as McpRouteImport } from './routes/mcp'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as EulaRouteImport } from './routes/eula'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProSuccessRouteImport } from './routes/pro.success'
-import { Route as AuthenticatedShiftsRouteImport } from './routes/_authenticated.shifts'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
-import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
-import { Route as AuthenticatedMoreRouteImport } from './routes/_authenticated.more'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
-import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
-import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as EulaRouteImport } from './routes/eula'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
-import { Route as AuthGoogleCallbackRouteImport } from './routes/auth.google.callback'
-import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
+import { Route as AuthenticatedMoreRouteImport } from './routes/_authenticated.more'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated.onboarding'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
+import { Route as AuthenticatedShiftsRouteImport } from './routes/_authenticated.shifts'
+import { Route as ProSuccessRouteImport } from './routes/pro.success'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
-import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
-import { Route as ApiPublicRevenuecatWebhookRouteImport } from './routes/api/public/revenuecat/webhook'
-import { Route as ApiPublicHooksSendWeeklyReminderRouteImport } from './routes/api/public/hooks/send-weekly-reminder'
-import { Route as ApiPublicHooksSendTrialRemindersRouteImport } from './routes/api/public/hooks/send-trial-reminders'
-import { Route as ApiPublicHooksSendPushWeeklyReminderRouteImport } from './routes/api/public/hooks/send-push-weekly-reminder'
-import { Route as ApiPublicHooksSendPushNotificationRouteImport } from './routes/api/public/hooks/send-push-notification'
-import { Route as ApiPublicHooksSendPushDailyReminderRouteImport } from './routes/api/public/hooks/send-push-daily-reminder'
-import { Route as ApiPublicHooksSendDailyReminderRouteImport } from './routes/api/public/hooks/send-daily-reminder'
-import { Route as ApiPublicHooksDispatchShiftAlertsRouteImport } from './routes/api/public/hooks/dispatch-shift-alerts'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as AuthGoogleCallbackRouteImport } from './routes/auth.google.callback'
 import { Route as ApiPublicGoogleSyncAllRouteImport } from './routes/api/public/google/sync-all'
+import { Route as ApiPublicHooksDispatchShiftAlertsRouteImport } from './routes/api/public/hooks/dispatch-shift-alerts'
+import { Route as ApiPublicHooksSendDailyReminderRouteImport } from './routes/api/public/hooks/send-daily-reminder'
+import { Route as ApiPublicHooksSendPushDailyReminderRouteImport } from './routes/api/public/hooks/send-push-daily-reminder'
+import { Route as ApiPublicHooksSendPushNotificationRouteImport } from './routes/api/public/hooks/send-push-notification'
+import { Route as ApiPublicHooksSendPushWeeklyReminderRouteImport } from './routes/api/public/hooks/send-push-weekly-reminder'
+import { Route as ApiPublicHooksSendTrialRemindersRouteImport } from './routes/api/public/hooks/send-trial-reminders'
+import { Route as ApiPublicHooksSendWeeklyReminderRouteImport } from './routes/api/public/hooks/send-weekly-reminder'
+import { Route as ApiPublicRevenuecatWebhookRouteImport } from './routes/api/public/revenuecat/webhook'
+import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SupportRoute = SupportRouteImport.update({
-  id: '/support',
-  path: '/support',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PricingRoute = PricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const McpRoute = McpRouteImport.update({
-  id: '/mcp',
-  path: '/mcp',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EulaRoute = EulaRouteImport.update({
@@ -88,38 +57,61 @@ const EulaRoute = EulaRouteImport.update({
   path: '/eula',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProSuccessRoute = ProSuccessRouteImport.update({
-  id: '/pro/success',
-  path: '/pro/success',
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedShiftsRoute = AuthenticatedShiftsRouteImport.update({
-  id: '/shifts',
-  path: '/shifts',
-  getParentRoute: () => AuthenticatedRoute,
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthenticatedRoute,
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => AuthenticatedRoute,
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedMoreRoute = AuthenticatedMoreRouteImport.update({
-  id: '/more',
-  path: '/more',
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -127,26 +119,34 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
+const AuthenticatedMoreRoute = AuthenticatedMoreRouteImport.update({
+  id: '/more',
+  path: '/more',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const Char91DotwellKnownChar93OauthProtectedResourceRoute =
-  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
-    id: '/.well-known/oauth-protected-resource',
-    path: '/.well-known/oauth-protected-resource',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const Char91DotmcpChar93ListToolsRoute =
-  Char91DotmcpChar93ListToolsRouteImport.update({
-    id: '/.mcp/list-tools',
-    path: '/.mcp/list-tools',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
-  id: '/auth/google/callback',
-  path: '/auth/google/callback',
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedShiftsRoute = AuthenticatedShiftsRouteImport.update({
+  id: '/shifts',
+  path: '/shifts',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const ProSuccessRoute = ProSuccessRouteImport.update({
+  id: '/pro/success',
+  path: '/pro/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
@@ -155,50 +155,20 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
-const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
-  id: '/.lovable/oauth/consent',
-  path: '/.lovable/oauth/consent',
+const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
+  id: '/auth/google/callback',
+  path: '/auth/google/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
-  id: '/api/public/stripe/webhook',
-  path: '/api/public/stripe/webhook',
+const ApiPublicGoogleSyncAllRoute = ApiPublicGoogleSyncAllRouteImport.update({
+  id: '/api/public/google/sync-all',
+  path: '/api/public/google/sync-all',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicRevenuecatWebhookRoute =
-  ApiPublicRevenuecatWebhookRouteImport.update({
-    id: '/api/public/revenuecat/webhook',
-    path: '/api/public/revenuecat/webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksSendWeeklyReminderRoute =
-  ApiPublicHooksSendWeeklyReminderRouteImport.update({
-    id: '/api/public/hooks/send-weekly-reminder',
-    path: '/api/public/hooks/send-weekly-reminder',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksSendTrialRemindersRoute =
-  ApiPublicHooksSendTrialRemindersRouteImport.update({
-    id: '/api/public/hooks/send-trial-reminders',
-    path: '/api/public/hooks/send-trial-reminders',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksSendPushWeeklyReminderRoute =
-  ApiPublicHooksSendPushWeeklyReminderRouteImport.update({
-    id: '/api/public/hooks/send-push-weekly-reminder',
-    path: '/api/public/hooks/send-push-weekly-reminder',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksSendPushNotificationRoute =
-  ApiPublicHooksSendPushNotificationRouteImport.update({
-    id: '/api/public/hooks/send-push-notification',
-    path: '/api/public/hooks/send-push-notification',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksSendPushDailyReminderRoute =
-  ApiPublicHooksSendPushDailyReminderRouteImport.update({
-    id: '/api/public/hooks/send-push-daily-reminder',
-    path: '/api/public/hooks/send-push-daily-reminder',
+const ApiPublicHooksDispatchShiftAlertsRoute =
+  ApiPublicHooksDispatchShiftAlertsRouteImport.update({
+    id: '/api/public/hooks/dispatch-shift-alerts',
+    path: '/api/public/hooks/dispatch-shift-alerts',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksSendDailyReminderRoute =
@@ -207,15 +177,45 @@ const ApiPublicHooksSendDailyReminderRoute =
     path: '/api/public/hooks/send-daily-reminder',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksDispatchShiftAlertsRoute =
-  ApiPublicHooksDispatchShiftAlertsRouteImport.update({
-    id: '/api/public/hooks/dispatch-shift-alerts',
-    path: '/api/public/hooks/dispatch-shift-alerts',
+const ApiPublicHooksSendPushDailyReminderRoute =
+  ApiPublicHooksSendPushDailyReminderRouteImport.update({
+    id: '/api/public/hooks/send-push-daily-reminder',
+    path: '/api/public/hooks/send-push-daily-reminder',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicGoogleSyncAllRoute = ApiPublicGoogleSyncAllRouteImport.update({
-  id: '/api/public/google/sync-all',
-  path: '/api/public/google/sync-all',
+const ApiPublicHooksSendPushNotificationRoute =
+  ApiPublicHooksSendPushNotificationRouteImport.update({
+    id: '/api/public/hooks/send-push-notification',
+    path: '/api/public/hooks/send-push-notification',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSendPushWeeklyReminderRoute =
+  ApiPublicHooksSendPushWeeklyReminderRouteImport.update({
+    id: '/api/public/hooks/send-push-weekly-reminder',
+    path: '/api/public/hooks/send-push-weekly-reminder',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSendTrialRemindersRoute =
+  ApiPublicHooksSendTrialRemindersRouteImport.update({
+    id: '/api/public/hooks/send-trial-reminders',
+    path: '/api/public/hooks/send-trial-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSendWeeklyReminderRoute =
+  ApiPublicHooksSendWeeklyReminderRouteImport.update({
+    id: '/api/public/hooks/send-weekly-reminder',
+    path: '/api/public/hooks/send-weekly-reminder',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicRevenuecatWebhookRoute =
+  ApiPublicRevenuecatWebhookRouteImport.update({
+    id: '/api/public/revenuecat/webhook',
+    path: '/api/public/revenuecat/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
+  id: '/api/public/stripe/webhook',
+  path: '/api/public/stripe/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -461,67 +461,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/support': {
-      id: '/support'
-      path: '/support'
-      fullPath: '/support'
-      preLoaderRoute: typeof SupportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pricing': {
-      id: '/pricing'
-      path: '/pricing'
-      fullPath: '/pricing'
-      preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mcp': {
-      id: '/mcp'
-      path: '/mcp'
-      fullPath: '/mcp'
-      preLoaderRoute: typeof McpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/eula': {
-      id: '/eula'
-      path: '/eula'
-      fullPath: '/eula'
-      preLoaderRoute: typeof EulaRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -531,67 +475,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/eula': {
+      id: '/eula'
+      path: '/eula'
+      fullPath: '/eula'
+      preLoaderRoute: typeof EulaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pro/success': {
-      id: '/pro/success'
-      path: '/pro/success'
-      fullPath: '/pro/success'
-      preLoaderRoute: typeof ProSuccessRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/shifts': {
-      id: '/_authenticated/shifts'
-      path: '/shifts'
-      fullPath: '/shifts'
-      preLoaderRoute: typeof AuthenticatedShiftsRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/onboarding': {
-      id: '/_authenticated/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/more': {
-      id: '/_authenticated/more'
-      path: '/more'
-      fullPath: '/more'
-      preLoaderRoute: typeof AuthenticatedMoreRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/calendar': {
-      id: '/_authenticated/calendar'
-      path: '/calendar'
-      fullPath: '/calendar'
-      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/.well-known/oauth-protected-resource': {
-      id: '/.well-known/oauth-protected-resource'
-      path: '/.well-known/oauth-protected-resource'
-      fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.mcp/list-tools': {
@@ -601,18 +545,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/google/callback': {
-      id: '/auth/google/callback'
-      path: '/auth/google/callback'
-      fullPath: '/auth/google/callback'
-      preLoaderRoute: typeof AuthGoogleCallbackRouteImport
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.mcp/invoke-tool/$tool': {
-      id: '/.mcp/invoke-tool/$tool'
-      path: '/.mcp/invoke-tool/$tool'
-      fullPath: '/.mcp/invoke-tool/$tool'
-      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+    '/_authenticated/calendar': {
+      id: '/_authenticated/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/more': {
+      id: '/_authenticated/more'
+      path: '/more'
+      fullPath: '/more'
+      preLoaderRoute: typeof AuthenticatedMoreRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/shifts': {
+      id: '/_authenticated/shifts'
+      path: '/shifts'
+      fullPath: '/shifts'
+      preLoaderRoute: typeof AuthenticatedShiftsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/pro/success': {
+      id: '/pro/success'
+      path: '/pro/success'
+      fullPath: '/pro/success'
+      preLoaderRoute: typeof ProSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.lovable/oauth/consent': {
@@ -622,60 +608,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/stripe/webhook': {
-      id: '/api/public/stripe/webhook'
-      path: '/api/public/stripe/webhook'
-      fullPath: '/api/public/stripe/webhook'
-      preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/revenuecat/webhook': {
-      id: '/api/public/revenuecat/webhook'
-      path: '/api/public/revenuecat/webhook'
-      fullPath: '/api/public/revenuecat/webhook'
-      preLoaderRoute: typeof ApiPublicRevenuecatWebhookRouteImport
+    '/auth/google/callback': {
+      id: '/auth/google/callback'
+      path: '/auth/google/callback'
+      fullPath: '/auth/google/callback'
+      preLoaderRoute: typeof AuthGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/send-weekly-reminder': {
-      id: '/api/public/hooks/send-weekly-reminder'
-      path: '/api/public/hooks/send-weekly-reminder'
-      fullPath: '/api/public/hooks/send-weekly-reminder'
-      preLoaderRoute: typeof ApiPublicHooksSendWeeklyReminderRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/send-trial-reminders': {
-      id: '/api/public/hooks/send-trial-reminders'
-      path: '/api/public/hooks/send-trial-reminders'
-      fullPath: '/api/public/hooks/send-trial-reminders'
-      preLoaderRoute: typeof ApiPublicHooksSendTrialRemindersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/send-push-weekly-reminder': {
-      id: '/api/public/hooks/send-push-weekly-reminder'
-      path: '/api/public/hooks/send-push-weekly-reminder'
-      fullPath: '/api/public/hooks/send-push-weekly-reminder'
-      preLoaderRoute: typeof ApiPublicHooksSendPushWeeklyReminderRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/send-push-notification': {
-      id: '/api/public/hooks/send-push-notification'
-      path: '/api/public/hooks/send-push-notification'
-      fullPath: '/api/public/hooks/send-push-notification'
-      preLoaderRoute: typeof ApiPublicHooksSendPushNotificationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/send-push-daily-reminder': {
-      id: '/api/public/hooks/send-push-daily-reminder'
-      path: '/api/public/hooks/send-push-daily-reminder'
-      fullPath: '/api/public/hooks/send-push-daily-reminder'
-      preLoaderRoute: typeof ApiPublicHooksSendPushDailyReminderRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/send-daily-reminder': {
-      id: '/api/public/hooks/send-daily-reminder'
-      path: '/api/public/hooks/send-daily-reminder'
-      fullPath: '/api/public/hooks/send-daily-reminder'
-      preLoaderRoute: typeof ApiPublicHooksSendDailyReminderRouteImport
+    '/api/public/google/sync-all': {
+      id: '/api/public/google/sync-all'
+      path: '/api/public/google/sync-all'
+      fullPath: '/api/public/google/sync-all'
+      preLoaderRoute: typeof ApiPublicGoogleSyncAllRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/dispatch-shift-alerts': {
@@ -685,11 +636,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDispatchShiftAlertsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/google/sync-all': {
-      id: '/api/public/google/sync-all'
-      path: '/api/public/google/sync-all'
-      fullPath: '/api/public/google/sync-all'
-      preLoaderRoute: typeof ApiPublicGoogleSyncAllRouteImport
+    '/api/public/hooks/send-daily-reminder': {
+      id: '/api/public/hooks/send-daily-reminder'
+      path: '/api/public/hooks/send-daily-reminder'
+      fullPath: '/api/public/hooks/send-daily-reminder'
+      preLoaderRoute: typeof ApiPublicHooksSendDailyReminderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/send-push-daily-reminder': {
+      id: '/api/public/hooks/send-push-daily-reminder'
+      path: '/api/public/hooks/send-push-daily-reminder'
+      fullPath: '/api/public/hooks/send-push-daily-reminder'
+      preLoaderRoute: typeof ApiPublicHooksSendPushDailyReminderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/send-push-notification': {
+      id: '/api/public/hooks/send-push-notification'
+      path: '/api/public/hooks/send-push-notification'
+      fullPath: '/api/public/hooks/send-push-notification'
+      preLoaderRoute: typeof ApiPublicHooksSendPushNotificationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/send-push-weekly-reminder': {
+      id: '/api/public/hooks/send-push-weekly-reminder'
+      path: '/api/public/hooks/send-push-weekly-reminder'
+      fullPath: '/api/public/hooks/send-push-weekly-reminder'
+      preLoaderRoute: typeof ApiPublicHooksSendPushWeeklyReminderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/send-trial-reminders': {
+      id: '/api/public/hooks/send-trial-reminders'
+      path: '/api/public/hooks/send-trial-reminders'
+      fullPath: '/api/public/hooks/send-trial-reminders'
+      preLoaderRoute: typeof ApiPublicHooksSendTrialRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/send-weekly-reminder': {
+      id: '/api/public/hooks/send-weekly-reminder'
+      path: '/api/public/hooks/send-weekly-reminder'
+      fullPath: '/api/public/hooks/send-weekly-reminder'
+      preLoaderRoute: typeof ApiPublicHooksSendWeeklyReminderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/revenuecat/webhook': {
+      id: '/api/public/revenuecat/webhook'
+      path: '/api/public/revenuecat/webhook'
+      fullPath: '/api/public/revenuecat/webhook'
+      preLoaderRoute: typeof ApiPublicRevenuecatWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/stripe/webhook': {
+      id: '/api/public/stripe/webhook'
+      path: '/api/public/stripe/webhook'
+      fullPath: '/api/public/stripe/webhook'
+      preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

@@ -274,41 +274,48 @@ export async function syncUserCalendar(userId: string): Promise<{
       nextSyncToken?: string;
     };
 
+    // Batch writes per page to keep database I/O low.
+    const cancelledIds: string[] = [];
+    const rows: Array<Record<string, unknown>> = [];
     for (const item of data.items ?? []) {
       if (item.status === "cancelled") {
-        await supabaseAdmin
-          .from("google_events_cache")
-          .delete()
-          .eq("user_id", userId)
-          .eq("google_event_id", item.id);
-        removed++;
+        cancelledIds.push(item.id);
         continue;
       }
       const start = parseEventTime(item.start);
       const end = parseEventTime(item.end);
       if (!start || !end) continue;
       seenIds.add(item.id);
+      rows.push({
+        user_id: userId,
+        google_event_id: item.id,
+        google_calendar_id: conn.google_calendar_id || "primary",
+        summary: item.summary ?? null,
+        description: item.description ?? null,
+        location: item.location ?? null,
+        html_link: item.htmlLink ?? null,
+        start_time: start.iso,
+        end_time: end.iso,
+        is_all_day: start.allDay,
+        status: item.status ?? null,
+        color_id: item.colorId ?? null,
+        color_hex: resolveGoogleEventColor(item.colorId, calendarColor),
+      });
+    }
+    if (cancelledIds.length) {
       await supabaseAdmin
         .from("google_events_cache")
-        .upsert(
-          {
-            user_id: userId,
-            google_event_id: item.id,
-            google_calendar_id: conn.google_calendar_id || "primary",
-            summary: item.summary ?? null,
-            description: item.description ?? null,
-            location: item.location ?? null,
-            html_link: item.htmlLink ?? null,
-            start_time: start.iso,
-            end_time: end.iso,
-            is_all_day: start.allDay,
-            status: item.status ?? null,
-            color_id: item.colorId ?? null,
-            color_hex: resolveGoogleEventColor(item.colorId, calendarColor),
-          },
-          { onConflict: "user_id,google_event_id" },
-        );
-      imported++;
+        .delete()
+        .eq("user_id", userId)
+        .in("google_event_id", cancelledIds);
+      removed += cancelledIds.length;
+    }
+    if (rows.length) {
+      const { error } = await supabaseAdmin
+        .from("google_events_cache")
+        .upsert(rows as never, { onConflict: "user_id,google_event_id" });
+      if (error) throw new Error(`Cache upsert failed: ${error.message}`);
+      imported += rows.length;
     }
 
     if (data.nextPageToken) {
