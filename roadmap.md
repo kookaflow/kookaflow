@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Apply and verify native-iOS-only field font sizing, viewport zoom limit, and horizontal gesture containment without changing web layout.
+- [x] Apply native-iOS-only field font sizing, viewport zoom limit, and horizontal gesture containment; browser simulation verified iOS settings and unchanged web/Android settings. Actual iPhone drag behavior requires a fresh native build and device check.
 
 - [x] iOS: bound calendar/banner/header widths, apply safe areas, and pin paywall Close/Restore; verified at narrow phone and landscape widths.
 - [x] Verify trial-ended and upgrade screens share RevenueCat prices with no native static-price fallback; signed-in browser tests used simulated offerings, purchase and restore responses.
