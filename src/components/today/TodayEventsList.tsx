@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { getCategoryConfig } from "@/lib/shiftConfig";
+import { getCategoryConfig, badgeTextColour } from "@/lib/shiftConfig";
 import type { CalendarEvent } from "@/types/event";
 
 interface Props {

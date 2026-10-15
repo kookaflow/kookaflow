@@ -202,8 +202,8 @@ export function TodayPanel({ date, events, onEventClick }: Props) {
                         className="group flex w-full items-start gap-3 rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-primary/50 hover:shadow-sm"
                       >
                         <span
-                          className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white"
-                          style={{ backgroundColor: cat.colour }}
+                          className="flex size-9 shrink-0 items-center justify-center rounded-lg"
+                          style={{ backgroundColor: cat.colour, color: badgeTextColour(cat.colour) }}
                         >
                           <Icon className="size-4" />
                         </span>
