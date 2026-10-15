@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Rebuilt the iOS app bundle (dist-mobile, 17:27) so it carries the width, gesture, viewport and More-page fixes; verified the markers are present in the new bundle. Website publish requested. Build number and TestFlight upload are Mumbi's.
+
 - [x] Bound native iOS document width and keep bottom navigation outside page scrolling; signed-in More, Dashboard and Calendar passed 320px/390px browser simulation. Physical Build 10 cannot be modified remotely; next native build needs device verification.
 - [x] Compress native More into single-open expandable sections while preserving web layout; expansion and navigation checked with a signed-in account.
 
