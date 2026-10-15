@@ -88,6 +88,7 @@ function CalendarPage() {
     <StampProvider>
       <CalendarPageInner />
     </StampProvider>
+    </>
   );
 }
 
