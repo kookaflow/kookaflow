@@ -94,6 +94,35 @@ export function ensureReadableBadgeColour(
   return L > 0.3 ? fallback : `#${norm}`;
 }
 
+/** Relative luminance (0–1) of a hex colour, or null if unparseable. */
+function relativeLuminance(colour: string): number | null {
+  const hex = colour.trim().replace(/^#/, "");
+  const norm =
+    hex.length === 3
+      ? hex.split("").map((c) => c + c).join("")
+      : hex.length === 6
+        ? hex
+        : null;
+  if (!norm || !/^[0-9a-fA-F]{6}$/.test(norm)) return null;
+  const r = parseInt(norm.slice(0, 2), 16) / 255;
+  const g = parseInt(norm.slice(2, 4), 16) / 255;
+  const b = parseInt(norm.slice(4, 6), 16) / 255;
+  const lin = (c: number) =>
+    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+/**
+ * Pick readable text for a badge background: dark text on light chips,
+ * white text on dark chips. Light backgrounds (L > 0.45, e.g. Travel's
+ * #FCFF59 and Business's #59FCFF) get dark text for >=4.5:1 contrast.
+ */
+export function badgeTextColour(bg: string): string {
+  const L = relativeLuminance(bg);
+  if (L === null) return "#FFFFFF";
+  return L > 0.45 ? "#1F2937" : "#FFFFFF";
+}
+
 export function getShiftConfig(type: string | null | undefined): ShiftConfig | null {
   if (!type) return null;
   return (SHIFT_CONFIG as Record<string, ShiftConfig>)[type] ?? null;
