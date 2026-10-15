@@ -177,7 +177,7 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl overflow-x-hidden pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <DialogContent className="max-w-2xl overflow-x-hidden max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1rem)] pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl">
             <Sparkles className="h-6 w-6 text-primary" />
@@ -294,7 +294,7 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
           </div>
         )}
 
-        <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
+        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-row items-center justify-between gap-2 border-t bg-background px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:justify-between">
           {IS_NATIVE_IAP ? (
             <Button variant="ghost" size="sm" disabled={restoring} onClick={() => void handleRestore()}>
               {restoring ? (

@@ -76,7 +76,7 @@ function OnboardingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <div
-        className="relative flex flex-col items-center gap-3 px-6 pb-16 pt-10 text-center text-white"
+        className="relative flex flex-col items-center gap-3 px-6 pb-16 pt-[calc(2.5rem+env(safe-area-inset-top))] text-center text-white"
         style={{ background: "var(--brand-gradient)" }}
       >
         <img src={logo} alt="Kookaflow" style={{ height: 80, width: "auto" }} className="overflow-hidden rounded-[22%] object-contain" />

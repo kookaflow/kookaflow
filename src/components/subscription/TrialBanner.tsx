@@ -4,6 +4,7 @@ import { Clock, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PaywallModal } from "./PaywallModal";
+import { IS_NATIVE_IAP } from "@/lib/revenuecat";
 
 /**
  * Slim countdown banner shown while a user is in the 14-day trial.
@@ -66,7 +67,7 @@ export function TrialBanner() {
           >
             Upgrade
           </Button>
-          {!expired && (
+          {!expired && !IS_NATIVE_IAP && (
             <Button asChild size="sm" variant="ghost">
               <Link to="/pricing">Compare plans</Link>
             </Button>

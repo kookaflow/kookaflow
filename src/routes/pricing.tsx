@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, Loader2, RotateCcw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,10 @@ export const Route = createFileRoute("/pricing")({
       { property: "og:description", content: "14-day free trial. Pro from $4.99 AUD/mo, or pay once for Lifetime Pro." },
     ],
   }),
+  beforeLoad: () => {
+    // iOS app: the native paywall is the only plan picker.
+    if (IS_NATIVE_IAP) throw redirect({ to: "/calendar", search: { paywall: "1" } as never });
+  },
   component: PricingPage,
 });
 

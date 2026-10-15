@@ -31,7 +31,7 @@ function ProSuccessPage() {
     sub.tier === "basic" ? "Basic" : "your plan";
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-16">
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-[calc(4rem+env(safe-area-inset-top))]">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-lg">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/15">
           <CheckCircle2 className="h-8 w-8 text-primary" />
