@@ -178,8 +178,50 @@
 /* Applied only after Capacitor confirms a native iOS WebView. */
 html.native-ios,
 html.native-ios body {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
   overscroll-behavior-x: none;
   touch-action: pan-y;
+}
+
+html.native-ios body {
+  position: fixed;
+  inset: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Keep native navigation in the viewport layout, not under a page scroll. */
+html.native-ios [data-app-shell] {
+  height: 100%;
+  max-height: 100%;
+}
+
+html.native-ios [data-app-sidebar] {
+  display: none;
+}
+
+html.native-ios [data-app-bottom-nav] {
+  position: relative;
+  inset: auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
+  order: 2;
+}
+
+html.native-ios [data-app-scroll] {
+  order: 1;
+  padding-left: 0;
+  overflow-x: hidden;
+}
+
+html.native-ios [data-app-content] {
+  padding-bottom: 1rem;
 }
 
 html.native-ios input,

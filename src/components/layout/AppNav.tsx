@@ -24,7 +24,7 @@ export function AppNav() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-56 flex-col border-r border-border bg-card md:flex lg:w-56">
+      <aside data-app-sidebar className="fixed inset-y-0 left-0 z-40 hidden w-56 flex-col border-r border-border bg-card md:flex lg:w-56">
         <div className="flex items-center gap-2 px-5 py-5">
           <img
             src={logo}
