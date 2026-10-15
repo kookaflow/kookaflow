@@ -38,11 +38,11 @@ export function TimeGrid({
   const nowOffset = (now.getHours() + now.getMinutes() / 60) * HOUR_HEIGHT;
 
   return (
-    <div className="flex h-full flex-col animate-in fade-in duration-200">
+    <div className="flex h-full w-full min-w-0 max-w-full flex-col overflow-hidden animate-in fade-in duration-200">
       {/* header */}
       <div
         className="grid border-b border-border bg-background/80 backdrop-blur"
-        style={{ gridTemplateColumns: `56px repeat(${days.length}, 1fr)` }}
+        style={{ gridTemplateColumns: `56px repeat(${days.length}, minmax(0, 1fr))` }}
       >
         <div />
         {days.map((d) => {
@@ -75,11 +75,11 @@ export function TimeGrid({
       </div>
 
       {/* body */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain">
         <div
           className="relative grid"
           style={{
-            gridTemplateColumns: `56px repeat(${days.length}, 1fr)`,
+            gridTemplateColumns: `56px repeat(${days.length}, minmax(0, 1fr))`,
             height: HOUR_HEIGHT * 24,
           }}
         >

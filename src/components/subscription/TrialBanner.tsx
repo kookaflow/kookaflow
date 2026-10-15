@@ -29,7 +29,7 @@ export function TrialBanner() {
   return (
     <>
       <div
-        className={`flex items-center justify-between gap-2 border-b px-3 py-2 ${
+        className={`grid w-full min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b px-3 py-2 ${
           expired
             ? "border-red-700 bg-[#DC2626] text-white font-semibold"
             : "border-border bg-primary/10 text-foreground text-sm"
@@ -54,7 +54,7 @@ export function TrialBanner() {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex max-w-full shrink-0 flex-wrap items-center justify-end gap-1">
           <Button
             size="sm"
             variant={expired ? "outline" : "default"}

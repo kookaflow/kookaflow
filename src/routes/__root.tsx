@@ -176,7 +176,7 @@ function AppLayout() {
   if (!showNav) return <Outlet />;
 
   return (
-    <div className="flex h-dvh min-w-0 flex-col overflow-hidden bg-background">
+    <div className="flex h-dvh w-full min-w-0 max-w-full flex-col overflow-hidden bg-background pt-[env(safe-area-inset-top)]">
       <OfflineBanner />
       <SyncBanner />
       <AppNav />

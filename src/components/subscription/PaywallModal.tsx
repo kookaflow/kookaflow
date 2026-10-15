@@ -177,15 +177,20 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl overflow-x-hidden max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1rem)] pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl">
-            <Sparkles className="h-6 w-6 text-primary" />
-            {headline}
-          </DialogTitle>
-          <DialogDescription>{subhead}</DialogDescription>
-        </DialogHeader>
-
+      <DialogContent showCloseButton={false} className="flex max-w-2xl flex-col gap-0 overflow-hidden max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-1rem)] p-0">
+        <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2 border-b px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
+          <DialogHeader className="min-w-0 text-left">
+            <DialogTitle className="flex min-w-0 items-start gap-2 break-words text-xl sm:text-2xl">
+              <Sparkles className="h-6 w-6 shrink-0 text-primary" />
+              <span className="min-w-0 break-words">{headline}</span>
+            </DialogTitle>
+            <DialogDescription className="break-words">{subhead}</DialogDescription>
+          </DialogHeader>
+          <Button variant="ghost" size="icon" className="shrink-0" aria-label="Close paywall" title="Close" onClick={() => onOpenChange(false)}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+        <div className="min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-y-contain px-4 py-4 [-webkit-overflow-scrolling:touch] sm:px-6">
         {IS_NATIVE_IAP ? (
           nativeLoading ? (
             <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
@@ -196,22 +201,23 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
               {nativePlans.map((p) => {
                 const copy = NATIVE_COPY[p.identifier];
                 return (
-                  <button
+                  <Button
                     key={p.productId || p.identifier}
                     type="button"
                     disabled={nativeBusy !== null || restoring}
                     onClick={() => void handleNativePick(p)}
-                    className="group relative flex min-w-0 flex-col items-start gap-1 rounded-lg border border-border bg-card p-4 text-left transition hover:border-primary hover:bg-accent/40 disabled:opacity-60"
+                    variant="outline"
+                    className="group relative h-auto w-full min-w-0 max-w-full flex-col items-start justify-start gap-1 whitespace-normal rounded-lg border-border bg-card p-4 text-left transition hover:border-primary hover:bg-accent/40 disabled:opacity-60"
                   >
                     {copy?.highlight && (
-                      <span className="absolute right-3 top-3 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
+                      <span className="max-w-full rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
                         {copy.highlight}
                       </span>
                     )}
                     <div className="max-w-full break-words text-sm font-medium text-foreground">
                       {copy?.name ?? p.title}
                     </div>
-                    <div className="flex items-baseline gap-1">
+                    <div className="flex min-w-0 max-w-full flex-wrap items-baseline gap-1">
                       <span className="min-w-0 break-words text-2xl font-semibold text-foreground">{p.priceString}</span>
                       {p.periodLabel && (
                         <span className="text-xs text-muted-foreground">{p.periodLabel}</span>
@@ -220,7 +226,7 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
                     {copy?.description && (
                       <div className="text-xs text-muted-foreground">{copy.description}</div>
                     )}
-                    <div className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
+                    <div className="mt-2 inline-flex min-w-0 max-w-full flex-wrap items-center gap-1 text-xs font-medium text-primary">
                       {nativeBusy === (p.productId || p.identifier) ? (
                         <>
                           <Loader2 className="h-3 w-3 animate-spin" /> Processing…
@@ -229,7 +235,7 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
                         <>Choose {copy?.name ?? p.title} →</>
                       )}
                     </div>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -293,10 +299,10 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
             ))}
           </div>
         )}
-
-        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-row items-center justify-between gap-2 border-t bg-background px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:justify-between">
+        </div>
+        <DialogFooter className="z-10 grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-1 border-t bg-background px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex sm:justify-between sm:px-6">
           {IS_NATIVE_IAP ? (
-            <Button variant="ghost" size="sm" disabled={restoring} onClick={() => void handleRestore()}>
+            <Button variant="ghost" size="sm" className="h-auto min-h-9 min-w-0 justify-start whitespace-normal text-left" disabled={restoring} onClick={() => void handleRestore()}>
               {restoring ? (
                 <>
                   <Loader2 className="mr-1 h-4 w-4 animate-spin" /> Restoring…

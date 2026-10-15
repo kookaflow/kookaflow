@@ -276,7 +276,7 @@ export function AccountSection() {
           )}
         </div>
       </Card>
-      {IS_NATIVE_IAP && <PaywallModal open={paywallOpen} onOpenChange={setPaywallOpen} />}
+      {IS_NATIVE_IAP && <PaywallModal open={paywallOpen} onOpenChange={setPaywallOpen} reason={sub.tier === "expired" || (!sub.isTrialing && sub.tier === "trial") ? "trial-expired" : undefined} />}
     </section>
   );
 }

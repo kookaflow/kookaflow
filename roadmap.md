@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] iOS: bound calendar/banner/header widths, apply safe areas, and pin paywall Close/Restore.
+- [ ] Verify trial-ended and upgrade screens share RevenueCat prices with no native static-price fallback.
+
 - [x] Native pricing page: each plan button purchases its matching RevenueCat package directly; no second paywall modal on native.
 - [x] Restore Purchases action on the native pricing page.
 - [ ] RevenueCat storefront metadata: priceString returns US-looking amounts on AU devices. Not fixed by this change; needs dashboard/App Store price metadata verification (external, blocked on dashboard access).

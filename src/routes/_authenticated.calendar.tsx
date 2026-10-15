@@ -226,7 +226,7 @@ function CalendarPageInner() {
       {/* Compact mobile header (under md) */}
       {!panelOpen && (
         <header
-          className="md:hidden flex items-center justify-between gap-2 px-3 text-white shrink-0"
+          className="md:hidden grid w-full min-w-0 max-w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 text-white shrink-0"
           style={{
             height: 44,
             background:
@@ -234,7 +234,7 @@ function CalendarPageInner() {
           }}
         >
           <img src={logo} alt="Kookaflow" style={{ height: 32, width: "auto" }} className="overflow-hidden rounded-[22%] object-contain" />
-          <span className="text-sm font-bold truncate">{format(date, "MMM yyyy")}</span>
+          <span className="min-w-0 truncate text-center text-sm font-bold">{format(date, "MMM yyyy")}</span>
           <ThemeToggle />
         </header>
       )}
@@ -328,8 +328,8 @@ function CalendarPageInner() {
       )}
 
       {/* Mobile compact controls row */}
-      <div className="md:hidden flex items-center justify-between gap-2 border-b border-border px-2 shrink-0" style={{ height: 44 }}>
-        <div className="flex items-center gap-0.5 rounded-full border border-border bg-muted/40 p-0.5">
+      <div className="md:hidden grid w-full min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-1 border-b border-border px-2 shrink-0" style={{ height: 44 }}>
+        <div className="flex w-fit min-w-0 max-w-full items-center gap-0.5 rounded-full border border-border bg-muted/40 p-0.5">
           {(["month", "week", "day"] as ViewMode[]).map((v) => (
             <button
               key={v}
@@ -344,7 +344,7 @@ function CalendarPageInner() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={goPrev}
