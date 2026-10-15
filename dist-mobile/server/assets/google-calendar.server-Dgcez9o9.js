@@ -1,0 +1,342 @@
+import crypto from "crypto";
+import { s as supabaseAdmin } from "./client.server-U_pH-Evd.js";
+const GOOGLE_EVENT_COLORS = {
+  "1": "#7986CB",
+  // Lavender
+  "2": "#33B679",
+  // Sage
+  "3": "#8E24AA",
+  // Grape
+  "4": "#E67C73",
+  // Flamingo
+  "5": "#F6BF26",
+  // Banana
+  "6": "#F4511E",
+  // Tangerine
+  "7": "#039BE5",
+  // Peacock
+  "8": "#616161",
+  // Graphite
+  "9": "#3F51B5",
+  // Blueberry
+  "10": "#0B8043",
+  // Basil
+  "11": "#D50000"
+  // Tomato
+};
+const GOOGLE_DEFAULT_COLOR = "#0B0BDE";
+function resolveGoogleEventColor(colorId, _calendarColor) {
+  if (colorId && GOOGLE_EVENT_COLORS[colorId]) return GOOGLE_EVENT_COLORS[colorId];
+  return GOOGLE_DEFAULT_COLOR;
+}
+function getSigningKey() {
+  const key = process.env.GOOGLE_OAUTH_STATE_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) {
+    throw new Error(
+      "OAuth state signing secret is not configured (set GOOGLE_OAUTH_STATE_SECRET or SUPABASE_SERVICE_ROLE_KEY)"
+    );
+  }
+  return key;
+}
+const GOOGLE_SCOPES = [
+  "https://www.googleapis.com/auth/calendar.readonly",
+  "openid",
+  "email",
+  "profile"
+].join(" ");
+function signState(userId) {
+  const payload = `${userId}.${Date.now()}`;
+  const sig = crypto.createHmac("sha256", getSigningKey()).update(payload).digest("hex");
+  return Buffer.from(`${payload}.${sig}`).toString("base64url");
+}
+function verifyState(state) {
+  try {
+    const decoded = Buffer.from(state, "base64url").toString("utf8");
+    const [userId, ts, sig] = decoded.split(".");
+    if (!userId || !ts || !sig) return null;
+    const expected = crypto.createHmac("sha256", getSigningKey()).update(`${userId}.${ts}`).digest("hex");
+    if (sig.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected)))
+      return null;
+    if (Date.now() - Number(ts) > 15 * 60 * 1e3) return null;
+    return userId;
+  } catch {
+    return null;
+  }
+}
+function getRedirectUri(request) {
+  const url = new URL(request.url);
+  return `${url.origin}/auth/google/callback`;
+}
+async function exchangeCodeForTokens(code, redirectUri) {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  if (!clientId || !clientSecret)
+    throw new Error("Google OAuth credentials not configured");
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      code,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code"
+    })
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Google token exchange failed (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+async function refreshAccessToken(refreshToken) {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  if (!clientId || !clientSecret)
+    throw new Error("Google OAuth credentials not configured");
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token"
+    })
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Google token refresh failed (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+async function getUserInfoEmail(accessToken) {
+  try {
+    const res = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.email ?? null;
+  } catch {
+    return null;
+  }
+}
+async function getValidAccessToken(userId) {
+  const { data: conn } = await supabaseAdmin.from("google_calendar_connections").select("access_token, refresh_token, token_expires_at").eq("user_id", userId).maybeSingle();
+  if (!conn) return null;
+  const expiresAt = new Date(conn.token_expires_at).getTime();
+  if (expiresAt - Date.now() > 6e4) return conn.access_token;
+  const fresh = await refreshAccessToken(conn.refresh_token);
+  const newExpiresAt = new Date(Date.now() + fresh.expires_in * 1e3);
+  await supabaseAdmin.from("google_calendar_connections").update({
+    access_token: fresh.access_token,
+    token_expires_at: newExpiresAt.toISOString()
+  }).eq("user_id", userId);
+  return fresh.access_token;
+}
+async function fetchCalendarColor(accessToken, calendarId) {
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/users/me/calendarList/${calendarId}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.backgroundColor ?? null;
+  } catch {
+    return null;
+  }
+}
+function parseEventTime(t) {
+  if (!t) return null;
+  if (t.dateTime) return { iso: t.dateTime, allDay: false };
+  if (t.date) return { iso: (/* @__PURE__ */ new Date(`${t.date}T00:00:00Z`)).toISOString(), allDay: true };
+  return null;
+}
+async function syncUserCalendar(userId) {
+  const { data: conn } = await supabaseAdmin.from("google_calendar_connections").select("sync_token, google_calendar_id").eq("user_id", userId).maybeSingle();
+  if (!conn) throw new Error("No Google connection");
+  const accessToken = await getValidAccessToken(userId);
+  if (!accessToken) throw new Error("Cannot obtain access token");
+  const calendarId = encodeURIComponent(conn.google_calendar_id || "primary");
+  await fetchCalendarColor(accessToken, calendarId);
+  let pageToken;
+  let nextSyncToken;
+  let imported = 0;
+  let removed = 0;
+  const fullSync = true;
+  const windowMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1e3).toISOString();
+  const windowMax = new Date(Date.now() + 180 * 24 * 60 * 60 * 1e3).toISOString();
+  let seenIds = /* @__PURE__ */ new Set();
+  const baseParams = () => {
+    const p = new URLSearchParams();
+    p.set("timeMin", windowMin);
+    p.set("timeMax", windowMax);
+    p.set("singleEvents", "true");
+    p.set("maxResults", "250");
+    return p;
+  };
+  for (let i = 0; i < 20; i++) {
+    const params = baseParams();
+    if (pageToken) params.set("pageToken", pageToken);
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?${params}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (res.status === 410) {
+      await supabaseAdmin.from("google_calendar_connections").update({ sync_token: null }).eq("user_id", userId);
+      pageToken = void 0;
+      seenIds = /* @__PURE__ */ new Set();
+      continue;
+    }
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Calendar list failed (${res.status}): ${text}`);
+    }
+    const data = await res.json();
+    const cancelledIds = [];
+    const rows = [];
+    for (const item of data.items ?? []) {
+      if (item.status === "cancelled") {
+        cancelledIds.push(item.id);
+        continue;
+      }
+      const start = parseEventTime(item.start);
+      const end = parseEventTime(item.end);
+      if (!start || !end) continue;
+      seenIds.add(item.id);
+      rows.push({
+        user_id: userId,
+        google_event_id: item.id,
+        google_calendar_id: conn.google_calendar_id || "primary",
+        summary: item.summary ?? null,
+        description: item.description ?? null,
+        location: item.location ?? null,
+        html_link: item.htmlLink ?? null,
+        start_time: start.iso,
+        end_time: end.iso,
+        is_all_day: start.allDay,
+        status: item.status ?? null,
+        color_id: item.colorId ?? null,
+        color_hex: resolveGoogleEventColor(item.colorId)
+      });
+    }
+    if (cancelledIds.length) {
+      await supabaseAdmin.from("google_events_cache").delete().eq("user_id", userId).in("google_event_id", cancelledIds);
+      removed += cancelledIds.length;
+    }
+    if (rows.length) {
+      const { error } = await supabaseAdmin.from("google_events_cache").upsert(rows, { onConflict: "user_id,google_event_id" });
+      if (error) throw new Error(`Cache upsert failed: ${error.message}`);
+      imported += rows.length;
+    }
+    if (data.nextPageToken) {
+      pageToken = data.nextPageToken;
+      continue;
+    }
+    nextSyncToken = data.nextSyncToken;
+    break;
+  }
+  {
+    const { data: cached } = await supabaseAdmin.from("google_events_cache").select("google_event_id").eq("user_id", userId).lt("start_time", windowMax).gt("end_time", windowMin);
+    const stale = (cached ?? []).map((r) => r.google_event_id).filter((id) => !seenIds.has(id));
+    for (let i = 0; i < stale.length; i += 100) {
+      const batch = stale.slice(i, i + 100);
+      const { error } = await supabaseAdmin.from("google_events_cache").delete().eq("user_id", userId).in("google_event_id", batch);
+      if (!error) removed += batch.length;
+    }
+  }
+  await supabaseAdmin.from("google_calendar_connections").update({
+    sync_token: nextSyncToken ?? null,
+    last_synced_at: (/* @__PURE__ */ new Date()).toISOString(),
+    last_sync_error: null
+  }).eq("user_id", userId);
+  return { imported, removed, fullSync };
+}
+async function pushEventToGoogle(userId, eventId) {
+  const { data: event } = await supabaseAdmin.from("events").select(
+    "id, user_id, title, start_time, end_time, is_all_day, location, notes, category, google_event_id"
+  ).eq("id", eventId).maybeSingle();
+  if (!event || event.user_id !== userId) return;
+  if (event.category !== "work") return;
+  const accessToken = await getValidAccessToken(userId);
+  if (!accessToken) return;
+  const { data: conn } = await supabaseAdmin.from("google_calendar_connections").select("google_calendar_id, two_way_sync_enabled").eq("user_id", userId).maybeSingle();
+  if (!conn || !conn.two_way_sync_enabled) return;
+  const calendarId = encodeURIComponent(conn.google_calendar_id || "primary");
+  const body = {
+    summary: event.title,
+    description: (event.notes ?? "") + (event.notes ? "\n\n" : "") + "Synced from Kookaflow",
+    location: event.location ?? void 0,
+    start: event.is_all_day ? { date: event.start_time.slice(0, 10) } : { dateTime: event.start_time },
+    end: event.is_all_day ? { date: event.end_time.slice(0, 10) } : { dateTime: event.end_time }
+  };
+  if (event.google_event_id) {
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${encodeURIComponent(event.google_event_id)}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      }
+    );
+    if (res.status === 404) {
+      await supabaseAdmin.from("events").update({ google_event_id: null }).eq("id", event.id);
+      return pushEventToGoogle(userId, eventId);
+    }
+    if (!res.ok) {
+      const text = await res.text();
+      console.warn(`Google update failed: ${res.status} ${text}`);
+    }
+  } else {
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      }
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      console.warn(`Google create failed: ${res.status} ${text}`);
+      return;
+    }
+    const created = await res.json();
+    await supabaseAdmin.from("events").update({ google_event_id: created.id }).eq("id", event.id);
+  }
+}
+async function deleteEventFromGoogle(userId, googleEventId) {
+  const accessToken = await getValidAccessToken(userId);
+  if (!accessToken) return;
+  const { data: conn } = await supabaseAdmin.from("google_calendar_connections").select("google_calendar_id, two_way_sync_enabled").eq("user_id", userId).maybeSingle();
+  if (!conn || !conn.two_way_sync_enabled) return;
+  const calendarId = encodeURIComponent(conn.google_calendar_id || "primary");
+  await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${encodeURIComponent(googleEventId)}`,
+    {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${accessToken}` }
+    }
+  );
+}
+export {
+  GOOGLE_SCOPES as G,
+  signState as a,
+  GOOGLE_DEFAULT_COLOR as b,
+  getUserInfoEmail as c,
+  deleteEventFromGoogle as d,
+  exchangeCodeForTokens as e,
+  getRedirectUri as g,
+  pushEventToGoogle as p,
+  resolveGoogleEventColor as r,
+  syncUserCalendar as s,
+  verifyState as v
+};
