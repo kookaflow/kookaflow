@@ -63,20 +63,22 @@ import { IS_NATIVE_IAP } from "@/lib/revenuecat";
 type ViewMode = "month" | "week" | "day";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
+  validateSearch: (search: Record<string, unknown>): { paywall?: "1" } => ({
+    paywall: String(search.paywall ?? "") === "1" ? "1" : undefined,
+  }),
   component: CalendarPage,
 });
 
 function NativePaywallFromUrl() {
   const [open, setOpen] = useState(false);
+  const { paywall } = Route.useSearch();
   useEffect(() => {
-    if (!IS_NATIVE_IAP) return;
+    if (!IS_NATIVE_IAP || paywall !== "1") return;
     const url = new URL(window.location.href);
-    if (url.searchParams.get("paywall") === "1") {
-      url.searchParams.delete("paywall");
-      window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
-      setOpen(true);
-    }
-  }, []);
+    url.searchParams.delete("paywall");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    setOpen(true);
+  }, [paywall]);
   if (!IS_NATIVE_IAP) return null;
   return <PaywallModal open={open} onOpenChange={setOpen} />;
 }
@@ -226,7 +228,7 @@ function CalendarPageInner() {
       {/* Compact mobile header (under md) */}
       {!panelOpen && (
         <header
-          className="md:hidden flex items-center justify-between gap-2 px-3 text-white shrink-0"
+          className="md:hidden grid w-full min-w-0 max-w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 text-white shrink-0"
           style={{
             height: 44,
             background:
@@ -234,7 +236,7 @@ function CalendarPageInner() {
           }}
         >
           <img src={logo} alt="Kookaflow" style={{ height: 32, width: "auto" }} className="overflow-hidden rounded-[22%] object-contain" />
-          <span className="text-sm font-bold truncate">{format(date, "MMM yyyy")}</span>
+          <span className="min-w-0 truncate text-center text-sm font-bold">{format(date, "MMM yyyy")}</span>
           <ThemeToggle />
         </header>
       )}
@@ -328,8 +330,8 @@ function CalendarPageInner() {
       )}
 
       {/* Mobile compact controls row */}
-      <div className="md:hidden flex items-center justify-between gap-2 border-b border-border px-2 shrink-0" style={{ height: 44 }}>
-        <div className="flex items-center gap-0.5 rounded-full border border-border bg-muted/40 p-0.5">
+      <div className="md:hidden grid w-full min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-1 border-b border-border px-2 shrink-0" style={{ height: 44 }}>
+        <div className="flex w-fit min-w-0 max-w-full items-center gap-0.5 rounded-full border border-border bg-muted/40 p-0.5">
           {(["month", "week", "day"] as ViewMode[]).map((v) => (
             <button
               key={v}
@@ -344,7 +346,7 @@ function CalendarPageInner() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={goPrev}

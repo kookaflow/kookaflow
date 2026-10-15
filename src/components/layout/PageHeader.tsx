@@ -24,7 +24,7 @@ export function PageHeader({ title, subtitle, right, children }: PageHeaderProps
         minHeight: 140,
       }}
     >
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 pb-10 pt-4 sm:px-6">
+      <div className="mx-auto grid w-full min-w-0 max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 pb-10 pt-4 sm:flex sm:flex-wrap sm:px-6">
         <Link to="/dashboard" className="flex items-center gap-2 shrink-0">
           <img
             src={logo}
@@ -33,9 +33,9 @@ export function PageHeader({ title, subtitle, right, children }: PageHeaderProps
             className="overflow-hidden rounded-[22%] object-contain"
           />
         </Link>
-        {children ? <div className="flex items-center gap-2">{children}</div> : null}
-        <div className="ml-auto flex items-center gap-2">{right}</div>
-        <div className="w-full">
+        {children ? <div className="col-span-2 row-start-2 flex min-w-0 max-w-full flex-wrap items-center gap-2">{children}</div> : null}
+        <div className="col-start-2 row-start-1 ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">{right}</div>
+        <div className="col-span-2 w-full min-w-0">
           <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
             {title}
           </h1>
