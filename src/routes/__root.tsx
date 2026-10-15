@@ -203,12 +203,12 @@ function AppLayout() {
   if (!showNav) return <Outlet />;
 
   return (
-    <div className="flex h-dvh w-full min-w-0 max-w-full flex-col overflow-hidden bg-background pt-[env(safe-area-inset-top)]">
+    <div data-app-shell className="flex h-dvh w-full min-w-0 max-w-full flex-col overflow-hidden bg-background pt-[env(safe-area-inset-top)]">
       <OfflineBanner />
       <SyncBanner />
       <AppNav />
-      <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] md:pl-56">
-        <div className="min-h-full w-full min-w-0 max-w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0">
+      <div data-app-scroll className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] md:pl-56">
+        <div data-app-content className="min-h-full w-full min-w-0 max-w-full pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0">
           <Outlet />
         </div>
       </div>

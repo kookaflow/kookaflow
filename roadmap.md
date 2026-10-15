@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Fix native iOS document width and keep bottom navigation visible on every signed-in page.
+- [ ] Compress native More into expandable sections while preserving web layout.
+
 - [x] Apply native-iOS-only field font sizing, viewport zoom limit, and horizontal gesture containment; browser simulation verified iOS settings and unchanged web/Android settings. Actual iPhone drag behavior requires a fresh native build and device check.
 
 - [x] iOS: bound calendar/banner/header widths, apply safe areas, and pin paywall Close/Restore; verified at narrow phone and landscape widths.
