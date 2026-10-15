@@ -135,6 +135,33 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    if (import.meta.env.VITE_IS_MOBILE_BUILD !== true) return;
+
+    let disposed = false;
+    let cleanup: (() => void) | undefined;
+    void import("@capacitor/core").then(({ Capacitor }) => {
+      if (disposed || !Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "ios") return;
+
+      const html = document.documentElement;
+      const viewport = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
+      const previousViewport = viewport?.content;
+      html.classList.add("native-ios");
+      if (viewport) {
+        viewport.content = "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover";
+      }
+      cleanup = () => {
+        html.classList.remove("native-ios");
+        if (viewport && previousViewport !== undefined) viewport.content = previousViewport;
+      };
+    });
+
+    return () => {
+      disposed = true;
+      cleanup?.();
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <PreferencesProvider>
