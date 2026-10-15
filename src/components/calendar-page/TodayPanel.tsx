@@ -8,7 +8,7 @@ import {
 } from "date-fns";
 import { type MockEvent } from "./constants";
 import type { ShiftType } from "@/types/event";
-import { CATEGORY_LIST, getCategoryConfig, getShiftConfig } from "@/lib/shiftConfig";
+import { CATEGORY_LIST, getCategoryConfig, getShiftConfig, badgeTextColour } from "@/lib/shiftConfig";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sparkles, Lightbulb } from "lucide-react";
 
