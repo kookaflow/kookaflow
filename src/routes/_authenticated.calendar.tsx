@@ -63,20 +63,22 @@ import { IS_NATIVE_IAP } from "@/lib/revenuecat";
 type ViewMode = "month" | "week" | "day";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
+  validateSearch: (search: Record<string, unknown>): { paywall?: "1" } => ({
+    paywall: String(search.paywall ?? "") === "1" ? "1" : undefined,
+  }),
   component: CalendarPage,
 });
 
 function NativePaywallFromUrl() {
   const [open, setOpen] = useState(false);
+  const { paywall } = Route.useSearch();
   useEffect(() => {
-    if (!IS_NATIVE_IAP) return;
+    if (!IS_NATIVE_IAP || paywall !== "1") return;
     const url = new URL(window.location.href);
-    if (url.searchParams.get("paywall") === "1") {
-      url.searchParams.delete("paywall");
-      window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
-      setOpen(true);
-    }
-  }, []);
+    url.searchParams.delete("paywall");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    setOpen(true);
+  }, [paywall]);
   if (!IS_NATIVE_IAP) return null;
   return <PaywallModal open={open} onOpenChange={setOpen} />;
 }

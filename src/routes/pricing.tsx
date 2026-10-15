@@ -28,7 +28,7 @@ export const Route = createFileRoute("/pricing")({
   }),
   beforeLoad: () => {
     // iOS app: the native paywall is the only plan picker.
-    if (IS_NATIVE_IAP) throw redirect({ to: "/calendar", search: { paywall: "1" } as never });
+    if (IS_NATIVE_IAP) throw redirect({ to: "/calendar", search: { paywall: "1" } });
   },
   component: PricingPage,
 });
