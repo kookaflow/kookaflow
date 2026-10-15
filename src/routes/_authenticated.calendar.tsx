@@ -57,6 +57,8 @@ import { WellnessNudgeBanner } from "@/components/calendar/WellnessNudgeBanner";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { KookaburraOnCalendar } from "@/components/shared/empty-illustrations";
 import type { CategoryId } from "@/types/event";
+import { PaywallModal } from "@/components/subscription/PaywallModal";
+import { IS_NATIVE_IAP } from "@/lib/revenuecat";
 
 type ViewMode = "month" | "week" | "day";
 
@@ -64,8 +66,25 @@ export const Route = createFileRoute("/_authenticated/calendar")({
   component: CalendarPage,
 });
 
+function NativePaywallFromUrl() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!IS_NATIVE_IAP) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("paywall") === "1") {
+      url.searchParams.delete("paywall");
+      window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+      setOpen(true);
+    }
+  }, []);
+  if (!IS_NATIVE_IAP) return null;
+  return <PaywallModal open={open} onOpenChange={setOpen} />;
+}
+
 function CalendarPage() {
   return (
+    <>
+    <NativePaywallFromUrl />
     <StampProvider>
       <CalendarPageInner />
     </StampProvider>

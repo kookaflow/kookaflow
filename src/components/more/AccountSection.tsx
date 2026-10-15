@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
+import { PaywallModal } from "@/components/subscription/PaywallModal";
 import { createCustomerPortalSession } from "@/lib/stripe.functions";
 import {
   IS_NATIVE_IAP,
@@ -34,6 +35,7 @@ export function AccountSection() {
   const openPortal = useServerFn(createCustomerPortalSession);
   const [portalLoading, setPortalLoading] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -221,9 +223,15 @@ export function AccountSection() {
           </span>
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             {showUpgrade && (
-              <Button asChild size="sm" variant="default" className="flex-1 sm:flex-none">
-                <Link to="/pricing">{upgradeLabel}</Link>
-              </Button>
+              IS_NATIVE_IAP ? (
+                <Button size="sm" variant="default" className="flex-1 sm:flex-none" onClick={() => setPaywallOpen(true)}>
+                  {upgradeLabel}
+                </Button>
+              ) : (
+                <Button asChild size="sm" variant="default" className="flex-1 sm:flex-none">
+                  <Link to="/pricing">{upgradeLabel}</Link>
+                </Button>
+              )
             )}
             {showAppleManage && (
               <Button
