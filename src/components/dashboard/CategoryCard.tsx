@@ -1,5 +1,5 @@
 import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
-import { getCategoryConfig } from "@/lib/shiftConfig";
+import { getCategoryConfig, badgeTextColour } from "@/lib/shiftConfig";
 import type { CategoryCardData } from "./lib/metrics";
 import { cn } from "@/lib/utils";
 
@@ -19,8 +19,8 @@ export function CategoryCard({ data }: { data: CategoryCardData }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span
-            className="flex size-9 items-center justify-center rounded-lg text-white"
-            style={{ backgroundColor: def.colour }}
+            className="flex size-9 items-center justify-center rounded-lg"
+            style={{ backgroundColor: def.colour, color: badgeTextColour(def.colour) }}
           >
             <Icon className="size-5" />
           </span>

@@ -14,7 +14,7 @@ import {
 } from "date-fns";
 import { type MockEvent } from "./constants";
 import { ICON_MAP } from "@/components/events/IconPicker";
-import { getCategoryConfig, getShiftConfig, ensureReadableBadgeColour } from "@/lib/shiftConfig";
+import { getCategoryConfig, getShiftConfig, ensureReadableBadgeColour, badgeTextColour } from "@/lib/shiftConfig";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -142,8 +142,8 @@ export function MonthView({
                       onEventClick?.(e);
                     }}
                     aria-label={`Edit ${e.title}`}
-                    className="flex w-full shrink-0 items-center gap-0.5 truncate rounded-sm px-1 py-0.5 text-[10px] sm:text-[9px] font-medium text-white shadow-sm min-h-[16px]"
-                    style={{ backgroundColor: bg }}
+                    className="flex w-full shrink-0 items-center gap-0.5 truncate rounded-sm px-1 py-0.5 text-[10px] sm:text-[9px] font-medium shadow-sm min-h-[16px]"
+                    style={{ backgroundColor: bg, color: badgeTextColour(bg) }}
                     title={e.title}
                   >
                     {Icon && <Icon className="size-3 sm:size-2.5 shrink-0" />}

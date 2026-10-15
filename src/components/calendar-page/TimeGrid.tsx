@@ -1,7 +1,7 @@
 import { format, isSameDay, isToday, startOfDay, differenceInMinutes } from "date-fns";
 import { useEffect, useRef } from "react";
 import { type MockEvent } from "./constants";
-import { getCategoryConfig, getShiftConfig, ensureReadableBadgeColour } from "@/lib/shiftConfig";
+import { getCategoryConfig, getShiftConfig, ensureReadableBadgeColour, badgeTextColour } from "@/lib/shiftConfig";
 import { ICON_MAP } from "@/components/events/IconPicker";
 import { cn } from "@/lib/utils";
 import { GOOGLE_DEFAULT_COLOR } from "@/lib/googleColors";
@@ -169,11 +169,12 @@ export function TimeGrid({
                       key={e.id}
                       type="button"
                       onClick={() => onEventClick?.(e)}
-                      className="absolute left-1 right-1 flex flex-col gap-0.5 overflow-hidden rounded-md border-l-4 px-1.5 py-1 text-left text-[11px] text-white shadow-sm transition-all hover:brightness-110 hover:shadow-md"
+                      className="absolute left-1 right-1 flex flex-col gap-0.5 overflow-hidden rounded-md border-l-4 px-1.5 py-1 text-left text-[11px] shadow-sm transition-all hover:brightness-110 hover:shadow-md"
                       style={{
                         top,
                         height,
                         backgroundColor: bg,
+                        color: badgeTextColour(bg),
                         borderLeftColor: "rgba(0,0,0,0.25)",
                       }}
                       title={isGoogle ? `${e.title} (Google Calendar)` : e.title}

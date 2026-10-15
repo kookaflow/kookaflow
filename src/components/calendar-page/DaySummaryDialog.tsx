@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Plus, Sparkles } from "lucide-react";
-import { CATEGORY_LIST, getCategoryConfig, getShiftConfig, ensureReadableBadgeColour } from "@/lib/shiftConfig";
+import { CATEGORY_LIST, getCategoryConfig, getShiftConfig, ensureReadableBadgeColour, badgeTextColour } from "@/lib/shiftConfig";
 import { ICON_MAP } from "@/components/events/IconPicker";
 import type { MockEvent } from "./constants";
 
@@ -89,7 +89,7 @@ export function DaySummaryDialog({ open, onOpenChange, date, events, onEventClic
                       <button type="button"
                         onClick={() => { onOpenChange(false); onEventClick?.(e); }}
                         className="group flex w-full items-start gap-3 rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-primary/50 hover:shadow-sm">
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg text-white" style={{ backgroundColor: bg }}>
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: bg, color: badgeTextColour(bg) }}>
                           <Icon className="size-5" />
                         </span>
                         <div className="min-w-0 flex-1">
