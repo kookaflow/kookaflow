@@ -26,6 +26,13 @@
 - Preserve the existing native `/pricing` redirect to the calendar plus paywall. The website’s hardcoded Stripe price displays remain web-only, not removed from the website.
 - Pass the trial-ended reason from Account when applicable so its title agrees with the trial banner and locked-feature entry points.
 
+### Exact TestFlight screen identification
+- The matching component is `src/components/subscription/PaywallModal.tsx`: `reason="trial-expired"` produces **Your 14-day trial has ended**, and its plan cards produce **Choose Pro Yearly →**, **Choose Lifetime Pro →**, **Choose Pro Monthly →**, and **Choose Basic →**.
+- It has no route of its own. It is a modal over the current signed-in route, including `/calendar`, opened by `TrialBanner`, `FeatureLock`, or `useUpgradePrompt`. Account uses the same component. The separate `/pricing` route has a native redirect to `/calendar?paywall=1`, whose calendar consumer opens this modal.
+- Current source and the available `dist-mobile` bundle both render this native screen with RevenueCat `priceString`; neither contains the reported four prices as literals in this screen. The exact installed TestFlight binary has not been inspected, so its provenance and storefront cannot be asserted. Seeing $19.99 / $39.99 / $2.99 / $1.99 alone does not establish hardcoding: localized StoreKit prices can differ from website AUD prices.
+- Keep this screen on the shared native `PaywallModal`, not a second trial-ended price screen. Enforce native rendering of only live offering packages; no web plan cards or hardcoded price fallback may appear on native, even when offerings fail.
+- Verify the mobile-build flag and native `/pricing` guard in the freshly generated mobile artifact. If the exact installed TestFlight version still differs, identify its bundle before attributing its prices to stale code or a storefront; do not replace legitimate Apple prices with expected website prices.
+
 ## Files to change
 1. `src/styles.css` — explicit root width/overflow safety net.
 2. `src/routes/__root.tsx` — single app-shell top safe-area inset.
@@ -43,6 +50,7 @@ Existing viewport metadata, bottom tab safe areas, native pricing redirect and R
 - Check narrow phone widths, landscape safe areas, long feature names and localized prices, with enough plans to require scrolling.
 - Verify document and paywall have no horizontal overflow; X, Not now and Restore remain visible while plans scroll.
 - Check Account Upgrade, trial-ended Upgrade and locked features open identical native plan labels/prices; `/pricing` cannot render the website price page on native.
+- Search the fresh native artifact for hardcoded price displays and confirm both trial-ended and ordinary upgrade cards read offering prices. Test an unavailable offering to confirm no static-price fallback appears.
 - Check ordinary web pricing and checkout remain unchanged. Review available build diagnostics and run relevant existing tests.
 - Real Apple offerings, purchases, restores and notch/home-indicator behavior require a fresh mobile build, iOS sync and physical-device testing. Browser checks alone cannot certify StoreKit behavior.
 - Publishing requires your explicit request; this plan does not publish or upload a TestFlight build.
