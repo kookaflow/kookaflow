@@ -276,6 +276,7 @@ export function AccountSection() {
           )}
         </div>
       </Card>
+      {IS_NATIVE_IAP && <PaywallModal open={paywallOpen} onOpenChange={setPaywallOpen} />}
     </section>
   );
 }
