@@ -463,7 +463,7 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
 
   const createMut = useMutation({
     mutationFn: async (draft: EventDraft) => {
-      const dto = await create({ data: draftToInput(draft) });
+      const dto = await insertEvent(draftToInput(draft));
       if (dto.category === "work") {
         scheduleAlert({ data: { eventId: dto.id } }).catch((e) =>
           console.warn("scheduleShiftAlert failed", e),
@@ -539,17 +539,13 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       }
       const occDate = format(new Date(occurrence.start), "yyyy-MM-dd");
       if (mode === "single") {
-        await updateRecurrenceScope({
-          data: { id: realId, mode: "exclude_date", date: occDate },
-        });
+        await updateRecurrenceScopeRow(realId, "exclude_date", occDate);
       } else {
         const endDate = format(
           addDays(new Date(occurrence.start), -1),
           "yyyy-MM-dd",
         );
-        await updateRecurrenceScope({
-          data: { id: realId, mode: "end_before", date: endDate },
-        });
+        await updateRecurrenceScopeRow(realId, "end_before", endDate);
       }
       queryClient.invalidateQueries({ queryKey: QK });
     },
