@@ -397,10 +397,6 @@ function expandRecurring(base: CalendarEvent): CalendarEvent[] {
 
 export function EventsProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
-  const create = useServerFn(createEventFn);
-  const update = useServerFn(updateEventFn);
-  const remove = useServerFn(deleteEventFn);
-  const updateRecurrenceScope = useServerFn(updateRecurrenceScopeFn);
   const scheduleAlert = useServerFn(scheduleShiftAlert);
   const cancelAlert = useServerFn(cancelShiftAlert);
   const [range, setRange] = useState(() => ({
