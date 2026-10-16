@@ -480,7 +480,7 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       if (!existing) throw new Error("Event not found");
       const merged: EventDraft = { ...existing, ...args.patch };
       const realId = baseEventId(args.id);
-      const dto = await update({ data: { id: realId, ...draftToInput(merged) } });
+      const dto = await updateEventRow(realId, draftToInput(merged));
       if (dto.category === "work") {
         scheduleAlert({ data: { eventId: dto.id } }).catch((e) =>
           console.warn("scheduleShiftAlert failed", e),
@@ -497,7 +497,7 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
     mutationFn: async (id: string) => {
       const realId = baseEventId(id);
       cancelAlert({ data: { eventId: realId } }).catch(() => undefined);
-      return remove({ data: { id: realId } });
+      return deleteEventRow(realId);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QK }),
   });
