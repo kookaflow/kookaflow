@@ -464,6 +464,7 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const createMut = useMutation({
     mutationFn: async (draft: EventDraft) => {
       const dto = await insertEvent(draftToInput(draft));
+      if (!dto) throw new Error("Couldn't save event — please try again.");
       if (dto.category === "work") {
         scheduleAlert({ data: { eventId: dto.id } }).catch((e) =>
           console.warn("scheduleShiftAlert failed", e),
@@ -481,6 +482,7 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       const merged: EventDraft = { ...existing, ...args.patch };
       const realId = baseEventId(args.id);
       const dto = await updateEventRow(realId, draftToInput(merged));
+      if (!dto) throw new Error("Couldn't save event — please try again.");
       if (dto.category === "work") {
         scheduleAlert({ data: { eventId: dto.id } }).catch((e) =>
           console.warn("scheduleShiftAlert failed", e),
