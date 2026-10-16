@@ -2,13 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { addDays, endOfDay, format, startOfDay } from "date-fns";
-import {
-  createEvent as createEventFn,
-  updateEvent as updateEventFn,
-  deleteEvent as deleteEventFn,
-  updateRecurrenceScope as updateRecurrenceScopeFn,
-  type EventDTO,
-} from "@/lib/events.functions";
+import type { EventDTO } from "@/lib/events.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
   scheduleShiftAlert,
