@@ -83,6 +83,107 @@ function queryEvents() {
   return supabase.from("events").select(EVENT_COLUMNS);
 }
 
+// Writes go through the authenticated browser client (same as reads above):
+// in the Capacitor WebView the serverFn transport can resolve to an empty
+// response, which previously surfaced as "undefined is not an object
+// (evaluating 'a.category')" when the mutation read the missing reply.
+type EventInput = ReturnType<typeof draftToInput>;
+
+function inputToRow(input: EventInput, userId: string) {
+  return {
+    user_id: userId,
+    title: input.title,
+    category: input.category,
+    start_time: input.start,
+    end_time: input.end,
+    is_all_day: input.isAllDay,
+    is_payday: input.isPayday,
+    shift_type: input.shiftType,
+    shift_role: input.shiftRole,
+    location: input.location,
+    notes: input.notes,
+    icon_name: input.iconName,
+    icon_color: input.iconColor,
+    split_shift_first_start: input.splitFirstStart,
+    split_shift_first_end: input.splitFirstEnd,
+    split_shift_break_duration: input.splitBreakMinutes,
+    split_shift_second_start: input.splitSecondStart,
+    split_shift_second_end: input.splitSecondEnd,
+    travel_duration_minutes: input.travelDurationMinutes,
+    hourly_rate: null,
+    calculated_earnings: null,
+    is_recurring: !!input.recurrencePattern,
+    recurrence_pattern: input.recurrencePattern,
+    recurrence_days: input.recurrenceDays,
+    recurrence_end_date: input.recurrenceEndDate,
+    recurrence_excluded_dates: input.recurrenceExcludedDates,
+  };
+}
+
+async function currentUserId(): Promise<string> {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw new Error("Not signed in");
+  return data.user.id;
+}
+
+async function insertEvent(input: EventInput): Promise<EventDTO> {
+  const userId = await currentUserId();
+  const { data, error } = await supabase
+    .from("events")
+    .insert(inputToRow(input, userId))
+    .select(EVENT_COLUMNS)
+    .single();
+  if (error || !data) throw new Error(error?.message ?? "Failed to create event");
+  return rowsToDtos([data])[0];
+}
+
+async function updateEventRow(id: string, input: EventInput): Promise<EventDTO> {
+  const userId = await currentUserId();
+  const { user_id: _u, ...patch } = inputToRow(input, userId);
+  void _u;
+  const { data, error } = await supabase
+    .from("events")
+    .update(patch)
+    .eq("id", id)
+    .select(EVENT_COLUMNS)
+    .single();
+  if (error || !data) throw new Error(error?.message ?? "Failed to update event");
+  return rowsToDtos([data])[0];
+}
+
+async function deleteEventRow(id: string): Promise<void> {
+  const { error } = await supabase.from("events").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+async function updateRecurrenceScopeRow(
+  id: string,
+  mode: "exclude_date" | "end_before",
+  date: string,
+): Promise<void> {
+  if (mode === "exclude_date") {
+    const { data: row, error } = await supabase
+      .from("events")
+      .select("recurrence_excluded_dates")
+      .eq("id", id)
+      .single();
+    if (error) throw new Error(error.message);
+    const dates: string[] = (row?.recurrence_excluded_dates as string[] | null) ?? [];
+    if (!dates.includes(date)) dates.push(date);
+    const { error: upErr } = await supabase
+      .from("events")
+      .update({ recurrence_excluded_dates: dates })
+      .eq("id", id);
+    if (upErr) throw new Error(upErr.message);
+  } else {
+    const { error: upErr } = await supabase
+      .from("events")
+      .update({ recurrence_end_date: date })
+      .eq("id", id);
+    if (upErr) throw new Error(upErr.message);
+  }
+}
+
 async function listEventsForCurrentUser(from: string, to: string): Promise<EventDTO[]> {
   const todayFrom = startOfDay(addDays(new Date(), -7)).toISOString();
   const todayTo = endOfDay(addDays(new Date(), 31)).toISOString();
