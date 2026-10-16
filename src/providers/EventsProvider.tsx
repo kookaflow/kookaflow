@@ -2,13 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { addDays, endOfDay, format, startOfDay } from "date-fns";
-import {
-  createEvent as createEventFn,
-  updateEvent as updateEventFn,
-  deleteEvent as deleteEventFn,
-  updateRecurrenceScope as updateRecurrenceScopeFn,
-  type EventDTO,
-} from "@/lib/events.functions";
+import type { EventDTO } from "@/lib/events.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
   scheduleShiftAlert,
@@ -87,6 +81,107 @@ function rowsToDtos(data: Awaited<ReturnType<typeof queryEvents>>["data"]): Even
 
 function queryEvents() {
   return supabase.from("events").select(EVENT_COLUMNS);
+}
+
+// Writes go through the authenticated browser client (same as reads above):
+// in the Capacitor WebView the serverFn transport can resolve to an empty
+// response, which previously surfaced as "undefined is not an object
+// (evaluating 'a.category')" when the mutation read the missing reply.
+type EventInput = ReturnType<typeof draftToInput>;
+
+function inputToRow(input: EventInput, userId: string) {
+  return {
+    user_id: userId,
+    title: input.title,
+    category: input.category,
+    start_time: input.start,
+    end_time: input.end,
+    is_all_day: input.isAllDay,
+    is_payday: input.isPayday,
+    shift_type: input.shiftType,
+    shift_role: input.shiftRole,
+    location: input.location,
+    notes: input.notes,
+    icon_name: input.iconName,
+    icon_color: input.iconColor,
+    split_shift_first_start: input.splitFirstStart,
+    split_shift_first_end: input.splitFirstEnd,
+    split_shift_break_duration: input.splitBreakMinutes,
+    split_shift_second_start: input.splitSecondStart,
+    split_shift_second_end: input.splitSecondEnd,
+    travel_duration_minutes: input.travelDurationMinutes,
+    hourly_rate: null,
+    calculated_earnings: null,
+    is_recurring: !!input.recurrencePattern,
+    recurrence_pattern: input.recurrencePattern,
+    recurrence_days: input.recurrenceDays,
+    recurrence_end_date: input.recurrenceEndDate,
+    recurrence_excluded_dates: input.recurrenceExcludedDates,
+  };
+}
+
+async function currentUserId(): Promise<string> {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw new Error("Not signed in");
+  return data.user.id;
+}
+
+async function insertEvent(input: EventInput): Promise<EventDTO> {
+  const userId = await currentUserId();
+  const { data, error } = await supabase
+    .from("events")
+    .insert(inputToRow(input, userId))
+    .select(EVENT_COLUMNS)
+    .single();
+  if (error || !data) throw new Error(error?.message ?? "Failed to create event");
+  return rowsToDtos([data])[0];
+}
+
+async function updateEventRow(id: string, input: EventInput): Promise<EventDTO> {
+  const userId = await currentUserId();
+  const { user_id: _u, ...patch } = inputToRow(input, userId);
+  void _u;
+  const { data, error } = await supabase
+    .from("events")
+    .update(patch)
+    .eq("id", id)
+    .select(EVENT_COLUMNS)
+    .single();
+  if (error || !data) throw new Error(error?.message ?? "Failed to update event");
+  return rowsToDtos([data])[0];
+}
+
+async function deleteEventRow(id: string): Promise<void> {
+  const { error } = await supabase.from("events").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+async function updateRecurrenceScopeRow(
+  id: string,
+  mode: "exclude_date" | "end_before",
+  date: string,
+): Promise<void> {
+  if (mode === "exclude_date") {
+    const { data: row, error } = await supabase
+      .from("events")
+      .select("recurrence_excluded_dates")
+      .eq("id", id)
+      .single();
+    if (error) throw new Error(error.message);
+    const dates: string[] = (row?.recurrence_excluded_dates as string[] | null) ?? [];
+    if (!dates.includes(date)) dates.push(date);
+    const { error: upErr } = await supabase
+      .from("events")
+      .update({ recurrence_excluded_dates: dates })
+      .eq("id", id);
+    if (upErr) throw new Error(upErr.message);
+  } else {
+    const { error: upErr } = await supabase
+      .from("events")
+      .update({ recurrence_end_date: date })
+      .eq("id", id);
+    if (upErr) throw new Error(upErr.message);
+  }
 }
 
 async function listEventsForCurrentUser(from: string, to: string): Promise<EventDTO[]> {
@@ -302,10 +397,6 @@ function expandRecurring(base: CalendarEvent): CalendarEvent[] {
 
 export function EventsProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
-  const create = useServerFn(createEventFn);
-  const update = useServerFn(updateEventFn);
-  const remove = useServerFn(deleteEventFn);
-  const updateRecurrenceScope = useServerFn(updateRecurrenceScopeFn);
   const scheduleAlert = useServerFn(scheduleShiftAlert);
   const cancelAlert = useServerFn(cancelShiftAlert);
   const [range, setRange] = useState(() => ({
@@ -372,7 +463,7 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
 
   const createMut = useMutation({
     mutationFn: async (draft: EventDraft) => {
-      const dto = await create({ data: draftToInput(draft) });
+      const dto = await insertEvent(draftToInput(draft));
       if (dto.category === "work") {
         scheduleAlert({ data: { eventId: dto.id } }).catch((e) =>
           console.warn("scheduleShiftAlert failed", e),
@@ -389,7 +480,7 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       if (!existing) throw new Error("Event not found");
       const merged: EventDraft = { ...existing, ...args.patch };
       const realId = baseEventId(args.id);
-      const dto = await update({ data: { id: realId, ...draftToInput(merged) } });
+      const dto = await updateEventRow(realId, draftToInput(merged));
       if (dto.category === "work") {
         scheduleAlert({ data: { eventId: dto.id } }).catch((e) =>
           console.warn("scheduleShiftAlert failed", e),
@@ -406,7 +497,7 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
     mutationFn: async (id: string) => {
       const realId = baseEventId(id);
       cancelAlert({ data: { eventId: realId } }).catch(() => undefined);
-      return remove({ data: { id: realId } });
+      return deleteEventRow(realId);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QK }),
   });
@@ -448,17 +539,13 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       }
       const occDate = format(new Date(occurrence.start), "yyyy-MM-dd");
       if (mode === "single") {
-        await updateRecurrenceScope({
-          data: { id: realId, mode: "exclude_date", date: occDate },
-        });
+        await updateRecurrenceScopeRow(realId, "exclude_date", occDate);
       } else {
         const endDate = format(
           addDays(new Date(occurrence.start), -1),
           "yyyy-MM-dd",
         );
-        await updateRecurrenceScope({
-          data: { id: realId, mode: "end_before", date: endDate },
-        });
+        await updateRecurrenceScopeRow(realId, "end_before", endDate);
       }
       queryClient.invalidateQueries({ queryKey: QK });
     },
