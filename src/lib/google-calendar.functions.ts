@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveGoogleEventColor } from "./googleColors";
+import { profileHasProAccess } from "./proAccess";
 import {
   syncUserCalendar,
   pushEventToGoogle as pushEventToGoogleServer,
@@ -18,20 +19,18 @@ import {
 async function requireProAccess(userId: string): Promise<void> {
   const { data: profile } = await supabaseAdmin
     .from("profiles")
-    .select("subscription_tier, subscription_status, trial_ends_at")
+    .select("subscription_tier, subscription_status, trial_ends_at, subscription_end_date")
     .eq("id", userId)
     .maybeSingle();
-  const tier = profile?.subscription_tier ?? "trial";
-  const status = profile?.subscription_status ?? null;
-  const trialEndsAt = profile?.trial_ends_at ? new Date(profile.trial_ends_at).getTime() : 0;
-  const now = Date.now();
-  const trialActive = tier === "trial" && trialEndsAt > now;
-  const proActive =
-    (tier === "pro" && (status === "active" || status === "trialling")) ||
-    tier === "lifetime";
-  if (!trialActive && !proActive) {
-    throw new Error("Subscription required: this feature requires Pro or an active trial");
-  }
+  if (profileHasProAccess(profile)) return;
+  // Never-downgrade fallback: a fresh Apple purchase the webhook hasn't recorded yet.
+  const { fetchRevenueCatSubscriber } = await import("./revenuecat.server");
+  const sub = await fetchRevenueCatSubscriber(userId);
+  const ents = sub?.entitlements ?? {};
+  const active = (e?: { expires_date?: string | null }) =>
+    !!e && (!e.expires_date || Date.parse(e.expires_date) > Date.now());
+  if (active(ents["pro"]) || active(ents["lifetime"])) return;
+  throw new Error("Subscription required: this feature requires Pro or an active trial");
 }
 
 export interface GoogleConnectionStatus {
@@ -205,7 +204,10 @@ export const deleteShiftFromGoogle = createServerFn({ method: "POST" })
  */
 export const getGoogleAuthUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: { native?: boolean } | undefined) =>
+    z.object({ native: z.boolean().optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ context, data }) => {
     const { userId } = context;
     await requireProAccess(userId);
     const clientId =
@@ -216,9 +218,11 @@ export const getGoogleAuthUrl = createServerFn({ method: "POST" })
     // Build redirect_uri from the request host so it matches deployment env.
     const { getRequest } = await import("@tanstack/react-start/server");
     const req = getRequest();
+    // Native app requests arrive cross-origin; the callback must always be the
+    // registered production address, which is also the request origin here.
     const origin = new URL(req.url).origin;
     const redirectUri = `${origin}/auth/google/callback`;
-    const state = signState(userId);
+    const state = signState(userId, data.native === true);
     const authorize = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     authorize.searchParams.set("client_id", clientId);
     authorize.searchParams.set("redirect_uri", redirectUri);
