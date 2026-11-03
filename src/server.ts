@@ -92,16 +92,21 @@ function preflightResponse(request: Request, origin: string): Response {
       "access-control-allow-methods": "GET,POST,OPTIONS",
       "access-control-allow-headers":
         request.headers.get("access-control-request-headers") ??
-        "authorization,content-type",
+        "authorization,content-type,accept,x-tsr-serverfn",
       "access-control-max-age": "86400",
       vary: "origin",
     },
   });
 }
 
+// TanStack's client decodes server-fn replies by reading these headers.
+// Cross-origin (Capacitor WebView) they are hidden unless exposed explicitly.
+const EXPOSED_HEADERS = "x-tss-serialized, x-tss-raw, x-tss-context, content-type";
+
 function withCorsHeaders(response: Response, origin: string): Response {
   const headers = new Headers(response.headers);
   headers.set("access-control-allow-origin", origin);
+  headers.set("access-control-expose-headers", EXPOSED_HEADERS);
   const vary = headers.get("vary");
   headers.set("vary", vary && !/\borigin\b/i.test(vary) ? `${vary}, origin` : "origin");
   return new Response(response.body, {

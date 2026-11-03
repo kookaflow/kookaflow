@@ -21,8 +21,8 @@ export const GOOGLE_SCOPES = [
   "profile",
 ].join(" ");
 
-export function signState(userId: string): string {
-  const payload = `${userId}.${Date.now()}`;
+export function signState(userId: string, native = false): string {
+  const payload = `${userId}.${Date.now()}${native ? ".n" : ""}`;
   const sig = crypto
     .createHmac("sha256", getSigningKey())
     .update(payload)
@@ -31,13 +31,24 @@ export function signState(userId: string): string {
 }
 
 export function verifyState(state: string): string | null {
+  return verifyStateDetailed(state)?.userId ?? null;
+}
+
+/** Native flag is part of the signed payload, so it cannot be forged. */
+export function verifyStateDetailed(
+  state: string,
+): { userId: string; native: boolean } | null {
   try {
     const decoded = Buffer.from(state, "base64url").toString("utf8");
-    const [userId, ts, sig] = decoded.split(".");
+    const parts = decoded.split(".");
+    const native = parts.length === 4 && parts[2] === "n";
+    if (parts.length !== 3 && !native) return null;
+    const [userId, ts] = parts;
+    const sig = parts[parts.length - 1];
     if (!userId || !ts || !sig) return null;
     const expected = crypto
       .createHmac("sha256", getSigningKey())
-      .update(`${userId}.${ts}`)
+      .update(native ? `${userId}.${ts}.n` : `${userId}.${ts}`)
       .digest("hex");
     if (
       sig.length !== expected.length ||
@@ -46,7 +57,7 @@ export function verifyState(state: string): string | null {
       return null;
     // 15 min freshness
     if (Date.now() - Number(ts) > 15 * 60 * 1000) return null;
-    return userId;
+    return { userId, native };
   } catch {
     return null;
   }

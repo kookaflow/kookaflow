@@ -111,7 +111,23 @@ export function ConnectedCalendars() {
     if (!requirePro("Google Calendar sync")) return;
     setConnecting(true);
     try {
-      const { url } = await fetchAuthUrl();
+      let native = false;
+      if (import.meta.env.VITE_IS_MOBILE_BUILD === true) {
+        const { Capacitor } = await import("@capacitor/core");
+        native = Capacitor.isNativePlatform();
+      }
+      const res = await fetchAuthUrl({ data: { native } });
+      const url = res && typeof res === "object" ? (res as { url?: unknown }).url : undefined;
+      if (typeof url !== "string" || !url.startsWith("https://accounts.google.com/")) {
+        throw new Error("Couldn't start Google connection — please try again");
+      }
+      if (native) {
+        // Google blocks sign-in inside app web views; use the system browser.
+        const { Browser } = await import("@capacitor/browser");
+        await Browser.open({ url, presentationStyle: "popover" });
+        setConnecting(false);
+        return;
+      }
       window.location.href = url;
     } catch (e) {
       setConnecting(false);

@@ -162,6 +162,21 @@ function RootComponent() {
     };
   }, []);
 
+  useEffect(() => {
+    let off: (() => void) | undefined;
+    let disposed = false;
+    void import("@/lib/nativeDeepLinks").then(({ registerNativeDeepLinks }) =>
+      registerNativeDeepLinks(queryClient).then((fn) => {
+        if (disposed) fn();
+        else off = fn;
+      }),
+    );
+    return () => {
+      disposed = true;
+      off?.();
+    };
+  }, [queryClient]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <PreferencesProvider>
