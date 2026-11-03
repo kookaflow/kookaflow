@@ -53,7 +53,7 @@ function renderErrorPage() {
 let serverEntryPromise;
 async function getServerEntry() {
   if (!serverEntryPromise) {
-    serverEntryPromise = import("./assets/server-3gGEGNUn.js").then((n) => n.s).then(
+    serverEntryPromise = import("./assets/server-iCTFWgqP.js").then((n) => n.s).then(
       (m) => m.default ?? m
     );
   }
@@ -108,15 +108,17 @@ function preflightResponse(request, origin) {
     headers: {
       "access-control-allow-origin": origin,
       "access-control-allow-methods": "GET,POST,OPTIONS",
-      "access-control-allow-headers": request.headers.get("access-control-request-headers") ?? "authorization,content-type",
+      "access-control-allow-headers": request.headers.get("access-control-request-headers") ?? "authorization,content-type,accept,x-tsr-serverfn",
       "access-control-max-age": "86400",
       vary: "origin"
     }
   });
 }
+const EXPOSED_HEADERS = "x-tss-serialized, x-tss-raw, x-tss-context, content-type";
 function withCorsHeaders(response, origin) {
   const headers = new Headers(response.headers);
   headers.set("access-control-allow-origin", origin);
+  headers.set("access-control-expose-headers", EXPOSED_HEADERS);
   const vary = headers.get("vary");
   headers.set("vary", vary && !/\borigin\b/i.test(vary) ? `${vary}, origin` : "origin");
   return new Response(response.body, {
