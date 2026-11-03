@@ -15,24 +15,28 @@ const MOBILE_SERVER_ORIGIN =
   (import.meta.env.VITE_MOBILE_SERVER_ORIGIN as string | undefined) ??
   "https://kookaflow.com";
 
-const mobileServerFnFetch: typeof fetch = (input, init) => {
-  if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
-    console.debug("[mobile serverFn]", input);
-  }
+const rawMobileFetch: typeof fetch = (input, init) => {
   if (typeof input === "string" && input.startsWith("/")) {
     return fetch(`${MOBILE_SERVER_ORIGIN}${input}`, init);
   }
-  if (input instanceof URL) {
-    return fetch(input, init);
-  }
   if (input instanceof Request && input.url.startsWith("/")) {
-    return fetch(
-      new Request(`${MOBILE_SERVER_ORIGIN}${input.url}`, input),
-      init,
-    );
+    return fetch(new Request(`${MOBILE_SERVER_ORIGIN}${input.url}`, input), init);
   }
   return fetch(input, init);
+};
+
+// If the server's decoding headers are not visible (e.g. a server without the
+// expose-headers fix), fail loudly instead of returning a wrongly-decoded value.
+const mobileServerFnFetch: typeof fetch = async (input, init) => {
+  const res = await rawMobileFetch(input, init);
+  if (
+    res.ok &&
+    !res.headers.get("x-tss-serialized") &&
+    !res.headers.get("x-tss-raw")
+  ) {
+    throw new Error("Server reply unreadable — please update the app and try again.");
+  }
+  return res;
 };
 
 // CORS for Capacitor WebView origins is handled in src/server.ts, which owns
