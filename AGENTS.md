@@ -5,4 +5,4 @@
 - Keep paywall header and footer outside the plans scroll region; hide the shared dialog's default close only when the paywall supplies its own accessible close control.
 - Apply iOS document overrides after hydration only when both the mobile build flag and Capacitor's native iOS platform match; keep web and Android document behavior unchanged.
 - On native iOS, keep bottom navigation in the app shell's non-scrolling layout and scroll only the bounded content area so every signed-in page remains navigable.
-- Native iOS More uses single-open expandable settings sections; preserve the expanded web layout to shorten native navigation without removing settings.
+- Native iOS More uses single-open expandable settings sections; preserve the expanded web layout to shorten native navigation without removing settings.- Native app server calls are cross-origin: src/server.ts must expose TanStack's x-tss-* reply headers to allowed app origins, or every server function returns a wrongly decoded value on iOS/Android.
