@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 /**
  * RevenueCat native IAP — Stage 1: SDK configuration + user identity only.
  *
@@ -12,6 +13,32 @@
 
 /** iOS public (publishable) API key — safe to ship in the client bundle. */
 const REVENUECAT_IOS_API_KEY = "appl_OjTSyFGFbiuQIDXhHRjHdajszLN";
+/**
+ * Android (Google Play) public SDK key — safe to ship in the client bundle.
+ * Paste from RevenueCat → Project → API keys → Google Play app (starts "goog_").
+ */
+const REVENUECAT_ANDROID_API_KEY = "";
+
+/** "android" | "ios" | "web" — Capacitor's platform, safe on web/SSR. */
+export function nativePlatform(): string {
+  return Capacitor.getPlatform();
+}
+
+/** User-facing store wording: Google Play on Android, Apple everywhere else. */
+export function storeLabels() {
+  const android = nativePlatform() === "android";
+  return android
+    ? {
+        account: "Google account",
+        store: "Google Play",
+        manageError: "Could not open Google Play's subscription settings.",
+      }
+    : {
+        account: "Apple ID",
+        store: "The App Store",
+        manageError: "Could not open Apple's subscription settings.",
+      };
+}
 
 export const IS_NATIVE_IAP =
   (import.meta.env.VITE_IS_MOBILE_BUILD as boolean | undefined) === true;
@@ -42,7 +69,13 @@ export async function configureRevenueCat(): Promise<boolean> {
       await Purchases.setLogLevel({
         level: import.meta.env.DEV ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR,
       });
-      await Purchases.configure({ apiKey: REVENUECAT_IOS_API_KEY });
+      const android = Capacitor.getPlatform() === "android";
+      const apiKey = android ? REVENUECAT_ANDROID_API_KEY : REVENUECAT_IOS_API_KEY;
+      if (!apiKey) {
+        console.warn("[revenuecat] Android API key is not set");
+        return false;
+      }
+      await Purchases.configure({ apiKey });
       configured = true;
       return true;
     } catch (err) {
@@ -487,11 +520,29 @@ export async function getRevenueCatSubscriptionInfo(): Promise<NativeSubscriptio
   }
 }
 
-/** Open Apple's native StoreKit subscription-management sheet on iOS. */
+/**
+ * Open the store's subscription management: StoreKit sheet on iOS, Google
+ * Play's subscriptions page on Android.
+ */
 export async function openNativeSubscriptionManagement(
-  _managementURL?: string | null,
+  managementURL?: string | null,
+  productId?: string | null,
 ): Promise<boolean> {
   if (!enabled()) return false;
+  if (Capacitor.getPlatform() === "android") {
+    try {
+      const sku = (productId ?? "").split(":")[0];
+      const url = sku
+        ? `https://play.google.com/store/account/subscriptions?sku=${encodeURIComponent(sku)}&package=com.kookaflow.app`
+        : managementURL || "https://play.google.com/store/account/subscriptions";
+      const { Browser } = await import("@capacitor/browser");
+      await Browser.open({ url });
+      return true;
+    } catch (err) {
+      console.warn("[revenuecat] Play subscription management failed", err);
+      return false;
+    }
+  }
   try {
     const { registerPlugin } = await import("@capacitor/core");
     const plugin = registerPlugin<{

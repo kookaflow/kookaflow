@@ -9,6 +9,7 @@ import { createCheckoutSession } from "@/lib/stripe.functions";
 import type { PlanKey } from "@/lib/stripe.server";
 import {
   IS_NATIVE_IAP,
+  storeLabels,
   getRevenueCatPlans,
   purchaseRevenueCatPlan,
   restoreRevenueCatPurchases,
@@ -171,7 +172,7 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
       toast.success("Purchases restored.");
       onOpenChange(false);
     } else {
-      toast.info("No previous purchases found for this Apple ID.");
+      toast.info(`No previous purchases found for this ${storeLabels().account}.`);
     }
   }
 
@@ -243,7 +244,7 @@ export function PaywallModal({ open, onOpenChange, feature, reason }: PaywallMod
             <div className="rounded-lg border border-border bg-card p-6 text-center">
               <p className="text-sm font-medium text-foreground">Purchases are unavailable right now</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                The App Store didn’t return any plans. Check your connection and try again, or restore
+                {storeLabels().store} didn’t return any plans. Check your connection and try again, or restore
                 a purchase you’ve already made.
               </p>
               <Button
