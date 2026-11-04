@@ -11,6 +11,7 @@ import { PaywallModal } from "@/components/subscription/PaywallModal";
 import { createCustomerPortalSession } from "@/lib/stripe.functions";
 import {
   IS_NATIVE_IAP,
+  storeLabels,
   openNativeSubscriptionManagement,
   refreshRevenueCatEntitlements,
   restoreRevenueCatPurchases,
@@ -52,9 +53,10 @@ export function AccountSection() {
   }, []);
 
   const native = sub.nativeSubscription;
-  /** Apple/Mac App Store purchase — the only case we send to Apple. */
-  const isAppleSubscriber =
-    !!native && (native.store === "APP_STORE" || native.store === "MAC_APP_STORE");
+  /** App Store / Mac App Store / Google Play purchase — managed in that store. */
+  const isStoreSubscriber =
+    !!native &&
+    (native.store === "APP_STORE" || native.store === "MAC_APP_STORE" || native.store === "PLAY_STORE");
   const isNativeLifetime = !!native?.isLifetime;
 
   const cadenceLabel =
@@ -128,7 +130,7 @@ export function AccountSection() {
         : `Access ends ${formatDate(native.expirationDate)}`
       : null;
 
-  const showAppleManage = isAppleSubscriber && !isNativeLifetime;
+  const showAppleManage = isStoreSubscriber && !isNativeLifetime;
   const showStripeManage =
     !IS_NATIVE_IAP &&
     (sub.tier === "pro" || sub.tier === "basic") &&
@@ -159,8 +161,8 @@ export function AccountSection() {
   }
 
   async function handleAppleManage() {
-    const ok = await openNativeSubscriptionManagement(native?.managementURL);
-    if (!ok) toast.error("Could not open Apple's subscription settings.");
+    const ok = await openNativeSubscriptionManagement(native?.managementURL, native?.productId);
+    if (!ok) toast.error(storeLabels().manageError);
   }
 
   async function handleRestore() {
@@ -176,7 +178,7 @@ export function AccountSection() {
       if (res.entitlements.pro || res.entitlements.basic) {
         toast.success("Purchases restored.");
       } else {
-        toast.info("No previous purchases found for this Apple ID.");
+        toast.info(`No previous purchases found for this ${storeLabels().account}.`);
       }
     } finally {
       setRestoring(false);
