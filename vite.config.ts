@@ -34,7 +34,9 @@ export default defineConfig({
   // Skip Nitro/Cloudflare Worker output for the mobile build.
   ...(isMobileBuild ? { nitro: false as const } : {}),
   vite: {
-    plugins: [mcpPlugin()],
+    // MCP routes are server-only (served by kookaflow.com); the static mobile
+    // bundle has no server, and the plugin's path check fails on Windows.
+    plugins: isMobileBuild ? [] : [mcpPlugin()],
     define: {
       "import.meta.env.VITE_IS_MOBILE_BUILD": JSON.stringify(isMobileBuild),
       "import.meta.env.VITE_MOBILE_SERVER_ORIGIN": JSON.stringify(mobileServerOrigin),
