@@ -19,12 +19,23 @@
 
 ### `src/components/more/AccountSection.tsx`
 - Rename the store check to `isStoreSubscriber`: App Store, Mac App Store **or** `PLAY_STORE`.
-- Change the toast and "Restore" text to read "Google Play" on Android and stay "Apple" on iOS (the platform is read after the page loads).
+- Use store wording: "Could not open Apple's subscription settings" becomes "…Google Play's…", and "No previous purchases found for this Apple ID" becomes "…for this Google account".
+
+### Store wording (from a full search for Apple and App Store)
+Only three messages people can see mention Apple. The terms, privacy and pricing pages have none.
+- `src/lib/revenuecat.ts`: add a small `storeLabels()` helper that returns Apple wording on iOS and Google Play wording on Android.
+- `src/components/subscription/PaywallModal.tsx`:
+  - "No previous purchases found for this Apple ID" becomes "…for this Google account".
+  - "The App Store didn't return any plans" becomes "Google Play didn't return any plans".
+- iOS text stays word-for-word the same.
+
+### `package.json`
+- Add `"@capacitor/android": "^8.5.0"`, matching `@capacitor/core`, so `npm install` picks it up.
 
 No other files change. Web and iOS behave the same as now.
 
-## What you set up yourself (MacinCloud / consoles)
-- **Install the Android add-on:** run `bun add @capacitor/android`, then `npx cap add android` and `npx cap sync android`. The Android project lives on your machine, like the iOS one.
+## What you set up yourself (Windows laptop / consoles)
+- **On Windows:** run `npm install`, then `npm run build:mobile`, then `npx cap add android` (first time only), then `npx cap sync android`. Open the project in Android Studio.
 - **AndroidManifest.xml**, inside the main `<activity>`, add this intent filter:
   ```text
   <intent-filter>
