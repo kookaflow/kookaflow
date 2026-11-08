@@ -33,7 +33,14 @@ export async function openExternal(url: string): Promise<void> {
 
 /** Open the website version of an in-app legal/support page. */
 export function openSitePage(path: string): Promise<void> {
-  return openExternal(SITE_ORIGIN + path);
+  return openExternal(withAppMarker(SITE_ORIGIN + path));
+}
+
+/** Add ?from=app so the website page hides links back into the site's sign-in/home. */
+export function withAppMarker(href: string): string {
+  const url = new URL(href, SITE_ORIGIN);
+  url.searchParams.set("from", "app");
+  return url.toString();
 }
 
 export function storeReviewUrl(): string {

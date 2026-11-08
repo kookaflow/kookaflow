@@ -90,7 +90,7 @@ function PrivacyPage() {
       <h2>Contact</h2>
       <p>
         Questions about this policy? Email{" "}
-        <a href="mailto:support@kookaflow.com">support@kookaflow.com</a>.
+        <a href="mailto:hello@kookaflow.com">hello@kookaflow.com</a>.
       </p>
     </LegalPage>
   );

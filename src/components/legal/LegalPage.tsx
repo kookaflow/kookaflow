@@ -1,7 +1,16 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import logo from "@/assets/kookaflow-logo.png";
+
+/** True when the page was opened from the phone app's in-app browser (?from=app). */
+export function useFromApp(): boolean {
+  const [fromApp, setFromApp] = useState(false);
+  useEffect(() => {
+    setFromApp(new URLSearchParams(window.location.search).get("from") === "app");
+  }, []);
+  return fromApp;
+}
 
 export function LegalPage({
   title,
@@ -12,6 +21,15 @@ export function LegalPage({
   subtitle?: string;
   children: ReactNode;
 }) {
+  const fromApp = useFromApp();
+  const logoImg = (
+    <img
+      src={logo}
+      alt="Kookaflow"
+      style={{ height: 36, width: "auto" }}
+      className="overflow-hidden rounded-[22%] object-contain"
+    />
+  );
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header
@@ -22,14 +40,13 @@ export function LegalPage({
         }}
       >
         <div className="mx-auto flex max-w-3xl flex-col gap-3 px-4 pb-10 pt-6 sm:px-6">
-          <Link to="/" className="flex items-center gap-2">
-            <img
-              src={logo}
-              alt="Kookaflow"
-              style={{ height: 36, width: "auto" }}
-              className="overflow-hidden rounded-[22%] object-contain"
-            />
-          </Link>
+          {fromApp ? (
+            <div className="flex items-center gap-2">{logoImg}</div>
+          ) : (
+            <Link to="/" className="flex items-center gap-2">
+              {logoImg}
+            </Link>
+          )}
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
           {subtitle ? (
             <p className="text-sm text-white/80">{subtitle}</p>
@@ -50,7 +67,9 @@ export function LegalPage({
           {children}
         </div>
         <div className="mt-10 flex items-center justify-between text-xs text-muted-foreground">
-          {import.meta.env.VITE_IS_MOBILE_BUILD ? (
+          {fromApp ? (
+            <span />
+          ) : import.meta.env.VITE_IS_MOBILE_BUILD ? (
             <Link to="/more" className="inline-flex items-center gap-1 hover:text-foreground">
               <ArrowLeft className="size-3.5" /> Back to app
             </Link>
@@ -67,6 +86,19 @@ export function LegalPage({
 }
 
 export function LegalFooterLinks() {
+  const fromApp = useFromApp();
+  const q = fromApp ? "?from=app" : "";
+  if (fromApp) {
+    return (
+      <nav className="flex items-center justify-center gap-3 text-[11px] text-muted-foreground">
+        <a href={`/privacy${q}`} className="hover:text-foreground hover:underline">Privacy</a>
+        <span aria-hidden>·</span>
+        <a href={`/terms${q}`} className="hover:text-foreground hover:underline">Terms</a>
+        <span aria-hidden>·</span>
+        <a href={`/support${q}`} className="hover:text-foreground hover:underline">Support</a>
+      </nav>
+    );
+  }
   return (
     <nav className="flex items-center justify-center gap-3 text-[11px] text-muted-foreground">
       <Link to="/privacy" className="hover:text-foreground hover:underline">Privacy</Link>

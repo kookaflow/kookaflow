@@ -41,7 +41,7 @@ const FAQS: Array<{ q: string; a: string }> = [
   },
   {
     q: "Can I export my data?",
-    a: "Email support@kookaflow.com and we will send you a copy of your data within 7 days.",
+    a: "Email hello@kookaflow.com and we will send you a copy of your data within 7 days.",
   },
   {
     q: "How do I delete my account?",
@@ -54,11 +54,11 @@ function SupportPage() {
     <LegalPage title="How can we help?" subtitle="We're here to support your flow.">
       <p>
         <a
-          href="mailto:support@kookaflow.com"
+          href="mailto:hello@kookaflow.com"
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-foreground shadow-sm transition hover:bg-accent"
         >
           <Mail className="size-4 text-primary" />
-          support@kookaflow.com
+          hello@kookaflow.com
         </a>
       </p>
 
