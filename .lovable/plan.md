@@ -14,7 +14,7 @@
 - `getPushPermission()` on native: use `Notifications.getPermissionAsync()` (granted?) plus `Notifications.canRequestPermission()` → returns `"granted"`, `"default"` (can still ask) or `"denied"`.
 - `requestPushPermission()` native: logs `[push] permission request` and result; calls `Notifications.requestPermission(true)` which shows the Android 13+ POST_NOTIFICATIONS dialog.
 - `loginPush` awaits `whenPushReady()` first, logs `[push] login start <id>` and `[push] login ok`.
-- New `logPushState(label)`: logs `[push] state` with permission, `canRequest`, subscription id, push token (`getTokenAsync()`), optedIn. Called after init, after login, after permission change, after subscription change, and 3s/10s after login so you can see if a token ever arrives.
+- New `logPushState(label)`: logs `[push] state` with permission, `canRequest`, subscription id, push token (`getTokenAsync()`) shown only as `present (abc123…)` (first 6 characters at most) or `missing`, never the full token, and optedIn. Called after init, after login, after permission change, after subscription change, and 3s/10s after login so you can see if a token ever arrives.
 
 ### 2. `src/providers/OneSignalProvider.tsx`
 - Get the user from `supabase.auth.getSession()` (local, no network) in a deferred tick, plus `onAuthStateChange` (deferred with `setTimeout`, no awaited auth calls inside). Covers restored sessions at launch and fresh sign-ins.
