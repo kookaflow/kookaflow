@@ -18,9 +18,9 @@ Note: `sendPushToUser` targets a single stored player id, so a user with web + p
 
 ## Code changes
 
-1. **Add plugin**: `onesignal-cordova-plugin` (OneSignal's officially supported SDK for Capacitor, v5 API: `OneSignal.initialize`, `login`, `Notifications.requestPermission`, `User.pushSubscription`). Keep `react-onesignal` for web.
+1. **Add plugin**: `@onesignal/capacitor-plugin`, OneSignal's own Capacitor plugin. OneSignal recommends it for Capacitor apps, and it supports iOS through Swift Package Manager and Android through Gradle (peer `@capacitor/core >=7`). Do not use `onesignal-cordova-plugin`: its guide lists CocoaPods as an iOS requirement, and its SPM support depends on Capacitor 8.4+ Cordova support. Keep `react-onesignal` for web. Leave out the location module with `ONESIGNAL_DISABLE_LOCATION=true`; the app doesn't use location.
 2. **New `src/lib/pushClient.ts`** — one small adapter with `init(appId)`, `login(userId)`, `logout()`, `requestPermission()`, `getPermission()` ("granted" | "denied" | "default" | "unsupported"), `getSubscription()` ({ id, optedIn }), `onSubscriptionChange(cb)`, `onPermissionChange(cb)`.
-   - Native (`Capacitor.isNativePlatform()`): dynamic import of the plugin after hydration, uses `window.plugins.OneSignal`/module export; no proxy object returned from async functions.
+   - Native (`Capacitor.isNativePlatform()`): dynamic import of `@onesignal/capacitor-plugin` after hydration. Always call through the imported module and never return the plugin proxy from an async function, which avoids the earlier Preferences `.then()` bug.
    - Web: dynamic import of `react-onesignal`, current behaviour unchanged (service worker, localhost flag).
    - Every call wrapped in try/catch, logs `[push]` prefix, never throws into UI.
 3. **`OneSignalProvider.tsx`** — use the adapter instead of `react-onesignal` directly. Native: initialise with the App ID baked in at build time (`VITE_ONESIGNAL_APP_ID`, publishable) with fallback to `getOneSignalConfig`, so startup doesn't depend on a network call. `login(userId)` on sign-in; `logout()` on sign-out (so the next person on a shared device doesn't get alerts). Persist subscription id/opt-in via existing `updatePushSubscription` on change (unchanged server side). Notification tap: open in-app route from `additionalData.url`/`launchURL` via router instead of WebView navigation.
@@ -48,8 +48,9 @@ Website behaviour stays the same.
 ### Xcode (ios/App)
 1. Target App > Signing & Capabilities > **+ Push Notifications**.
 2. **+ Background Modes** > tick **Remote notifications**.
-3. Recommended (for images + delivery confirmations): File > New > Target > **Notification Service Extension** named `OneSignalNotificationServiceExtension`, add OneSignal's `NotificationService.swift`, add **App Groups** capability `group.com.kookaflow.app.onesignal` to both targets. Add `pod 'OneSignalXCFramework', '>= 5.0', '< 6.0'` for that target in `ios/App/Podfile`, then `pod install`.
-4. After `npx cap sync ios`, archive and upload a new build.
+3. Skip the Notification Service Extension, App Groups and second target for launch. Notifications will be text-only; rich images can come later.
+4. No Podfile or CocoaPods. Run `ONESIGNAL_DISABLE_LOCATION=true npx cap sync ios`; Capacitor adds the package to `CapApp-SPM/Package.swift` automatically, so don't edit that file. If needed, use Xcode > File > Packages > Resolve Package Versions.
+5. Archive and upload a new build.
 
 ### Firebase / FCM (Android)
 1. console.firebase.google.com > add project (or use existing) > Add Android app, package `com.kookaflow.app`.
@@ -62,7 +63,7 @@ Website behaviour stays the same.
 3. Keep the existing Google Calendar deep-link intent filter; no other changes.
 
 ### Build
-`npm install`, `npm run build:mobile`, `npx cap sync ios` / `npx cap sync android`, then new TestFlight / Play internal builds. Website changes go live on Publish.
+`npm install`, `npm run build:mobile`, `ONESIGNAL_DISABLE_LOCATION=true npx cap sync ios`; on Windows, `npx cross-env ONESIGNAL_DISABLE_LOCATION=true npx cap sync android`, then new TestFlight / Play internal builds. Website changes go live on Publish.
 
 ## How to verify
 - Logcat/Xcode: `[push] native init ok`, `[push] login <userId>`, subscription id saved.
