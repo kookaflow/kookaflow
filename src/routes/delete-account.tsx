@@ -42,13 +42,38 @@ function DeleteAccountPage() {
         <strong> 30 days</strong>, and confirm by email.
       </p>
 
+      <h2 id="delete-some-data">Delete some of your data without deleting your account</h2>
+      <ul>
+        <li>
+          Delete individual shifts, events and shift templates in the app at any time — open the
+          item and choose Delete.
+        </li>
+        <li>
+          Disconnect Google Calendar in <strong>More → Connected Calendars → Disconnect</strong>.
+          This removes Kookaflow's access to your Google account, deletes the stored connection and
+          its tokens, and deletes the Google events Kookaflow had stored. Shifts already copied into
+          your Google Calendar stay in Google.
+        </li>
+        <li>
+          For anything else, email{" "}
+          <a href="mailto:hello@kookaflow.com?subject=Delete%20some%20of%20my%20data">
+            hello@kookaflow.com
+          </a>{" "}
+          from your account's email address with the subject "Delete some of my data". We will
+          handle it within <strong>30 days</strong>.
+        </li>
+      </ul>
+
       <h2>What is deleted</h2>
       <ul>
         <li>Your profile and sign-in account (name, email, job role, settings).</li>
         <li>All shifts and calendar events.</li>
         <li>Shift templates and custom categories.</li>
         <li>Preferences, including reminder and notification settings.</li>
-        <li>Your Google Calendar connection, its access tokens and cached Google events.</li>
+        <li>
+          Your Google Calendar connection: Kookaflow's access is revoked at Google, and its tokens
+          and cached Google events are deleted.
+        </li>
         <li>
           Your push notification registration with our notification provider, plus scheduled
           alerts and reminder history.

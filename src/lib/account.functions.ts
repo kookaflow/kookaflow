@@ -59,6 +59,14 @@ export const deleteAccount = createServerFn({ method: "POST" })
       console.error("[deleteAccount] OneSignal deletion failed:", (e as Error).message);
     }
 
+    // 3) Revoke Google Calendar access at Google. Never blocks deletion.
+    try {
+      const { revokeGoogleAccess } = await import("@/lib/google-calendar.server");
+      await revokeGoogleAccess(userId);
+    } catch (e) {
+      console.error("[deleteAccount] Google revoke failed:", (e as Error).message);
+    }
+
     // Delete from every table that holds per-user rows. Order isn't critical
     // because none have FKs to one another, but we batch for clarity.
     const userScopedTables = [

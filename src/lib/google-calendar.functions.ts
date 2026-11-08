@@ -72,6 +72,8 @@ export const disconnectGoogleCalendar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId } = context;
+    const { revokeGoogleAccess } = await import("./google-calendar.server");
+    await revokeGoogleAccess(userId);
     await supabaseAdmin
       .from("google_events_cache")
       .delete()

@@ -489,3 +489,27 @@ export async function deleteEventFromGoogle(
     },
   );
 }
+/**
+ * Revoke Kookaflow's Google grant for this user. Never throws; failures are logged.
+ */
+export async function revokeGoogleAccess(userId: string): Promise<void> {
+  try {
+    const { data: conn } = await supabaseAdmin
+      .from("google_calendar_connections")
+      .select("access_token, refresh_token")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const token = conn?.refresh_token || conn?.access_token;
+    if (!token) return;
+    const res = await fetch("https://oauth2.googleapis.com/revoke", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ token }).toString(),
+    });
+    if (!res.ok) {
+      console.error(`[google-revoke] failed [${res.status}]:`, await res.text().catch(() => ""));
+    }
+  } catch (e) {
+    console.error("[google-revoke] error:", (e as Error).message);
+  }
+}
