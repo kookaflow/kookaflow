@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import logo from "@/assets/kookaflow-logo.png";
+import { APP_STORE_URL, PLAY_STORE_URL, SHOW_GOOGLE_PLAY_BUTTON } from "@/lib/externalLinks";
 
 /** True when the page was opened from the phone app's in-app browser (?from=app). */
 export function useFromApp(): boolean {
@@ -66,22 +67,52 @@ export function LegalPage({
         <div className="legal-content space-y-4 text-sm leading-relaxed text-foreground/90 [&_h2]:mt-8 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-foreground [&_p]:mb-3 [&_ul]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_a]:text-primary [&_a]:underline-offset-2 hover:[&_a]:underline [&_strong]:text-foreground">
           {children}
         </div>
-        <div className="mt-10 flex items-center justify-between text-xs text-muted-foreground">
-          {fromApp ? (
-            <span />
-          ) : import.meta.env.VITE_IS_MOBILE_BUILD ? (
+        {fromApp ? (
+          <div className="mt-10 flex justify-end">
+            <LegalFooterLinks />
+          </div>
+        ) : import.meta.env.VITE_IS_MOBILE_BUILD ? (
+          <div className="mt-10 flex items-center justify-between text-xs text-muted-foreground">
             <Link to="/more" className="inline-flex items-center gap-1 hover:text-foreground">
               <ArrowLeft className="size-3.5" /> Back to app
             </Link>
-          ) : (
-            <Link to="/login" className="inline-flex items-center gap-1 hover:text-foreground">
-              <ArrowLeft className="size-3.5" /> Back to sign in
-            </Link>
-          )}
-          <LegalFooterLinks />
-        </div>
+            <LegalFooterLinks />
+          </div>
+        ) : (
+          <LegalSiteFooter />
+        )}
       </main>
     </div>
+  );
+}
+
+/** Website footer: official store badges (unaltered artwork) plus site navigation. */
+function LegalSiteFooter() {
+  return (
+    <footer className="mt-12 border-t border-border pt-8 text-center">
+      <p className="mb-4 text-sm font-medium text-foreground">Get Kookaflow on your phone</p>
+      <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" aria-label="Download on the App Store">
+          <img src="/badges/app-store-badge.svg" alt="Download on the App Store" style={{ height: 56, width: "auto" }} />
+        </a>
+        {SHOW_GOOGLE_PLAY_BUTTON ? (
+          <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" aria-label="Get it on Google Play">
+            <img src="/badges/google-play-badge.png" alt="Get it on Google Play" style={{ height: 83, width: "auto" }} />
+          </a>
+        ) : null}
+      </div>
+      <nav className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
+        <Link to="/" className="hover:text-foreground hover:underline">Home</Link>
+        <span aria-hidden>·</span>
+        <Link to="/login" className="hover:text-foreground hover:underline">Sign in</Link>
+        <span aria-hidden>·</span>
+        <Link to="/privacy" className="hover:text-foreground hover:underline">Privacy</Link>
+        <span aria-hidden>·</span>
+        <Link to="/terms" className="hover:text-foreground hover:underline">Terms</Link>
+        <span aria-hidden>·</span>
+        <Link to="/support" className="hover:text-foreground hover:underline">Support</Link>
+      </nav>
+    </footer>
   );
 }
 

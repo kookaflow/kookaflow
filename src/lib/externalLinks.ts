@@ -4,6 +4,10 @@ import { isNativeApp } from "@/lib/nativeFileShare";
 export const SITE_ORIGIN = "https://kookaflow.com";
 export const APPLE_APP_ID = "6791698037";
 export const ANDROID_PACKAGE = "com.kookaflow.app";
+export const APP_STORE_URL = `https://apps.apple.com/app/id${APPLE_APP_ID}`;
+export const PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`;
+/** Switch to true once the Google Play listing is live to show the Play badge on the website. */
+export const SHOW_GOOGLE_PLAY_BUTTON = false;
 
 /** Website pages that must open in the in-app browser on native, never in the app's own view. */
 const WEB_ONLY_PATHS = ["/privacy", "/terms", "/support", "/eula", "/delete-account", "/pricing-web"];
