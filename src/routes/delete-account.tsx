@@ -49,7 +49,11 @@ function DeleteAccountPage() {
         <li>Shift templates and custom categories.</li>
         <li>Preferences, including reminder and notification settings.</li>
         <li>Your Google Calendar connection, its access tokens and cached Google events.</li>
-        <li>Scheduled push notification alerts and reminder history.</li>
+        <li>
+          Your push notification registration with our notification provider, plus scheduled
+          alerts and reminder history.
+        </li>
+        <li>Any active subscription paid by card on our website (Stripe) is cancelled immediately.</li>
         <li>Dismissed wellness nudges and category display choices.</li>
       </ul>
 
@@ -60,8 +64,8 @@ function DeleteAccountPage() {
         under their own policies.
       </p>
 
-      <h2>Deleting your account does not cancel a subscription</h2>
-      <p>If you subscribed, cancel it in the store you bought it from:</p>
+      <h2>Deleting your account does not cancel an App Store or Google Play subscription</h2>
+      <p>If you subscribed through the App Store or Google Play, cancel it in that store:</p>
       <ul>
         <li>
           <strong>iPhone / App Store:</strong> Settings → your name → Subscriptions → Kookaflow →
@@ -72,8 +76,8 @@ function DeleteAccountPage() {
           Payments &amp; subscriptions → Subscriptions → Kookaflow → Cancel subscription.
         </li>
         <li>
-          <strong>Website (card payment):</strong> before deleting, go to More → Account → Manage
-          subscription, or email us and we will cancel it.
+          <strong>Website (card payment):</strong> cancelled automatically when you delete your
+          account.
         </li>
       </ul>
 

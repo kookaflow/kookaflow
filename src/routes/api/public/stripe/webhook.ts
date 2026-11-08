@@ -38,6 +38,20 @@ export const Route = createFileRoute("/api/public/stripe/webhook")({
   },
 });
 
+async function profileExists(userId: string, eventType: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from("profiles")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) {
+    console.warn("[stripe-webhook] no profile for user, event ignored", eventType, userId);
+    return false;
+  }
+  return true;
+}
+
 async function handleEvent(event: Stripe.Event): Promise<void> {
   switch (event.type) {
     case "checkout.session.completed": {
@@ -45,6 +59,7 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
       const userId = (session.metadata?.supabase_user_id) || session.client_reference_id;
       const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id ?? null;
       if (!userId) return;
+      if (!(await profileExists(userId, event.type))) return;
 
       if (session.mode === "payment") {
         // One-time purchase: basic or lifetime. Resolve via line items.
@@ -73,6 +88,7 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
       const sub = event.data.object as Stripe.Subscription;
       const userId = sub.metadata?.supabase_user_id ?? (await lookupUserByCustomer(typeof sub.customer === "string" ? sub.customer : sub.customer.id));
       if (!userId) return;
+      if (!(await profileExists(userId, event.type))) return;
 
       const priceId = sub.items.data[0]?.price?.id;
       const plan = priceId ? planForPriceId(priceId) : null;
@@ -98,6 +114,7 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
       const sub = event.data.object as Stripe.Subscription;
       const userId = sub.metadata?.supabase_user_id ?? (await lookupUserByCustomer(typeof sub.customer === "string" ? sub.customer : sub.customer.id));
       if (!userId) return;
+      if (!(await profileExists(userId, event.type))) return;
       await supabaseAdmin
         .from("profiles")
         .update({
@@ -115,6 +132,7 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
       if (!customerId) return;
       const userId = await lookupUserByCustomer(customerId);
       if (!userId) return;
+      if (!(await profileExists(userId, event.type))) return;
       await supabaseAdmin
         .from("profiles")
         .update({ subscription_status: "past_due" })

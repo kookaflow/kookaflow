@@ -172,3 +172,22 @@ export function computeBalanceScore(
   const score = Math.round(100 - Math.abs(lifeRatio - 0.6) * 150);
   return Math.max(0, Math.min(100, score));
 }
+/**
+ * Remove a user's OneSignal user record (and its push subscriptions), plus a
+ * stray stored subscription id. 404 counts as already gone. Throws on other errors.
+ */
+export async function deleteOneSignalUser(userId: string, playerId?: string | null) {
+  const { appId, key } = getOneSignalCreds();
+  const headers = { Authorization: `Key ${key}`, Accept: "application/json" };
+  const base = `https://api.onesignal.com/apps/${appId}`;
+  const urls = [`${base}/users/by/external_id/${encodeURIComponent(userId)}`];
+  if (playerId) urls.push(`${base}/subscriptions/${encodeURIComponent(playerId)}`);
+  const failures: string[] = [];
+  for (const url of urls) {
+    const res = await fetch(url, { method: "DELETE", headers });
+    if (!res.ok && res.status !== 404) {
+      failures.push(`[${res.status}] ${await res.text().catch(() => "")}`);
+    }
+  }
+  if (failures.length) throw new Error(`OneSignal delete failed: ${failures.join("; ")}`);
+}
