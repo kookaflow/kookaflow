@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { deleteAccount } from "@/lib/account.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { clearNativeSession } from "@/lib/nativeAuthPersistence";
 
 export function DangerZone() {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ export function DangerZone() {
   const mut = useMutation({
     mutationFn: () => runDelete(),
     onSuccess: async () => {
+      await clearNativeSession();
       await supabase.auth.signOut();
       toast.success("Your account has been permanently deleted.");
       navigate({ to: "/login" });

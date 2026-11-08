@@ -177,6 +177,21 @@ function RootComponent() {
     };
   }, [queryClient]);
 
+  useEffect(() => {
+    let off: (() => void) | undefined;
+    let disposed = false;
+    void import("@/lib/nativeAuthPersistence").then(({ startNativeAuthPersistence }) =>
+      startNativeAuthPersistence().then((fn) => {
+        if (disposed) fn();
+        else off = fn;
+      }),
+    );
+    return () => {
+      disposed = true;
+      off?.();
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <PreferencesProvider>
@@ -198,6 +213,7 @@ function AuthListener() {
   const queryClient = useQueryClient();
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       if (event === "SIGNED_OUT") {
         toast("Your session timed out — please sign in again");
       }

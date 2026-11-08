@@ -6,6 +6,11 @@ import { ShiftAlertWatcher } from "@/components/notifications/ShiftAlertWatcher"
 import { ShiftTemplatesProvider } from "@/providers/ShiftTemplatesProvider";
 import { TrialBanner } from "@/components/subscription/TrialBanner";
 import { RevenueCatProvider } from "@/providers/RevenueCatProvider";
+import {
+  ensureFreshNativeSession,
+  isNativeAuthPlatform,
+  restoreNativeSession,
+} from "@/lib/nativeAuthPersistence";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -38,7 +43,14 @@ function AuthenticatedLayout() {
       // 1. Trust the locally stored session first — no network round-trip.
       const { data: sessionData } = await supabase.auth.getSession();
       if (!mounted) return;
-      const session = sessionData.session;
+      let session = sessionData.session;
+      const native = isNativeAuthPlatform();
+
+      // Native: WebView storage may have been purged — restore the durable copy first.
+      if (!session && native && (await restoreNativeSession())) {
+        if (!mounted) return;
+        session = (await supabase.auth.getSession()).data.session;
+      }
 
       if (!session) {
         navigate({ to: "/login" });
@@ -65,6 +77,19 @@ function AuthenticatedLayout() {
       }
 
       // 3. Background validation. Redirect only on an explicit auth failure.
+      if (native) {
+        // Refresh first if the token expired while the app slept; only a dead
+        // refresh token sends the user to sign-in, never network or expired-JWT errors.
+        try {
+          const state = await ensureFreshNativeSession();
+          if (!mounted) return;
+          if (state === "signed_out") navigate({ to: "/login" });
+        } catch {
+          /* offline — keep the user in */
+        }
+        return;
+      }
+
       try {
         const { error } = await supabase.auth.getUser();
         if (!mounted) return;
@@ -79,7 +104,9 @@ function AuthenticatedLayout() {
     });
 
     // 4. Coming back to the foreground after the phone slept: re-arm the token quietly.
+    // Native uses appStateChange auto-refresh instead (avoids racing refreshes).
     const onVisible = () => {
+      if (isNativeAuthPlatform()) return;
       if (document.visibilityState !== "visible") return;
       void supabase.auth.refreshSession().catch(() => {
         /* offline — autoRefreshToken will retry */

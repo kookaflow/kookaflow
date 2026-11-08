@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { KeyRound, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { clearNativeSession } from "@/lib/nativeAuthPersistence";
 
 export function SecuritySection() {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ export function SecuritySection() {
   }
 
   async function signOut() {
+    await clearNativeSession();
     await supabase.auth.signOut();
     navigate({ to: "/login" });
   }

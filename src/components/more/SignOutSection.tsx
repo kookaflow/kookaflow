@@ -1,11 +1,13 @@
 import { useNavigate } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { clearNativeSession } from "@/lib/nativeAuthPersistence";
 
 export function SignOutSection() {
   const navigate = useNavigate();
 
   async function handleSignOut() {
+    await clearNativeSession();
     await supabase.auth.signOut();
     navigate({ to: "/login" });
   }
