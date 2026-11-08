@@ -179,6 +179,14 @@ function RootComponent() {
 
   useEffect(() => {
     let off: (() => void) | undefined;
+    void import("@/lib/externalLinks").then(({ installNativeLinkGuard }) => {
+      off = installNativeLinkGuard();
+    });
+    return () => off?.();
+  }, []);
+
+  useEffect(() => {
+    let off: (() => void) | undefined;
     let disposed = false;
     void import("@/lib/nativeAuthPersistence").then(({ startNativeAuthPersistence }) =>
       startNativeAuthPersistence().then((fn) => {

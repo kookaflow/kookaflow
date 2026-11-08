@@ -2,14 +2,23 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRight, FileText, HelpCircle, Scale, Share2, ShieldCheck, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
+import { isNativeApp } from "@/lib/nativeFileShare";
+import { openSitePage, openStoreReview } from "@/lib/externalLinks";
 
 const SHARE_TEXT =
   "I use Kookaflow to manage my shifts and find my flow — find your flow too! kookaflow.com";
 
-const APP_STORE_URL = "#"; // placeholder until live
-
 export function AboutSection() {
   async function share() {
+    if (isNativeApp()) {
+      try {
+        const { Share } = await import("@capacitor/share");
+        await Share.share({ title: "Kookaflow", text: SHARE_TEXT, url: "https://kookaflow.com" });
+      } catch (err) {
+        if (!/cancel/i.test(String((err as Error)?.message ?? err))) toast.error("Couldn't open share sheet");
+      }
+      return;
+    }
     if (typeof navigator !== "undefined" && (navigator as Navigator).share) {
       try {
         await (navigator as Navigator).share({ title: "Kookaflow", text: SHARE_TEXT });
@@ -41,7 +50,7 @@ export function AboutSection() {
         <Divider />
         <RowLink to="/eula" icon={<Scale size={18} />} label="EULA" />
         <Divider />
-        <RowExternal href={APP_STORE_URL} icon={<Star size={18} />} label="Rate Kookaflow ⭐" />
+        <RowButton onClick={openStoreReview} icon={<Star size={18} />} label="Rate Kookaflow ⭐" />
         <Divider />
         <RowButton onClick={share} icon={<Share2 size={18} />} label="Share Kookaflow" />
       </Card>
@@ -70,18 +79,13 @@ function RowShell({ icon, label, trailing }: { icon: React.ReactNode; label: str
 }
 
 function RowLink({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
+  if (isNativeApp()) {
+    return <RowButton onClick={() => void openSitePage(to)} icon={icon} label={label} />;
+  }
   return (
     <Link to={to} className="block transition-colors hover:bg-accent/40">
       <RowShell icon={icon} label={label} />
     </Link>
-  );
-}
-
-function RowExternal({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
-  return (
-    <a href={href} target="_blank" rel="noopener" className="block transition-colors hover:bg-accent/40">
-      <RowShell icon={icon} label={label} />
-    </a>
   );
 }
 

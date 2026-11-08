@@ -50,9 +50,15 @@ export function LegalPage({
           {children}
         </div>
         <div className="mt-10 flex items-center justify-between text-xs text-muted-foreground">
-          <Link to="/login" className="inline-flex items-center gap-1 hover:text-foreground">
-            <ArrowLeft className="size-3.5" /> Back to sign in
-          </Link>
+          {import.meta.env.VITE_IS_MOBILE_BUILD ? (
+            <Link to="/more" className="inline-flex items-center gap-1 hover:text-foreground">
+              <ArrowLeft className="size-3.5" /> Back to app
+            </Link>
+          ) : (
+            <Link to="/login" className="inline-flex items-center gap-1 hover:text-foreground">
+              <ArrowLeft className="size-3.5" /> Back to sign in
+            </Link>
+          )}
           <LegalFooterLinks />
         </div>
       </main>

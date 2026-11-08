@@ -53,7 +53,10 @@ export function DangerZone() {
             <p className="text-sm font-semibold text-foreground">Delete Account</p>
             <p className="mt-1 text-xs text-muted-foreground">
               This permanently deletes your account and all your data including shifts,
-              events, and preferences. This cannot be undone.
+              events, and preferences. This cannot be undone.{" "}
+              <a href="/delete-account" className="text-primary underline-offset-2 hover:underline">
+                How deletion works
+              </a>
             </p>
             <Button
               variant="outline"
