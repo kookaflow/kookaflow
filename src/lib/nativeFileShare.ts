@@ -25,18 +25,18 @@ export async function shareFileNatively(
   blob: Blob,
   filename: string,
 ): Promise<"shared" | "cancelled"> {
-  const [{ Filesystem, Directory }, { Share }] = await Promise.all([
+  const [fsMod, shareMod] = await Promise.all([
     import("@capacitor/filesystem"),
     import("@capacitor/share"),
   ]);
   const data = await blobToBase64(blob);
-  const { uri } = await Filesystem.writeFile({
+  const { uri } = await fsMod.Filesystem.writeFile({
     path: filename,
     data,
-    directory: Directory.Cache,
+    directory: fsMod.Directory.Cache,
   });
   try {
-    await Share.share({ title: filename, files: [uri], dialogTitle: filename });
+    await shareMod.Share.share({ title: filename, files: [uri], dialogTitle: filename });
     return "shared";
   } catch (e) {
     const msg = String((e as Error)?.message ?? e).toLowerCase();

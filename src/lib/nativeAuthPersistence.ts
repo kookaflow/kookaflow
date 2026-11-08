@@ -12,15 +12,18 @@ export function isNativeAuthPlatform(): boolean {
   return import.meta.env.VITE_IS_MOBILE_BUILD === true && Capacitor.isNativePlatform();
 }
 
-async function prefs() {
-  return (await import("@capacitor/preferences")).Preferences;
+// Never return/await the plugin proxy itself: Capacitor proxies throw on
+// ".then()". Return the module and call mod.Preferences.* instead.
+async function prefsModule() {
+  const mod = await import("@capacitor/preferences");
+  return mod;
 }
 
 type Saved = { access_token: string; refresh_token: string };
 
 async function save(s: Saved, reason = "unknown") {
   try {
-    await (await prefs()).set({ key: KEY, value: JSON.stringify(s) });
+    await (await prefsModule()).Preferences.set({ key: KEY, value: JSON.stringify(s) });
     console.log(`[native-auth] saved (event=${reason})`);
   } catch (e) {
     console.warn("[native-auth] save failed", e);
@@ -28,7 +31,7 @@ async function save(s: Saved, reason = "unknown") {
 }
 
 async function removeCopy() {
-  await (await prefs()).remove({ key: KEY });
+  await (await prefsModule()).Preferences.remove({ key: KEY });
 }
 
 /** Call before a deliberate sign-out or account deletion. */
@@ -65,7 +68,7 @@ export async function restoreNativeSession(): Promise<boolean> {
 
 async function restoreFromPreferences(): Promise<boolean> {
   try {
-    const { value } = await (await prefs()).get({ key: KEY });
+    const { value } = await (await prefsModule()).Preferences.get({ key: KEY });
     console.log(`[native-auth] preferences copy: ${value ? "present" : "missing"}`);
     if (!value) return false;
     const saved = JSON.parse(value) as Saved;
@@ -124,7 +127,17 @@ let inFlight: Promise<boolean> | null = null;
 export function resolveNativeSession(): Promise<boolean> {
   if (!isNativeAuthPlatform()) return Promise.resolve(false);
   if (!inFlight) {
-    inFlight = checkNativeSession().finally(() => {
+    const timeout = new Promise<boolean>((resolve) =>
+      setTimeout(() => {
+        console.warn("[native-auth] launch check timed out -> /login");
+        resolve(false);
+      }, 8000),
+    );
+    const safe = checkNativeSession().catch((e) => {
+      console.warn("[native-auth] launch check failed -> /login", e);
+      return false;
+    });
+    inFlight = Promise.race([safe, timeout]).finally(() => {
       inFlight = null;
     });
   }
@@ -153,7 +166,11 @@ export async function startNativeAuthPersistence(): Promise<() => void> {
 
   // Migration + restore: the shared launch check copies the WebView session
   // into Preferences (or restores from it) before anything else runs here.
-  await resolveNativeSession();
+  try {
+    await resolveNativeSession();
+  } catch (e) {
+    console.warn("[native-auth] launch check failed", e);
+  }
 
   const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
     if (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED" || event === "INITIAL_SESSION")) {
@@ -163,15 +180,20 @@ export async function startNativeAuthPersistence(): Promise<() => void> {
     // clearNativeSession(); anything else is recoverable via restore.
   });
 
-  const { App } = await import("@capacitor/app");
-  const handle = await App.addListener("appStateChange", ({ isActive }) => {
-    if (isActive) void supabase.auth.startAutoRefresh();
-    else void supabase.auth.stopAutoRefresh();
-  });
+  let handle: { remove: () => Promise<void> } | null = null;
+  try {
+    const appMod = await import("@capacitor/app");
+    handle = await appMod.App.addListener("appStateChange", ({ isActive }) => {
+      if (isActive) void supabase.auth.startAutoRefresh();
+      else void supabase.auth.stopAutoRefresh();
+    });
+  } catch (e) {
+    console.warn("[native-auth] appStateChange listener failed", e);
+  }
   void supabase.auth.startAutoRefresh();
 
   return () => {
     sub.subscription.unsubscribe();
-    void handle.remove();
+    void handle?.remove();
   };
 }

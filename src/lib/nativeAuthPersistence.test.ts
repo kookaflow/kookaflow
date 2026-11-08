@@ -6,13 +6,21 @@ const auth = {
   setSession: vi.fn(),
 };
 
-vi.mock("@capacitor/preferences", () => ({
-  Preferences: {
+// Mimic Capacitor's plugin proxy: touching ".then" throws, like on device.
+vi.mock("@capacitor/preferences", () => {
+  const impl = {
     get: async ({ key }: { key: string }) => ({ value: store.get(key) ?? null }),
     set: async ({ key, value }: { key: string; value: string }) => void store.set(key, value),
     remove: async ({ key }: { key: string }) => void store.delete(key),
-  },
-}));
+  };
+  const Preferences = new Proxy(impl, {
+    get(t, prop) {
+      if (prop === "then") throw new Error('"Preferences.then()" is not implemented');
+      return (t as Record<string | symbol, unknown>)[prop];
+    },
+  });
+  return { Preferences };
+});
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth } }));
 
 const KEY = "kookaflow.auth.session";
@@ -73,5 +81,11 @@ describe("native launch sign-in check", () => {
     auth.setSession.mockResolvedValue({ data: { session: null }, error: { message: "Failed to fetch" } });
     expect(await m.checkNativeSession()).toBe(false);
     expect(store.has(KEY)).toBe(true);
+  });
+
+  it("launch check that throws resolves to not signed in (login, not blank)", async () => {
+    const m = await load();
+    auth.getSession.mockRejectedValue(new Error("boom"));
+    expect(await m.checkNativeSession()).toBe(false);
   });
 });
