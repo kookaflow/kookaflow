@@ -75,6 +75,11 @@ export function ConnectedCalendars() {
   }, [qc]);
 
   const syncMut = useMutation({
+    onError: (e) => {
+      console.error("[google] sync request failed", e);
+      toast.dismiss("google-sync");
+      toast.error("Sync didn't finish — please try again.");
+    },
     mutationFn: () => {
       toast.message(
         "Syncing your calendar — this may take a few minutes depending on how many events you have ☕",
@@ -91,7 +96,7 @@ export function ConnectedCalendars() {
           }`,
         );
       } else {
-        toast.error(`Sync failed: ${res.error ?? "unknown error"}`);
+        toast.error(res.error ?? "Sync didn't finish — we'll retry automatically.");
       }
       qc.invalidateQueries({ queryKey: ["google-connection-status"] });
       qc.invalidateQueries({ queryKey: ["google-events"] });
@@ -99,6 +104,10 @@ export function ConnectedCalendars() {
   });
 
   const disconnectMut = useMutation({
+    onError: (e) => {
+      console.error("[google] disconnect failed", e);
+      toast.error("Couldn't disconnect Google Calendar — please try again.");
+    },
     mutationFn: () => disconnect(),
     onSuccess: () => {
       toast.success("Google Calendar disconnected");
@@ -131,8 +140,8 @@ export function ConnectedCalendars() {
       window.location.href = url;
     } catch (e) {
       setConnecting(false);
-      const msg = e instanceof Error ? e.message : "Could not start Google connection";
-      toast.error(msg);
+      console.error("[google] connect failed", e);
+      toast.error("Couldn't start Google connection — please try again.");
     }
   };
 
@@ -173,16 +182,26 @@ export function ConnectedCalendars() {
                 <CalendarCheck2 className="size-5 text-emerald-500" />
               </div>
 
-              {status.lastSyncError && (
+              {status.needsReconnect ? (
+                <div className="space-y-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-300">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="size-4 shrink-0" />
+                    <span>
+                      Google needs you to reconnect Kookaflow. When Google asks, tick the box
+                      to let Kookaflow see your calendar.
+                    </span>
+                  </div>
+                  <Button size="sm" onClick={handleConnect} disabled={connecting} className="gap-2">
+                    <GoogleLogo className="size-4" />
+                    {connecting ? "Opening Google…" : "Reconnect"}
+                  </Button>
+                </div>
+              ) : status.lastSyncError ? (
                 <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-300">
                   <AlertTriangle className="size-4 shrink-0" />
-                  <span>
-                    Google Calendar disconnected — reconnect to continue syncing.
-                    <br />
-                    <span className="opacity-70">({status.lastSyncError})</span>
-                  </span>
+                  <span>{status.lastSyncError}</span>
                 </div>
-              )}
+              ) : null}
 
               <div className="flex gap-2">
                 <Button

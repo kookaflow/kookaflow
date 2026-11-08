@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { SCOPE_MISSING_MESSAGE } from "@/lib/googleErrors";
 
 /**
  * Native-only: handle com.kookaflow.app://google-calendar?status=... links that
@@ -25,6 +26,7 @@ export async function registerNativeDeepLinks(queryClient: QueryClient): Promise
     queryClient.invalidateQueries({ queryKey: ["google-connection-status"] });
     queryClient.invalidateQueries({ queryKey: ["google-events"] });
     if (status === "connected") toast.success("Google Calendar connected");
+    else if (status === "scope_missing") toast.error(SCOPE_MISSING_MESSAGE, { duration: 8000 });
     else toast.error("Google Calendar connection didn't finish — please try again");
   });
   return () => void handle.remove();

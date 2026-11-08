@@ -1,4 +1,8 @@
 import crypto from "crypto";
+import { GoogleApiError } from "./googleErrors";
+
+/** Two-way sync needs the calendar.events scope, which Kookaflow does not request yet. */
+export const TWO_WAY_SYNC_AVAILABLE = false;
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveGoogleEventColor } from "./googleColors";
 
@@ -121,7 +125,8 @@ export async function refreshAccessToken(
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Google token refresh failed (${res.status}): ${text}`);
+    console.error(`[google] token refresh failed [${res.status}]: ${text}`);
+    throw new GoogleApiError(res.status, text, "Google token refresh failed");
   }
   return res.json();
 }
@@ -277,7 +282,8 @@ export async function syncUserCalendar(userId: string): Promise<{
     }
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`Calendar list failed (${res.status}): ${text}`);
+      console.error(`[google] events list failed [${res.status}]: ${text}`);
+      throw new GoogleApiError(res.status, text, "Calendar list failed");
     }
     const data = (await res.json()) as {
       items?: GoogleEventResource[];
@@ -384,6 +390,8 @@ export async function pushEventToGoogle(
   userId: string,
   eventId: string,
 ): Promise<void> {
+  // Kookaflow is read-only for now (calendar.readonly scope): never write to Google.
+  if (!TWO_WAY_SYNC_AVAILABLE) return;
   const { data: event } = await supabaseAdmin
     .from("events")
     .select(
@@ -472,6 +480,7 @@ export async function deleteEventFromGoogle(
   userId: string,
   googleEventId: string,
 ): Promise<void> {
+  if (!TWO_WAY_SYNC_AVAILABLE) return;
   const accessToken = await getValidAccessToken(userId);
   if (!accessToken) return;
   const { data: conn } = await supabaseAdmin

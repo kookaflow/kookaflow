@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { syncUserCalendar } from "@/lib/google-calendar.server";
+import { classifyGoogleError, friendlyStoredError } from "@/lib/googleErrors";
 
 export const Route = createFileRoute("/api/public/google/sync-all")({
   server: {
@@ -12,19 +13,25 @@ export const Route = createFileRoute("/api/public/google/sync-all")({
         }
         const { data: conns } = await supabaseAdmin
           .from("google_calendar_connections")
-          .select("user_id");
+          .select("user_id, last_sync_error");
         const results: Array<{ userId: string; ok: boolean; error?: string }> = [];
         for (const c of conns ?? []) {
+          // Skip connections waiting for the user to reconnect.
+          if (friendlyStoredError(c.last_sync_error)?.code === "needs_reconnect") {
+            results.push({ userId: c.user_id, ok: false, error: "needs_reconnect" });
+            continue;
+          }
           try {
             await syncUserCalendar(c.user_id);
             results.push({ userId: c.user_id, ok: true });
           } catch (e) {
-            const msg = e instanceof Error ? e.message : String(e);
+            console.error(`[google] background sync failed for ${c.user_id}`, e);
+            const code = classifyGoogleError(e);
             await supabaseAdmin
               .from("google_calendar_connections")
-              .update({ last_sync_error: msg })
+              .update({ last_sync_error: code })
               .eq("user_id", c.user_id);
-            results.push({ userId: c.user_id, ok: false, error: msg });
+            results.push({ userId: c.user_id, ok: false, error: code });
           }
         }
         return Response.json({ ok: true, count: results.length, results });

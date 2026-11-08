@@ -7,6 +7,7 @@ import {
   syncUserCalendar,
   verifyStateDetailed,
 } from "@/lib/google-calendar.server";
+import { hasCalendarReadScope, SCOPE_MISSING_MESSAGE } from "@/lib/googleErrors";
 
 function escapeHtml(s: string): string {
   return s
@@ -19,10 +20,16 @@ function escapeHtml(s: string): string {
 
 const APP_RETURN = "com.kookaflow.app://google-calendar";
 
-function htmlResponse(title: string, body: string, status = 200, native = false) {
+function htmlResponse(
+  title: string,
+  body: string,
+  status = 200,
+  native = false,
+  nativeStatus?: string,
+) {
   const ok = status < 400;
   const target = native
-    ? `${APP_RETURN}?status=${ok ? "connected" : "error"}`
+    ? `${APP_RETURN}?status=${nativeStatus ?? (ok ? "connected" : "error")}`
     : ok
       ? "/settings?google=connected"
       : "/settings";
@@ -52,7 +59,7 @@ export const Route = createFileRoute("/auth/google/callback")({
         if (error) {
           return htmlResponse(
             "Connection cancelled",
-            `<h1>Connection cancelled</h1><p>${escapeHtml(error)}</p>`,
+            `<h1>Connection cancelled</h1><p>Google Calendar wasn't connected. You can try again any time.</p>`,
             400,
             native,
           );
@@ -78,6 +85,22 @@ export const Route = createFileRoute("/auth/google/callback")({
         try {
           const redirectUri = getRedirectUri(request);
           const tokens = await exchangeCodeForTokens(code, redirectUri);
+          if (!hasCalendarReadScope(tokens.scope)) {
+            // The user unticked the calendar permission: don't save, release the token.
+            console.warn(`[google] connect without calendar scope for ${userId}: ${tokens.scope}`);
+            await fetch("https://oauth2.googleapis.com/revoke", {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({ token: tokens.refresh_token || tokens.access_token }),
+            }).catch((e) => console.error("[google-revoke] failed", e));
+            return htmlResponse(
+              "Permission needed",
+              `<h1>Permission needed</h1><p>${escapeHtml(SCOPE_MISSING_MESSAGE)}</p>`,
+              400,
+              native,
+              "scope_missing",
+            );
+          }
           const email = await getUserInfoEmail(tokens.access_token);
           const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
@@ -107,10 +130,10 @@ export const Route = createFileRoute("/auth/google/callback")({
             native,
           );
         } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
+          console.error("[google] connect callback failed", e);
           return htmlResponse(
             "Connection failed",
-            `<h1>Connection failed</h1><p>${escapeHtml(msg)}</p>`,
+            `<h1>Connection didn't finish</h1><p>Something went wrong connecting Google Calendar. Please try again.</p>`,
             500,
             native,
           );

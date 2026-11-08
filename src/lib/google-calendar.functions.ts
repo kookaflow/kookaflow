@@ -10,7 +10,14 @@ import {
   deleteEventFromGoogle as deleteEventFromGoogleServer,
   GOOGLE_SCOPES,
   signState,
+  TWO_WAY_SYNC_AVAILABLE,
 } from "./google-calendar.server";
+import {
+  classifyGoogleError,
+  FRIENDLY_GOOGLE_MESSAGES,
+  friendlyStoredError,
+  hasCalendarReadScope,
+} from "./googleErrors";
 
 /**
  * Server-side subscription gate. Throws if the user does not have pro-level access.
@@ -38,7 +45,10 @@ export interface GoogleConnectionStatus {
   googleEmail: string | null;
   twoWaySyncEnabled: boolean;
   lastSyncedAt: string | null;
+  /** Friendly message only — never raw Google text. */
   lastSyncError: string | null;
+  needsReconnect?: boolean;
+  twoWaySyncAvailable?: boolean;
 }
 
 export const getGoogleConnectionStatus = createServerFn({ method: "GET" })
@@ -47,7 +57,7 @@ export const getGoogleConnectionStatus = createServerFn({ method: "GET" })
     const { userId } = context;
     const { data } = await supabaseAdmin
       .from("google_calendar_connections")
-      .select("google_email, two_way_sync_enabled, last_synced_at, last_sync_error")
+      .select("google_email, two_way_sync_enabled, last_synced_at, last_sync_error, scope")
       .eq("user_id", userId)
       .maybeSingle();
     if (!data) {
@@ -59,12 +69,18 @@ export const getGoogleConnectionStatus = createServerFn({ method: "GET" })
         lastSyncError: null,
       };
     }
+    const scopeMissing = !!data.scope && !hasCalendarReadScope(data.scope);
+    const err = scopeMissing
+      ? friendlyStoredError("needs_reconnect")
+      : friendlyStoredError(data.last_sync_error);
     return {
       connected: true,
       googleEmail: data.google_email,
-      twoWaySyncEnabled: data.two_way_sync_enabled,
+      twoWaySyncEnabled: TWO_WAY_SYNC_AVAILABLE && data.two_way_sync_enabled,
       lastSyncedAt: data.last_synced_at,
-      lastSyncError: data.last_sync_error,
+      lastSyncError: err?.message ?? null,
+      needsReconnect: err?.code === "needs_reconnect",
+      twoWaySyncAvailable: TWO_WAY_SYNC_AVAILABLE,
     };
   });
 
@@ -91,6 +107,7 @@ export const setTwoWaySync = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { userId } = context;
     await requireProAccess(userId);
+    if (!TWO_WAY_SYNC_AVAILABLE) return { ok: false };
     await supabaseAdmin
       .from("google_calendar_connections")
       .update({ two_way_sync_enabled: data.enabled })
@@ -107,12 +124,20 @@ export const triggerGoogleSync = createServerFn({ method: "POST" })
       const result = await syncUserCalendar(userId);
       return { ok: true, ...result };
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[google] manual sync failed", e);
+      const code = classifyGoogleError(e);
       await supabaseAdmin
         .from("google_calendar_connections")
-        .update({ last_sync_error: msg })
+        .update({ last_sync_error: code })
         .eq("user_id", userId);
-      return { ok: false, error: msg, imported: 0, removed: 0, fullSync: false };
+      return {
+        ok: false,
+        error: FRIENDLY_GOOGLE_MESSAGES[code],
+        needsReconnect: code === "needs_reconnect",
+        imported: 0,
+        removed: 0,
+        fullSync: false,
+      };
     }
   });
 
