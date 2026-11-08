@@ -18,19 +18,25 @@ async function prefs() {
 
 type Saved = { access_token: string; refresh_token: string };
 
-async function save(s: Saved) {
+async function save(s: Saved, reason = "unknown") {
   try {
     await (await prefs()).set({ key: KEY, value: JSON.stringify(s) });
+    console.log(`[native-auth] saved (event=${reason})`);
   } catch (e) {
     console.warn("[native-auth] save failed", e);
   }
+}
+
+async function removeCopy() {
+  await (await prefs()).remove({ key: KEY });
 }
 
 /** Call before a deliberate sign-out or account deletion. */
 export async function clearNativeSession(): Promise<void> {
   if (!isNativeAuthPlatform()) return;
   try {
-    await (await prefs()).remove({ key: KEY });
+    await removeCopy();
+    console.log("[native-auth] cleared (deliberate sign-out)");
   } catch (e) {
     console.warn("[native-auth] clear failed", e);
   }
@@ -54,22 +60,75 @@ function isDeadRefreshToken(error: { message?: string } | null | undefined) {
  */
 export async function restoreNativeSession(): Promise<boolean> {
   if (!isNativeAuthPlatform()) return false;
+  return restoreFromPreferences();
+}
+
+async function restoreFromPreferences(): Promise<boolean> {
   try {
     const { value } = await (await prefs()).get({ key: KEY });
+    console.log(`[native-auth] preferences copy: ${value ? "present" : "missing"}`);
     if (!value) return false;
     const saved = JSON.parse(value) as Saved;
     if (!saved?.refresh_token) return false;
     const { data, error } = await supabase.auth.setSession(saved);
     if (error) {
-      if (isDeadRefreshToken(error)) await clearNativeSession();
-      console.warn("[native-auth] restore failed", error.message);
+      if (isDeadRefreshToken(error)) {
+        await removeCopy();
+        console.log("[native-auth] cleared (saved sign-in rejected by server)");
+      }
+      console.warn("[native-auth] restore failed:", error.message);
       return false;
+    }
+    console.log(`[native-auth] restore ${data.session ? "ok" : "failed: no session returned"}`);
+    // setSession may have rotated the refresh token — keep the durable copy current.
+    if (data.session) {
+      await save(
+        { access_token: data.session.access_token, refresh_token: data.session.refresh_token },
+        "restore",
+      );
     }
     return !!data.session;
   } catch (e) {
     console.warn("[native-auth] restore error", e);
     return false;
   }
+}
+
+/**
+ * The launch check: read the WebView session, restore it from Preferences if
+ * missing, refresh the durable copy, and report whether a session exists.
+ * Concurrent callers share one in-flight check; later calls re-check (cheap,
+ * local) so a deliberate sign-out is never masked by a stale result.
+ * This is the ungated core; callers use resolveNativeSession(). Exported for tests.
+ */
+export async function checkNativeSession(): Promise<boolean> {
+  console.log("[native-auth] launch check start");
+  try {
+    const { data } = await supabase.auth.getSession();
+    console.log(`[native-auth] webview session: ${data.session ? "present" : "missing"}`);
+    if (data.session) {
+      await save(
+        { access_token: data.session.access_token, refresh_token: data.session.refresh_token },
+        "launch-check",
+      );
+      return true;
+    }
+    return await restoreFromPreferences();
+  } catch (e) {
+    console.warn("[native-auth] launch check error", e);
+    return false;
+  }
+}
+
+let inFlight: Promise<boolean> | null = null;
+export function resolveNativeSession(): Promise<boolean> {
+  if (!isNativeAuthPlatform()) return Promise.resolve(false);
+  if (!inFlight) {
+    inFlight = checkNativeSession().finally(() => {
+      inFlight = null;
+    });
+  }
+  return inFlight;
 }
 
 /**
@@ -92,18 +151,13 @@ export async function ensureFreshNativeSession(): Promise<"ok" | "offline" | "si
 export async function startNativeAuthPersistence(): Promise<() => void> {
   if (!isNativeAuthPlatform()) return () => {};
 
-  // Migration: copy the current WebView session into Preferences.
-  const { data } = await supabase.auth.getSession();
-  if (data.session) {
-    await save({
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-    });
-  }
+  // Migration + restore: the shared launch check copies the WebView session
+  // into Preferences (or restores from it) before anything else runs here.
+  await resolveNativeSession();
 
   const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
     if (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED" || event === "INITIAL_SESSION")) {
-      void save({ access_token: session.access_token, refresh_token: session.refresh_token });
+      void save({ access_token: session.access_token, refresh_token: session.refresh_token }, event);
     }
     // SIGNED_OUT deliberately does not clear the copy: deliberate sign-outs call
     // clearNativeSession(); anything else is recoverable via restore.

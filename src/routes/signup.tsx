@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { isNativeAuthPlatform, resolveNativeSession } from "@/lib/nativeAuthPersistence";
 import { toast } from "sonner";
 import { Mail, Lock, ShieldCheck, User } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
@@ -13,6 +14,14 @@ export const Route = createFileRoute("/signup")({
     typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//")
       ? { next: s.next }
       : {},
+  beforeLoad: async () => {
+    // Phone apps: an existing or restorable sign-in skips the form.
+    if (!isNativeAuthPlatform()) return;
+    if (await resolveNativeSession()) {
+      console.log("[native-auth] redirect /signup -> /calendar");
+      throw redirect({ to: "/calendar" });
+    }
+  },
   component: SignupPage,
 });
 

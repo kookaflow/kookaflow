@@ -9,7 +9,7 @@ import { RevenueCatProvider } from "@/providers/RevenueCatProvider";
 import {
   ensureFreshNativeSession,
   isNativeAuthPlatform,
-  restoreNativeSession,
+  resolveNativeSession,
 } from "@/lib/nativeAuthPersistence";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -40,19 +40,16 @@ function AuthenticatedLayout() {
     let mounted = true;
 
     (async () => {
+      const native = isNativeAuthPlatform();
+      // Native: run the shared launch check (WebView session, else restore from Preferences).
+      if (native) await resolveNativeSession();
       // 1. Trust the locally stored session first — no network round-trip.
       const { data: sessionData } = await supabase.auth.getSession();
       if (!mounted) return;
-      let session = sessionData.session;
-      const native = isNativeAuthPlatform();
-
-      // Native: WebView storage may have been purged — restore the durable copy first.
-      if (!session && native && (await restoreNativeSession())) {
-        if (!mounted) return;
-        session = (await supabase.auth.getSession()).data.session;
-      }
+      const session = sessionData.session;
 
       if (!session) {
+        if (native) console.log("[native-auth] _authenticated -> /login (no session after restore)");
         navigate({ to: "/login" });
         return;
       }
@@ -83,7 +80,10 @@ function AuthenticatedLayout() {
         try {
           const state = await ensureFreshNativeSession();
           if (!mounted) return;
-          if (state === "signed_out") navigate({ to: "/login" });
+          if (state === "signed_out") {
+            console.log("[native-auth] _authenticated -> /login (refresh token rejected)");
+            navigate({ to: "/login" });
+          }
         } catch {
           /* offline — keep the user in */
         }
@@ -100,7 +100,10 @@ function AuthenticatedLayout() {
     })();
 
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT") navigate({ to: "/login" });
+      if (event === "SIGNED_OUT") {
+        if (isNativeAuthPlatform()) console.log("[native-auth] _authenticated -> /login (SIGNED_OUT event)");
+        navigate({ to: "/login" });
+      }
     });
 
     // 4. Coming back to the foreground after the phone slept: re-arm the token quietly.

@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { isNativeAuthPlatform, resolveNativeSession } from "@/lib/nativeAuthPersistence";
 import logo from "@/assets/kookaflow-logo.png";
 import { Button } from "@/components/ui/button";
 
@@ -19,6 +20,13 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
+  beforeLoad: async () => {
+    // Phone apps never show the marketing page: restore the sign-in first, then route.
+    if (!isNativeAuthPlatform()) return;
+    const signedIn = await resolveNativeSession();
+    console.log(`[native-auth] redirect / -> ${signedIn ? "/calendar" : "/login"}`);
+    throw redirect({ to: signedIn ? "/calendar" : "/login" });
+  },
   component: LandingPage,
 });
 
