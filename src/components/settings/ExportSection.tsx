@@ -7,6 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEvents } from "@/providers/EventsProvider";
 import type { CalendarEvent } from "@/types/event";
+import { isNativeApp, shareFileNatively } from "@/lib/nativeFileShare";
+
+const NATIVE_FAIL = "Couldn't export the file — please try again.";
+
+async function nativeShare(blob: Blob, filename: string) {
+  try {
+    const r = await shareFileNatively(blob, filename);
+    if (r === "shared") toast.success("Report ready — choose where to save or share it");
+  } catch (e) {
+    console.error("[export] native share failed:", e);
+    toast.error(NATIVE_FAIL);
+  }
+}
 
 const CATEGORY_LABEL: Record<string, string> = {
   work: "Work",
@@ -31,7 +44,12 @@ export function ExportSection() {
       const now = new Date();
       const monthLabel = format(now, "MMMM yyyy");
       const filename = `Kookaflow-${format(now, "MMMM")}-${format(now, "yyyy")}.pdf`;
-      generateMonthlyPdf(allEvents, now, monthLabel).save(filename);
+      const doc = generateMonthlyPdf(allEvents, now, monthLabel);
+      if (isNativeApp()) {
+        await nativeShare(doc.output("blob"), filename);
+        return;
+      }
+      doc.save(filename);
       toast.success("Monthly report downloaded");
     } catch (e) {
       toast.error((e as Error).message || "Could not generate PDF");
@@ -46,10 +64,15 @@ export function ExportSection() {
       const allEvents = await loadAllEvents();
       const csv = eventsToCsv(allEvents);
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const csvName = `Kookaflow-events-${format(new Date(), "yyyy-MM-dd")}.csv`;
+      if (isNativeApp()) {
+        await nativeShare(blob, csvName);
+        return;
+      }
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Kookaflow-events-${format(new Date(), "yyyy-MM-dd")}.csv`;
+      a.download = csvName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
