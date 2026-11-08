@@ -8,6 +8,10 @@ Before any data is deleted, read the user's profile (stripe_customer_id, stripe_
 
 Existing table and sign-in deletion then runs as now. Helper for OneSignal goes in src/lib/reminders/push.server.ts (`deleteOneSignalUser`), loaded inside the handler.
 
+## Webhooks after deletion
+- **Stripe webhook:** today a missing profile already returns 200 (updates match no rows, no error), but nothing is logged. Add a shared `profileExists(userId)` check before every profile update (subscription created/updated/deleted, payment failed, one-time checkout); when missing, log `[stripe-webhook] no profile for user, event ignored` with event type and return 200 — no retries.
+- **RevenueCat webhook:** already checks and returns 200 with a log when the profile is missing (confirmed in code). No change.
+
 ## /delete-account page
 - "What is deleted": replace the push line with "Your push notification registration with our notification provider, plus scheduled alerts and reminder history."
 - Add: "Any active subscription paid by card on our website (Stripe) is cancelled immediately."
@@ -17,6 +21,7 @@ Existing table and sign-in deletion then runs as now. Helper for OneSignal goes 
 - src/lib/account.functions.ts
 - src/lib/reminders/push.server.ts
 - src/routes/delete-account.tsx
+- src/routes/api/public/stripe/webhook.ts
 
 ## Verification
 Typecheck; run the OneSignal and Stripe helpers against a missing ID to confirm failures log and deletion continues.
