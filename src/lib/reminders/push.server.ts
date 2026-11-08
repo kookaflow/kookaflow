@@ -10,6 +10,69 @@ function getOneSignalCreds() {
   return { appId, key };
 }
 
+/**
+ * Build a OneSignal notification body targeting users by external_id (set
+ * on every device by OneSignal.login(userId)), so web, iOS and Android all
+ * receive it. Native taps open `data.path` inside the app.
+ */
+export function buildPushBody({
+  appId,
+  externalUserIds,
+  heading,
+  content,
+  url,
+  scheduledFor,
+}: {
+  appId: string;
+  externalUserIds: string[];
+  heading: string;
+  content: string;
+  url?: string;
+  scheduledFor?: string;
+}) {
+  const path = url ? toAppPath(url) : null;
+  return {
+    app_id: appId,
+    include_aliases: { external_id: externalUserIds },
+    target_channel: "push",
+    headings: { en: heading },
+    contents: { en: content },
+    ...(url ? { web_url: url } : {}),
+    ...(path ? { data: { path } } : {}),
+    ...(scheduledFor ? { send_after: scheduledFor } : {}),
+  };
+}
+
+function toAppPath(url: string): string | null {
+  try {
+    const u = new URL(url, "https://kookaflow.com");
+    if (!/(^|\.)kookaflow\.com$/.test(u.hostname)) return null;
+    return u.pathname + u.search;
+  } catch {
+    return null;
+  }
+}
+
+async function postNotification(body: Record<string, unknown>) {
+  const { key } = getOneSignalCreds();
+  const res = await fetch(ONESIGNAL_API, {
+    method: "POST",
+    headers: {
+      Authorization: `Key ${key}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      `OneSignal API error [${res.status}]: ${JSON.stringify(data)}`,
+    );
+  }
+  return data as { id?: string; errors?: unknown };
+}
+
 export async function sendOneSignalPush({
   externalUserIds,
   heading,
@@ -21,38 +84,15 @@ export async function sendOneSignalPush({
   content: string;
   url?: string;
 }) {
-  const { appId, key } = getOneSignalCreds();
-
-  const res = await fetch(ONESIGNAL_API, {
-    method: "POST",
-    headers: {
-      Authorization: `Key ${key}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      app_id: appId,
-      include_aliases: { external_id: externalUserIds },
-      target_channel: "push",
-      headings: { en: heading },
-      contents: { en: content },
-      ...(url ? { url } : {}),
-    }),
-  });
-
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(
-      `OneSignal API error [${res.status}]: ${JSON.stringify(data)}`,
-    );
-  }
-  return data;
+  const { appId } = getOneSignalCreds();
+  return postNotification(
+    buildPushBody({ appId, externalUserIds, heading, content, url }),
+  );
 }
 
 /**
- * Send a push notification to a single user by looking up their stored
- * OneSignal player ID. Silently skips if the user has no player ID or
- * has push disabled.
+ * Send a push notification to all of a user's devices (by external_id).
+ * Skips if the user has turned push off.
  */
 export async function sendPushToUser({
   supabaseAdmin,
@@ -71,37 +111,27 @@ export async function sendPushToUser({
 }): Promise<{ skipped: true; reason: string } | { skipped: false; data: unknown }> {
   const { data: profile, error } = await supabaseAdmin
     .from("profiles")
-    .select("onesignal_player_id, push_notifications_enabled")
+    .select("push_notifications_enabled")
     .eq("id", userId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!profile?.onesignal_player_id)
-    return { skipped: true, reason: "no_player_id" };
-  if (!profile.push_notifications_enabled)
+  if (!profile?.push_notifications_enabled)
     return { skipped: true, reason: "push_disabled" };
 
-  const { appId, key } = getOneSignalCreds();
-  const res = await fetch("https://onesignal.com/api/v1/notifications", {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${key}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      app_id: appId,
-      include_player_ids: [profile.onesignal_player_id],
-      headings: { en: title },
-      contents: { en: message },
-      ...(url ? { url } : {}),
-      ...(scheduledFor ? { send_after: scheduledFor } : {}),
+  const { appId } = getOneSignalCreds();
+  const data = await postNotification(
+    buildPushBody({
+      appId,
+      externalUserIds: [userId],
+      heading: title,
+      content: message,
+      url,
+      scheduledFor,
     }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(
-      `OneSignal API error [${res.status}]: ${JSON.stringify(data)}`,
-    );
+  );
+  if (!data.id) {
+    console.log("[push] no subscribed devices for user", userId, data.errors);
+    return { skipped: true, reason: "no_subscription" };
   }
   return { skipped: false, data };
 }

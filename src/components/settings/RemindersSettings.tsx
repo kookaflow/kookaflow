@@ -6,7 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Bell, BellOff, Mail, Smartphone, Check } from "lucide-react";
-import OneSignal from "react-onesignal";
+import {
+  getPushPermission,
+  isNativePush,
+  requestPushPermission,
+  type PushPermission,
+} from "@/lib/pushClient";
 import { useServerFn } from "@tanstack/react-start";
 import { getPushStatus, updatePushPrefs } from "@/lib/push.functions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -276,29 +281,29 @@ Take a breath—you've got this.`;
 }
 
 function usePermissionState() {
-  const [perm, setPerm] = useState<NotificationPermission | "unsupported">(
-    "default",
-  );
+  const [perm, setPerm] = useState<PushPermission>("default");
   useEffect(() => {
-    if (typeof Notification === "undefined") {
-      setPerm("unsupported");
-      return;
-    }
-    setPerm(Notification.permission);
-    const id = window.setInterval(() => setPerm(Notification.permission), 1500);
-    return () => window.clearInterval(id);
+    let alive = true;
+    const read = () => {
+      void getPushPermission().then((p) => {
+        if (alive) setPerm(p);
+      });
+    };
+    read();
+    const id = window.setInterval(read, 1500);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
   }, []);
   return perm;
 }
 
 function NotificationStatusCard() {
   const perm = usePermissionState();
+  const native = isNativePush();
   const enable = async () => {
-    try {
-      await OneSignal.Notifications.requestPermission();
-    } catch (e) {
-      console.error(e);
-    }
+    await requestPushPermission();
   };
 
   if (perm === "granted") {
@@ -313,11 +318,20 @@ function NotificationStatusCard() {
   }
   if (perm === "denied") {
     return (
-      <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
-        <span className="inline-block size-2 rounded-full bg-amber-500" />
-        <span className="text-sm text-foreground">
-          Notifications blocked — enable in your browser settings
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <span className="inline-block size-2 rounded-full bg-amber-500" />
+          <span className="text-sm text-foreground">
+            {native
+              ? "Notifications blocked — turn them on in your phone's Settings"
+              : "Notifications blocked — enable in your browser settings"}
+          </span>
+        </div>
+        {native ? (
+          <Button size="sm" variant="outline" onClick={enable}>
+            Open Settings
+          </Button>
+        ) : null}
       </div>
     );
   }

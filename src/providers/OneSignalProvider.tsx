@@ -1,41 +1,57 @@
 import { useEffect, useRef, useState } from "react";
-import OneSignal from "react-onesignal";
+import { useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getOneSignalConfig,
   updatePushSubscription,
 } from "@/lib/push.functions";
+import {
+  getPushSubscription,
+  initPush,
+  loginPush,
+  logoutPush,
+  onPushClick,
+  onPushSubscriptionChange,
+} from "@/lib/pushClient";
 import { PushPermissionPrompt } from "@/components/notifications/PushPermissionPrompt";
 
-let initialised = false;
+let started = false;
 
 export function OneSignalProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const persistFn = useServerFn(updatePushSubscription);
   const cfgFn = useServerFn(getOneSignalConfig);
-  const lastPlayerId = useRef<string | null>(null);
+  const lastPlayerId = useRef<string | null | undefined>(undefined);
+  const loggedInAs = useRef<string | null>(null);
+  const router = useRouter();
 
   // Init SDK once on client
   useEffect(() => {
-    if (typeof window === "undefined" || initialised) return;
-    initialised = true;
+    if (typeof window === "undefined" || started) return;
+    started = true;
     (async () => {
       try {
-        const cfg = await cfgFn();
-        if (!cfg.appId) return;
-        await OneSignal.init({
-          appId: cfg.appId,
-          allowLocalhostAsSecureOrigin: true,
-          serviceWorkerParam: { scope: "/" },
-        });
-        setReady(true);
+        const baked = import.meta.env.VITE_ONESIGNAL_APP_ID as string | undefined;
+        const appId = baked || (await cfgFn()).appId;
+        if (!appId) {
+          console.warn("[push] no OneSignal app id");
+          return;
+        }
+        if (await initPush(appId)) setReady(true);
       } catch (e) {
-        console.error("OneSignal init failed", e);
+        console.error("[push] init failed", e);
       }
     })();
   }, [cfgFn]);
+
+  // Notification taps (native): open the in-app screen
+  useEffect(() => {
+    return onPushClick((path) => {
+      router.history.push(path);
+    });
+  }, [router]);
 
   // Track auth user
   useEffect(() => {
@@ -47,16 +63,17 @@ export function OneSignalProvider({ children }: { children: React.ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Link user to OneSignal external_id when both ready
+  // Link user to OneSignal external_id; unlink on sign-out
   useEffect(() => {
-    if (!ready || !userId) return;
-    (async () => {
-      try {
-        await OneSignal.login(userId);
-      } catch (e) {
-        console.error("OneSignal login failed", e);
-      }
-    })();
+    if (!ready) return;
+    if (userId && loggedInAs.current !== userId) {
+      loggedInAs.current = userId;
+      void loginPush(userId);
+    } else if (!userId && loggedInAs.current) {
+      loggedInAs.current = null;
+      lastPlayerId.current = undefined;
+      void logoutPush();
+    }
   }, [ready, userId]);
 
   // Persist subscription id whenever it changes
@@ -64,20 +81,17 @@ export function OneSignalProvider({ children }: { children: React.ReactNode }) {
     if (!ready || !userId) return;
     const handler = async () => {
       try {
-        const playerId = OneSignal.User.PushSubscription.id ?? null;
-        const optedIn = OneSignal.User.PushSubscription.optedIn ?? false;
-        if (playerId === lastPlayerId.current) return;
-        lastPlayerId.current = playerId;
-        await persistFn({ data: { playerId, enabled: !!optedIn && !!playerId } });
+        const { id, optedIn } = await getPushSubscription();
+        if (id === lastPlayerId.current) return;
+        lastPlayerId.current = id;
+        await persistFn({ data: { playerId: id, enabled: optedIn && !!id } });
+        console.log("[push] subscription saved", id ? "present" : "none");
       } catch (e) {
-        console.error("Failed to persist OneSignal subscription", e);
+        console.error("[push] failed to persist subscription", e);
       }
     };
-    handler();
-    OneSignal.User.PushSubscription.addEventListener("change", handler);
-    return () => {
-      OneSignal.User.PushSubscription.removeEventListener("change", handler);
-    };
+    void handler();
+    return onPushSubscriptionChange(() => void handler());
   }, [ready, userId, persistFn]);
 
   return (

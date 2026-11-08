@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import OneSignal from "react-onesignal";
+import { getPushPermission, requestPushPermission } from "@/lib/pushClient";
 import { Bell, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoUrl from "@/assets/kookaflow-logo.png";
@@ -26,11 +26,17 @@ export function PushPermissionPrompt() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (typeof Notification === "undefined") return;
-    if (Notification.permission !== "default") return;
     if (recentlyDismissed()) return;
-    const t = window.setTimeout(() => setOpen(true), 1500);
-    return () => window.clearTimeout(t);
+    let t: number | undefined;
+    let cancelled = false;
+    void getPushPermission().then((p) => {
+      if (cancelled || p !== "default") return;
+      t = window.setTimeout(() => setOpen(true), 1500);
+    });
+    return () => {
+      cancelled = true;
+      if (t) window.clearTimeout(t);
+    };
   }, []);
 
   if (!open) return null;
@@ -47,7 +53,7 @@ export function PushPermissionPrompt() {
   const enable = async () => {
     setBusy(true);
     try {
-      await OneSignal.Notifications.requestPermission();
+      await requestPushPermission();
     } catch (e) {
       console.error("Permission request failed", e);
     } finally {
