@@ -43,6 +43,7 @@ describe("native launch sign-in check", () => {
     const m = await load();
     auth.getSession.mockResolvedValue({ data: { session: session("r1") } });
     expect(await m.checkNativeSession()).toBe(true);
+    await new Promise((r) => setTimeout(r, 10));
     expect(JSON.parse(store.get(KEY)!).refresh_token).toBe("r1");
   });
 
@@ -52,6 +53,7 @@ describe("native launch sign-in check", () => {
     auth.getSession.mockResolvedValue({ data: { session: null } });
     auth.setSession.mockResolvedValue({ data: { session: session("new") }, error: null });
     expect(await m.checkNativeSession()).toBe(true);
+    await new Promise((r) => setTimeout(r, 10));
     expect(JSON.parse(store.get(KEY)!).refresh_token).toBe("new");
   });
 
@@ -71,6 +73,7 @@ describe("native launch sign-in check", () => {
       error: { message: "Invalid Refresh Token: Already Used" },
     });
     expect(await m.checkNativeSession()).toBe(false);
+    await new Promise((r) => setTimeout(r, 10));
     expect(store.has(KEY)).toBe(false);
   });
 
@@ -87,5 +90,27 @@ describe("native launch sign-in check", () => {
     const m = await load();
     auth.getSession.mockRejectedValue(new Error("boom"));
     expect(await m.checkNativeSession()).toBe(false);
+  });
+
+  it("existing session resolves at once even if the phone save never finishes", async () => {
+    const m = await load();
+    const prefs = (await import("@capacitor/preferences")).Preferences as unknown as { set: unknown };
+    const orig = prefs.set;
+    (prefs as { set: unknown }).set = () => new Promise(() => {});
+    auth.getSession.mockResolvedValue({ data: { session: session("r9") } });
+    const started = Date.now();
+    expect(await m.checkNativeSession()).toBe(true);
+    expect(Date.now() - started).toBeLessThan(100);
+    (prefs as { set: unknown }).set = orig;
+  });
+
+  it("a stuck getSession gives up after 3 seconds -> login", async () => {
+    vi.useFakeTimers();
+    const m = await load();
+    auth.getSession.mockReturnValue(new Promise(() => {}));
+    const p = m.checkNativeSession();
+    await vi.advanceTimersByTimeAsync(3001);
+    expect(await p).toBe(false);
+    vi.useRealTimers();
   });
 });

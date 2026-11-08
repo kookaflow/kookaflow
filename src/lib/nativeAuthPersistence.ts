@@ -66,29 +66,49 @@ export async function restoreNativeSession(): Promise<boolean> {
   return restoreFromPreferences();
 }
 
+const t0Ref = { t: 0 };
+function step(msg: string) {
+  console.log(`[native-auth] +${Date.now() - t0Ref.t}ms ${msg}`);
+}
+
+/** Resolve with the promise, or reject after ms. Exported for tests. */
+export function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const id = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    p.then(
+      (v) => { clearTimeout(id); resolve(v); },
+      (e) => { clearTimeout(id); reject(e); },
+    );
+  });
+}
+
+function saveLater(s: Saved, reason: string) {
+  step(`save scheduled (${reason})`);
+  setTimeout(() => void save(s, reason), 0);
+}
+
 async function restoreFromPreferences(): Promise<boolean> {
   try {
-    const { value } = await (await prefsModule()).Preferences.get({ key: KEY });
-    console.log(`[native-auth] preferences copy: ${value ? "present" : "missing"}`);
+    step("preferences get begin");
+    const mod = await prefsModule();
+    const { value } = await withTimeout(mod.Preferences.get({ key: KEY }), 2000, "Preferences.get");
+    step(`preferences get end: ${value ? "present" : "missing"}`);
     if (!value) return false;
     const saved = JSON.parse(value) as Saved;
     if (!saved?.refresh_token) return false;
-    const { data, error } = await supabase.auth.setSession(saved);
+    step("setSession begin");
+    const { data, error } = await withTimeout(supabase.auth.setSession(saved), 5000, "setSession");
+    step(`setSession end: ${error ? "error" : data.session ? "ok" : "no session"}`);
     if (error) {
       if (isDeadRefreshToken(error)) {
-        await removeCopy();
+        setTimeout(() => void removeCopy().catch(() => {}), 0);
         console.log("[native-auth] cleared (saved sign-in rejected by server)");
       }
       console.warn("[native-auth] restore failed:", error.message);
       return false;
     }
-    console.log(`[native-auth] restore ${data.session ? "ok" : "failed: no session returned"}`);
-    // setSession may have rotated the refresh token — keep the durable copy current.
     if (data.session) {
-      await save(
-        { access_token: data.session.access_token, refresh_token: data.session.refresh_token },
-        "restore",
-      );
+      saveLater({ access_token: data.session.access_token, refresh_token: data.session.refresh_token }, "restore");
     }
     return !!data.session;
   } catch (e) {
@@ -99,21 +119,19 @@ async function restoreFromPreferences(): Promise<boolean> {
 
 /**
  * The launch check: read the WebView session, restore it from Preferences if
- * missing, refresh the durable copy, and report whether a session exists.
- * Concurrent callers share one in-flight check; later calls re-check (cheap,
- * local) so a deliberate sign-out is never masked by a stale result.
- * This is the ungated core; callers use resolveNativeSession(). Exported for tests.
+ * missing, and report whether a session exists. Never waits on Preferences
+ * writes; every step is individually time-boxed and logged with timing.
+ * Ungated core; callers use resolveNativeSession(). Exported for tests.
  */
 export async function checkNativeSession(): Promise<boolean> {
-  console.log("[native-auth] launch check start");
+  t0Ref.t = Date.now();
+  step("launch check start");
   try {
-    const { data } = await supabase.auth.getSession();
-    console.log(`[native-auth] webview session: ${data.session ? "present" : "missing"}`);
+    step("getSession begin");
+    const { data } = await withTimeout(supabase.auth.getSession(), 3000, "getSession");
+    step(`getSession end: webview session ${data.session ? "present" : "missing"}`);
     if (data.session) {
-      await save(
-        { access_token: data.session.access_token, refresh_token: data.session.refresh_token },
-        "launch-check",
-      );
+      saveLater({ access_token: data.session.access_token, refresh_token: data.session.refresh_token }, "launch-check");
       return true;
     }
     return await restoreFromPreferences();
@@ -124,24 +142,37 @@ export async function checkNativeSession(): Promise<boolean> {
 }
 
 let inFlight: Promise<boolean> | null = null;
+let settled: { value: boolean; at: number } | null = null;
 export function resolveNativeSession(): Promise<boolean> {
   if (!isNativeAuthPlatform()) return Promise.resolve(false);
+  if (settled && Date.now() - settled.at < 2000) return Promise.resolve(settled.value);
   if (!inFlight) {
-    const timeout = new Promise<boolean>((resolve) =>
-      setTimeout(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<boolean>((resolve) => {
+      timer = setTimeout(() => {
         console.warn("[native-auth] launch check timed out -> /login");
         resolve(false);
-      }, 8000),
-    );
+      }, 8000);
+    });
     const safe = checkNativeSession().catch((e) => {
       console.warn("[native-auth] launch check failed -> /login", e);
       return false;
     });
-    inFlight = Promise.race([safe, timeout]).finally(() => {
+    inFlight = Promise.race([safe, timeout]).then((v) => {
+      clearTimeout(timer);
+      step(`launch check result: ${v ? "signed in" : "signed out"} (total)`);
+      settled = { value: v, at: Date.now() };
+      return v;
+    }).finally(() => {
       inFlight = null;
     });
   }
   return inFlight;
+}
+
+/** Forget the cached launch result (after sign-in/sign-out). */
+export function resetNativeSessionCache() {
+  settled = null;
 }
 
 /**
@@ -172,9 +203,13 @@ export async function startNativeAuthPersistence(): Promise<() => void> {
     console.warn("[native-auth] launch check failed", e);
   }
 
+  // Never touch auth or the native bridge inside the callback: supabase-js
+  // holds its lock while notifying. Defer one tick.
   const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+    if (event === "SIGNED_IN" || event === "SIGNED_OUT") resetNativeSessionCache();
     if (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED" || event === "INITIAL_SESSION")) {
-      void save({ access_token: session.access_token, refresh_token: session.refresh_token }, event);
+      const copy = { access_token: session.access_token, refresh_token: session.refresh_token };
+      setTimeout(() => void save(copy, event), 0);
     }
     // SIGNED_OUT deliberately does not clear the copy: deliberate sign-outs call
     // clearNativeSession(); anything else is recoverable via restore.
@@ -190,7 +225,7 @@ export async function startNativeAuthPersistence(): Promise<() => void> {
   } catch (e) {
     console.warn("[native-auth] appStateChange listener failed", e);
   }
-  void supabase.auth.startAutoRefresh();
+  setTimeout(() => void supabase.auth.startAutoRefresh(), 0);
 
   return () => {
     sub.subscription.unsubscribe();

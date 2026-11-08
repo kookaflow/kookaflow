@@ -282,8 +282,10 @@ export function useSubscription(): SubscriptionState {
     }
 
     const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "TOKEN_REFRESHED") return;
+      setTimeout(() => {
       if (cancelled) return;
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
+      {
         void load();
         if (event === "SIGNED_OUT") {
           nativeRef.current = NO_ENTITLEMENTS;
@@ -292,6 +294,7 @@ export function useSubscription(): SubscriptionState {
           refreshNative();
         }
       }
+      }, 0);
     });
 
     // Realtime updates so webhook-driven subscription changes appear immediately.

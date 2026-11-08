@@ -42,8 +42,14 @@ function AuthenticatedLayout() {
     (async () => {
       const native = isNativeAuthPlatform();
       // Native: run the shared launch check (WebView session, else restore from Preferences).
-      if (native) await resolveNativeSession();
+      if (native && !(await resolveNativeSession())) {
+        if (!mounted) return;
+        console.log("[native-auth] _authenticated -> /login (launch check: signed out)");
+        navigate({ to: "/login" });
+        return;
+      }
       // 1. Trust the locally stored session first — no network round-trip.
+      // (Native: the launch check above already settled auth, so this is instant.)
       const { data: sessionData } = await supabase.auth.getSession();
       if (!mounted) return;
       const session = sessionData.session;
@@ -102,7 +108,7 @@ function AuthenticatedLayout() {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
         if (isNativeAuthPlatform()) console.log("[native-auth] _authenticated -> /login (SIGNED_OUT event)");
-        navigate({ to: "/login" });
+        setTimeout(() => navigate({ to: "/login" }), 0);
       }
     });
 

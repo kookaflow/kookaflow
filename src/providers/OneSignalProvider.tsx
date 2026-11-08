@@ -41,7 +41,8 @@ export function OneSignalProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUserId(session?.user?.id ?? null);
+      const id = session?.user?.id ?? null;
+      setTimeout(() => setUserId(id), 0);
     });
     return () => sub.subscription.unsubscribe();
   }, []);

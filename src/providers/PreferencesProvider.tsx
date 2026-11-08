@@ -116,7 +116,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     }
     pull();
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN") pull();
+      if (event === "SIGNED_IN") setTimeout(pull, 0);
     });
     return () => { cancelled = true; sub.subscription.unsubscribe(); };
   }, []);

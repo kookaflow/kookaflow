@@ -225,8 +225,10 @@ function AuthListener() {
       if (event === "SIGNED_OUT") {
         toast("Your session timed out — please sign in again");
       }
-      router.invalidate();
-      queryClient.invalidateQueries();
+      setTimeout(() => {
+        router.invalidate();
+        queryClient.invalidateQueries();
+      }, 0);
     });
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);

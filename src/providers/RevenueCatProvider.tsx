@@ -24,12 +24,14 @@ export function RevenueCatProvider() {
     })();
 
     const { data: authSub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (cancelled) return;
-      if (event === "SIGNED_IN" && session?.user) {
-        void identifyRevenueCatUser(session.user.id);
-      } else if (event === "SIGNED_OUT") {
-        void logOutRevenueCatUser();
-      }
+      setTimeout(() => {
+        if (cancelled) return;
+        if (event === "SIGNED_IN" && session?.user) {
+          void identifyRevenueCatUser(session.user.id);
+        } else if (event === "SIGNED_OUT") {
+          void logOutRevenueCatUser();
+        }
+      }, 0);
     });
 
     return () => {
