@@ -55,7 +55,17 @@ export function OneSignalProvider({ children }: { children: React.ReactNode }) {
 
   // Track auth user
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    // getSession is local (no network) and covers restored sessions at launch.
+    setTimeout(() => {
+      supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          const id = data.session?.user?.id ?? null;
+          console.log("[push] session user", id ? "present" : "none");
+          setUserId(id);
+        })
+        .catch((e) => console.warn("[push] session read failed", e));
+    }, 0);
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       const id = session?.user?.id ?? null;
       setTimeout(() => setUserId(id), 0);

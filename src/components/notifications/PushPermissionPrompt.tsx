@@ -2,10 +2,20 @@ import { useEffect, useState } from "react";
 import { getPushPermission, requestPushPermission } from "@/lib/pushClient";
 import { Bell, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Capacitor } from "@capacitor/core";
 import logoUrl from "@/assets/kookaflow-logo.png";
 
 const DISMISS_KEY = "kookaflow.push.dismissedAt";
 const DISMISS_DAYS = 7;
+const NATIVE_ASKED_KEY = "kookaflow.push.nativeAsked";
+
+function nativeAsked(): boolean {
+  try {
+    return Capacitor.isNativePlatform() && window.localStorage.getItem(NATIVE_ASKED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 function recentlyDismissed(): boolean {
   if (typeof window === "undefined") return true;
@@ -26,7 +36,7 @@ export function PushPermissionPrompt() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (recentlyDismissed()) return;
+    if (recentlyDismissed() || nativeAsked()) return;
     let t: number | undefined;
     let cancelled = false;
     void getPushPermission().then((p) => {
@@ -53,6 +63,11 @@ export function PushPermissionPrompt() {
   const enable = async () => {
     setBusy(true);
     try {
+      try {
+        if (Capacitor.isNativePlatform()) window.localStorage.setItem(NATIVE_ASKED_KEY, "1");
+      } catch {
+        /* ignore */
+      }
       await requestPushPermission();
     } catch (e) {
       console.error("Permission request failed", e);

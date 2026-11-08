@@ -25,37 +25,97 @@ const warn = (...a: unknown[]) => console.warn("[push]", ...a);
 const nativeMod = () => import("@onesignal/capacitor-plugin");
 const webMod = () => import("react-onesignal");
 
-let initialised = false;
+let initPromise: Promise<boolean> | null = null;
+let resolveReady: (ok: boolean) => void = () => {};
+const readyPromise = new Promise<boolean>((r) => (resolveReady = r));
 
-export async function initPush(appId: string): Promise<boolean> {
-  if (initialised) return true;
+const subListeners = new Set<() => void>();
+const emitSub = () => subListeners.forEach((cb) => { try { cb(); } catch { /* ignore */ } });
+
+/** Resolves once init has finished (true = ok). */
+export function whenPushReady(): Promise<boolean> {
+  return readyPromise;
+}
+
+/** Token is never logged in full: first 6 characters at most. */
+export function maskToken(t: string | null | undefined): string {
+  return t ? `present (${t.slice(0, 6)}…)` : "missing";
+}
+
+export async function logPushState(label: string): Promise<void> {
   try {
-    if (isNativePush()) {
-      const mod = await nativeMod();
-      await mod.default.initialize(appId);
-      log("native init ok");
-    } else {
-      const mod = await webMod();
-      await mod.default.init({
-        appId,
-        allowLocalhostAsSecureOrigin: true,
-        serviceWorkerParam: { scope: "/" },
-      });
-      log("web init ok");
-    }
-    initialised = true;
-    return true;
+    if (!isNativePush()) return;
+    const mod = await nativeMod();
+    const os = mod.default;
+    const [granted, canRequest, id, token, optedIn] = await Promise.all([
+      os.Notifications.hasPermission().catch(() => null),
+      os.Notifications.canRequestPermission().catch(() => null),
+      os.User.pushSubscription.getIdAsync().catch(() => null),
+      os.User.pushSubscription.getTokenAsync().catch(() => null),
+      os.User.pushSubscription.getOptedInAsync().catch(() => null),
+    ]);
+    log(`state (${label})`, `permission=${granted}`, `canRequest=${canRequest}`,
+      `subscriptionId=${id ? "present" : "missing"}`, `token=${maskToken(token)}`, `optedIn=${optedIn}`);
   } catch (e) {
-    warn("init failed", e);
-    return false;
+    warn("state read failed", e);
   }
 }
 
+export function initPush(appId: string): Promise<boolean> {
+  if (initPromise) return initPromise;
+  initPromise = (async () => {
+    try {
+      if (isNativePush()) {
+        const mod = await nativeMod();
+        const os = mod.default;
+        await os.initialize(appId);
+        log("native init ok");
+        // Register listeners right after init so the plugin always has them.
+        os.User.pushSubscription.addEventListener("change", () => {
+          log("subscription change");
+          void logPushState("subscription change");
+          emitSub();
+        });
+        os.Notifications.addEventListener("permissionChange", (granted: boolean) => {
+          log("permission change", granted);
+          void logPushState("permission change");
+          emitSub();
+        });
+        void logPushState("after init");
+      } else {
+        const mod = await webMod();
+        await mod.default.init({
+          appId,
+          allowLocalhostAsSecureOrigin: true,
+          serviceWorkerParam: { scope: "/" },
+        });
+        log("web init ok");
+        mod.default.User.PushSubscription.addEventListener("change", () => emitSub());
+      }
+      resolveReady(true);
+      return true;
+    } catch (e) {
+      warn("init failed", e);
+      resolveReady(false);
+      return false;
+    }
+  })();
+  return initPromise;
+}
+
 export async function loginPush(userId: string): Promise<void> {
+  if (!(await whenPushReady())) {
+    warn("login skipped: init failed");
+    return;
+  }
   try {
+    log("login start", userId);
     if (isNativePush()) await (await nativeMod()).default.login(userId);
     else await (await webMod()).default.login(userId);
-    log("login", userId);
+    log("login ok", userId);
+    void logPushState("after login");
+    setTimeout(() => void logPushState("3s after login"), 3000);
+    setTimeout(() => void logPushState("10s after login"), 10000);
   } catch (e) {
     warn("login failed", e);
   }
@@ -74,7 +134,12 @@ export async function logoutPush(): Promise<void> {
 export async function requestPushPermission(): Promise<boolean> {
   try {
     if (isNativePush()) {
-      return await (await nativeMod()).default.Notifications.requestPermission(true);
+      await whenPushReady();
+      log("permission request");
+      const ok = await (await nativeMod()).default.Notifications.requestPermission(true);
+      log("permission result", ok);
+      void logPushState("after permission request");
+      return ok;
     }
     await (await webMod()).default.Notifications.requestPermission();
     return typeof Notification !== "undefined" && Notification.permission === "granted";
@@ -84,14 +149,20 @@ export async function requestPushPermission(): Promise<boolean> {
   }
 }
 
+/** Map native granted/canRequest into a permission state. Exported for tests. */
+export function nativePermissionState(granted: boolean, canRequest: boolean): PushPermission {
+  if (granted) return "granted";
+  return canRequest ? "default" : "denied";
+}
+
 export async function getPushPermission(): Promise<PushPermission> {
   try {
     if (isNativePush()) {
-      const mod = await nativeMod();
-      const p = await mod.default.Notifications.permissionNative();
-      if (p === 1) return "denied";
-      if (p === 0) return "default";
-      return "granted";
+      await whenPushReady();
+      const os = (await nativeMod()).default;
+      const granted = await os.Notifications.hasPermission();
+      const canRequest = await os.Notifications.canRequestPermission();
+      return nativePermissionState(!!granted, !!canRequest);
     }
     if (typeof Notification === "undefined") return "unsupported";
     return Notification.permission;
@@ -117,32 +188,11 @@ export async function getPushSubscription(): Promise<PushSubscriptionInfo> {
   }
 }
 
-/** Subscribe to push-subscription changes. Returns an unsubscribe function. */
+/** Subscribe to push-subscription/permission changes. Returns an unsubscribe function. */
 export function onPushSubscriptionChange(cb: () => void): () => void {
-  let off = () => {};
-  let cancelled = false;
-  (async () => {
-    try {
-      if (isNativePush()) {
-        const mod = await nativeMod();
-        const h = () => cb();
-        if (cancelled) return;
-        mod.default.User.pushSubscription.addEventListener("change", h);
-        off = () => mod.default.User.pushSubscription.removeEventListener("change", h);
-      } else {
-        const mod = await webMod();
-        const h = () => cb();
-        if (cancelled) return;
-        mod.default.User.PushSubscription.addEventListener("change", h);
-        off = () => mod.default.User.PushSubscription.removeEventListener("change", h);
-      }
-    } catch (e) {
-      warn("subscription listener failed", e);
-    }
-  })();
+  subListeners.add(cb);
   return () => {
-    cancelled = true;
-    off();
+    subListeners.delete(cb);
   };
 }
 

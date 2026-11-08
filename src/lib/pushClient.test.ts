@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@capacitor/core", () => ({ Capacitor: { isNativePlatform: () => false } }));
 
-import { pathFromClick } from "./pushClient";
+import { maskToken, nativePermissionState, pathFromClick } from "./pushClient";
 import { buildPushBody } from "./reminders/push.server";
 
 describe("push targeting", () => {
@@ -35,5 +35,18 @@ describe("push targeting", () => {
   it("does not turn outside links into in-app paths", () => {
     expect(pathFromClick({ result: { url: "https://evil.com/x" } })).toBeNull();
     expect(pathFromClick({ notification: { additionalData: { path: "/calendar" } } })).toBe("/calendar");
+  });
+});
+
+describe("native push permission + token logging", () => {
+  it("maps Android permission: granted, can still ask, or denied", () => {
+    expect(nativePermissionState(true, false)).toBe("granted");
+    expect(nativePermissionState(false, true)).toBe("default");
+    expect(nativePermissionState(false, false)).toBe("denied");
+  });
+
+  it("never logs more than 6 characters of the push token", () => {
+    expect(maskToken("abcdefghijklmnop")).toBe("present (abcdef…)");
+    expect(maskToken(null)).toBe("missing");
   });
 });
