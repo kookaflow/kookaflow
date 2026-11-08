@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as EulaRouteImport } from './routes/eula'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as McpRouteImport } from './routes/mcp'
@@ -50,6 +51,11 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeleteAccountRoute = DeleteAccountRouteImport.update({
+  id: '/delete-account',
+  path: '/delete-account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EulaRoute = EulaRouteImport.update({
@@ -221,6 +227,7 @@ const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/eula': typeof EulaRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
@@ -255,6 +262,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/eula': typeof EulaRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
@@ -291,6 +299,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/delete-account': typeof DeleteAccountRoute
   '/eula': typeof EulaRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
@@ -327,6 +336,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/delete-account'
     | '/eula'
     | '/login'
     | '/mcp'
@@ -361,6 +371,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/delete-account'
     | '/eula'
     | '/login'
     | '/mcp'
@@ -396,6 +407,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/delete-account'
     | '/eula'
     | '/login'
     | '/mcp'
@@ -432,6 +444,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  DeleteAccountRoute: typeof DeleteAccountRoute
   EulaRoute: typeof EulaRoute
   LoginRoute: typeof LoginRoute
   McpRoute: typeof McpRoute
@@ -473,6 +486,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delete-account': {
+      id: '/delete-account'
+      path: '/delete-account'
+      fullPath: '/delete-account'
+      preLoaderRoute: typeof DeleteAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/eula': {
@@ -720,6 +740,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  DeleteAccountRoute: DeleteAccountRoute,
   EulaRoute: EulaRoute,
   LoginRoute: LoginRoute,
   McpRoute: McpRoute,

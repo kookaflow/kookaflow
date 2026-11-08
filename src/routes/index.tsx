@@ -207,6 +207,9 @@ function LandingPage() {
             <Link to="/support" className="text-white/90 hover:text-white hover:underline">
               Support
             </Link>
+            <Link to="/delete-account" className="text-white/90 hover:text-white hover:underline">
+              Delete Account
+            </Link>
             <Link to="/login" className="text-white/90 hover:text-white hover:underline">
               Sign In
             </Link>
