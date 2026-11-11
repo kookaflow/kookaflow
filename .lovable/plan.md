@@ -34,6 +34,7 @@ Week: 38h · est. $1,520
 - **Suggested rest window** shaded on the bar: after the last shift ending today (or the overnight one ending this morning), 8 hours starting 1 hour after it ends; before an evening/night shift, a pre-shift nap window ending 2 hours before start. Shown only when it doesn't clash with another item.
 - **List**: each of today's shifts and events with times, duration, estimated pay (shifts) and notes. A shift from yesterday that ends today appears as a small "Continuing: Night shift until 07:00" line, without pay (it's counted on its start day).
 - **"Add rest time"** button appears after a night shift (on the recovery day); it opens the event form pre-filled as Rest/Sleep for the suggested window.
+- **+ Add shift** and **+ Add event** buttons at the top of the list, opening the same shift sheet and event form as the day panel.
 - **"Coming up"**: next shift after today, e.g. "Coming up: Night shift · Thu 19:00".
 
 ## 3. Month view
@@ -44,7 +45,7 @@ Week: 38h · est. $1,520
 
 ## 4. Adding and editing from a day
 
-- Tapping a day (month or week) opens a panel directly under that day/row (on month view, below the week row containing it) listing the day's shifts and events; tapping one opens its existing edit form. Buttons: **+ Add shift**, **+ Add event**. Tapping the same day again closes it.
+- Tapping a day (month or week) opens a panel directly under that day/row (on month view, below the week row containing it) listing the day's shifts and events; tapping a shift or personal event opens its existing edit form; tapping a Google Calendar event opens its read-only details (title, time, location, notes, "Open in Google Calendar"). Same rule in day view. Buttons: **+ Add shift**, **+ Add event**. Tapping the same day again closes it.
 - **+ Add shift** opens a sheet (bottom sheet on phone, dialog on desktop):
   - The user's shift templates, each with badge, name and times. One tap creates that shift on that day (overnight templates end the next day automatically) and closes the sheet.
   - Templates whose times overlap an existing item on that day show an "Overlaps" tag (still tappable).
@@ -57,12 +58,18 @@ Week: 38h · est. $1,520
 
 One compact line ("6 shifts in a row - plan a rest day soon") with a small X. Dismissal remembered for that stretch, so it doesn't reappear until a different busy stretch.
 
+## Earnings visibility
+
+Earnings figures (footers, day view pay, totals) show only to users whose plan includes earnings tracking; everyone else sees hours only. There is no earnings-specific switch today, so this uses the existing Pro access check (trial, Pro, lifetime), the same one that unlocks other Pro features.
+
 ## Technical details
 
 - New pure helpers in `src/lib/calendarAgenda.ts`: `shiftInitials`, `isOvernight`, `itemsForDay` (start-day ownership), `recoveryInfo(day)`, `dayStatus`, `workedSegments(day)` (clips previous-day shifts), `suggestedRest`, `overlaps`, `periodTotals(range)`, `nextShift`. Unit tests in `calendarAgenda.test.ts` covering overnight ownership, recovery day, Sunday->Monday carry-over, two shifts in one day, overlap detection and totals.
 - New components in `src/components/calendar-page/`: `WeekAgenda.tsx`, `DayStatusView.tsx`, `DayBar.tsx`, `DayPanel.tsx`, `AddShiftSheet.tsx`, `ShiftBadge.tsx`, `PeriodFooter.tsx`.
 - `MonthView.tsx` updated for badges/dots/footer and inline panel; `TimeGrid` no longer used by week/day (kept file until confirmed unused, then removed).
 - `_authenticated.calendar.tsx`: swap views, drop slot-click create handlers, wire panel/sheet to existing `EventDialog`, `useEvents().createEvent` and shift templates query. Week/day visible range widened by one day before so previous-night shifts load.
+- Earnings gated with `useSubscription().hasProAccess`, passed into footers and day view.
+- Google events reuse the existing read-only Google detail dialog.
 - `WellnessNudgeBanner.tsx` restyled to a single line with dismiss key stored locally.
 - All colours via existing category tokens / saved shift colours; layout bounded for iOS width rules already in place.
 - Phone apps need a new mobile build to show it; website updates on Publish.
