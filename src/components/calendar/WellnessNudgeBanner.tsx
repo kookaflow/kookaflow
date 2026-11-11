@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { X } from "lucide-react";
 import type { MockEvent } from "@/components/calendar-page/constants";
 import type { CategoryId } from "@/types/event";
 import {
@@ -13,13 +14,6 @@ interface Props {
   onAction: (category: CategoryId) => void;
 }
 
-function hexAlpha(hex: string, alpha: number): string {
-  const h = hex.replace("#", "");
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 export function WellnessNudgeBanner({ events, anchor, onAction }: Props) {
   const [dismissedTick, setDismissedTick] = useState(0);
@@ -38,49 +32,20 @@ export function WellnessNudgeBanner({ events, anchor, onAction }: Props) {
   };
 
   return (
-    <div className="px-5 pt-2 animate-in slide-in-from-top-2 duration-200">
-      <div
-        className="flex items-start justify-between gap-3"
-        style={{
-          background: hexAlpha(nudge.colour, 0.12),
-          borderLeft: `3px solid ${nudge.colour}`,
-          borderRadius: 12,
-          padding: "12px 16px",
-          marginBottom: 8,
-        }}
+    <div className="flex min-w-0 shrink-0 items-center gap-2 border-b border-border px-3 py-1.5 text-xs sm:px-5 animate-in fade-in duration-200">
+      <span className="size-2 shrink-0 rounded-full" style={{ background: nudge.colour }} aria-hidden="true" />
+      <p className="min-w-0 flex-1 truncate text-foreground" title={nudge.message}>{nudge.message}</p>
+      <button type="button" onClick={handleAction} className="shrink-0 font-semibold text-primary hover:underline">
+        {nudge.buttonLabel}
+      </button>
+      <button
+        type="button"
+        onClick={() => handleDismiss(nudge.id)}
+        aria-label="Dismiss nudge"
+        className="-mr-2 flex size-8 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
       >
-        <p
-          className="text-foreground"
-          style={{ fontSize: 14, fontWeight: 400, lineHeight: 1.4 }}
-        >
-          {nudge.message}
-        </p>
-        <div className="flex flex-col items-end shrink-0">
-          <button
-            type="button"
-            onClick={handleAction}
-            className="font-bold text-white"
-            style={{
-              background: nudge.colour,
-              fontSize: 11,
-              padding: "4px 10px",
-              borderRadius: 20,
-              marginBottom: 4,
-            }}
-          >
-            {nudge.buttonLabel}
-          </button>
-          <button
-            type="button"
-            onClick={() => handleDismiss(nudge.id)}
-            aria-label="Dismiss nudge"
-            className="text-muted-foreground hover:text-foreground inline-flex items-center justify-center"
-            style={{ fontSize: 11, minHeight: 44, minWidth: 44 }}
-          >
-            Dismiss
-          </button>
-        </div>
-      </div>
+        <X className="size-3.5" />
+      </button>
     </div>
   );
 }

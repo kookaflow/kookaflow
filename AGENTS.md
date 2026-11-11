@@ -8,3 +8,4 @@
 - Native iOS More uses single-open expandable settings sections; preserve the expanded web layout to shorten native navigation without removing settings.- Native app server calls are cross-origin: src/server.ts must expose TanStack's x-tss-* reply headers to allowed app origins, or every server function returns a wrongly decoded value on iOS/Android.
 - Native store wording and subscription management branch on Capacitor.getPlatform() via storeLabels()/openNativeSubscriptionManagement in revenuecat.ts; Android must never show Apple wording (Play policy).
 - Push goes through src/lib/pushClient.ts: native uses @onesignal/capacitor-plugin, web uses react-onesignal; servers target external_id (OneSignal.login(userId)) so every device of a user receives it.
+- Calendar shift ownership/totals live in src/lib/calendarAgenda.ts (overnight shifts belong to their start day); views must use it so hours are never double-counted.

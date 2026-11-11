@@ -22,11 +22,15 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { MonthView } from "@/components/calendar-page/MonthView";
-import { TimeGrid } from "@/components/calendar-page/TimeGrid";
+import { WeekAgenda } from "@/components/calendar-page/WeekAgenda";
+import { DayStatusView } from "@/components/calendar-page/DayStatusView";
+import { AddShiftSheet } from "@/components/calendar-page/AddShiftSheet";
+import type { Earnings } from "@/components/calendar-page/agendaShared";
+import { useSubscription } from "@/hooks/useSubscription";
+import { supabase } from "@/integrations/supabase/client";
 import { TodayPanel } from "@/components/calendar-page/TodayPanel";
 import { EventDialog } from "@/components/events/EventDialog";
 import { WeekSummaryDialog } from "@/components/calendar-page/WeekSummaryDialog";
-import { DaySummaryDialog } from "@/components/calendar-page/DaySummaryDialog";
 import type { MockEvent, IconName } from "@/components/calendar-page/constants";
 import type { ShiftType as MockShiftType } from "@/types/event";
 import { useEvents } from "@/providers/EventsProvider";
@@ -125,11 +129,11 @@ function CalendarPageInner() {
     }
     if (view === "week") {
       return {
-        from: startOfWeek(date, { weekStartsOn: 1 }),
+        from: addDays(startOfWeek(date, { weekStartsOn: 1 }), -1),
         to: endOfWeek(date, { weekStartsOn: 1 }),
       };
     }
-    return { from: date, to: date };
+    return { from: addDays(date, -1), to: date };
   }, [date, view]);
   useEffect(() => {
     setVisibleRange(visibleRange.from, visibleRange.to);
@@ -145,7 +149,23 @@ function CalendarPageInner() {
   const [dialogDefault, setDialogDefault] = useState<Date>(new Date());
   const [dialogCategory, setDialogCategory] = useState<CategoryId | undefined>(undefined);
   const [weekSummaryOpen, setWeekSummaryOpen] = useState(false);
-  const [daySummaryOpen, setDaySummaryOpen] = useState(false);
+  const [openDay, setOpenDay] = useState<Date | null>(null);
+  const [shiftSheetDay, setShiftSheetDay] = useState<Date | null>(null);
+  const { hasProAccess } = useSubscription();
+  const { data: pay } = useQuery({
+    queryKey: ["user-pay-settings"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      const { data } = await supabase.from("user_preferences").select("hourly_rate,currency").eq("user_id", u.user.id).maybeSingle();
+      return data ?? null;
+    },
+    staleTime: 5 * 60_000,
+  });
+  const earnings: Earnings = {
+    rate: hasProAccess && pay?.hourly_rate != null ? Number(pay.hourly_rate) : null,
+    currency: pay?.currency ?? "AUD",
+  };
   const [googleDetail, setGoogleDetail] = useState<MockEvent | null>(null);
   const { selected: stamp, applyStamp, panelOpen } = useStamp();
 
@@ -171,7 +191,27 @@ function CalendarPageInner() {
       return;
     }
     setDate(d);
-    setDaySummaryOpen(true);
+    setOpenDay((cur) => (cur && cur.toDateString() === d.toDateString() ? null : d));
+  };
+  const openCustomShift = (d: Date) => {
+    setShiftSheetDay(null);
+    setEditingId(null);
+    const at = new Date(d);
+    at.setHours(9, 0, 0, 0);
+    setDialogDefault(at);
+    setDialogCategory("work");
+    setDialogOpen(true);
+  };
+  const openAddEvent = (d: Date) => {
+    const at = new Date(d);
+    at.setHours(12, 0, 0, 0);
+    openCreate(at);
+  };
+  const openAddRest = (start: Date) => {
+    setEditingId(null);
+    setDialogDefault(start);
+    setDialogCategory("rest");
+    setDialogOpen(true);
   };
 
   const goPrev = () => {
@@ -419,27 +459,35 @@ function CalendarPageInner() {
               cursor={date}
               selected={date}
               events={events}
+              openDay={openDay}
+              earnings={earnings}
               onSelect={handleDaySelect}
-              onCreate={openCreate}
               onEventClick={openEdit}
+              onAddShift={setShiftSheetDay}
+              onAddEvent={openAddEvent}
+              onClosePanel={() => setOpenDay(null)}
             />
           ) : view === "week" ? (
-            <TimeGrid
+            <WeekAgenda
               days={weekDays}
               events={events}
-              selected={date}
-              onSelectDay={handleDaySelect}
-              onCreate={openCreate}
+              openDay={openDay}
+              earnings={earnings}
+              onDayTap={handleDaySelect}
               onEventClick={openEdit}
+              onAddShift={setShiftSheetDay}
+              onAddEvent={openAddEvent}
+              onClosePanel={() => setOpenDay(null)}
             />
           ) : (
-            <TimeGrid
-              days={[date]}
+            <DayStatusView
+              day={date}
               events={events}
-              selected={date}
-              onSelectDay={handleDaySelect}
-              onCreate={openCreate}
+              earnings={earnings}
               onEventClick={openEdit}
+              onAddShift={setShiftSheetDay}
+              onAddEvent={openAddEvent}
+              onAddRest={openAddRest}
             />
           )}
         </main>
@@ -461,13 +509,11 @@ function CalendarPageInner() {
         events={events}
       />
 
-      <DaySummaryDialog
-        open={daySummaryOpen}
-        onOpenChange={setDaySummaryOpen}
-        date={date}
+      <AddShiftSheet
+        day={shiftSheetDay}
         events={events}
-        onEventClick={openEdit}
-        onAddEvent={openCreate}
+        onOpenChange={(o) => !o && setShiftSheetDay(null)}
+        onCustomTimes={openCustomShift}
       />
 
       <Dialog
@@ -507,7 +553,7 @@ function CalendarPageInner() {
               <a
                 href={googleDetail.externalUrl}
                 target="_blank"
-                rel="noopener"
+                rel="noopener noreferrer"
                 className="text-xs text-muted-foreground underline hover:text-foreground"
               >
                 Open in Google Calendar ↗

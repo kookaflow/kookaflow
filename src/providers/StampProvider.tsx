@@ -33,7 +33,7 @@ function endOfDayDate(day: Date): Date {
   return d;
 }
 
-function buildDraftFromStamp(stamp: StampDef, day: Date): EventDraft {
+export function buildDraftFromStamp(stamp: StampDef, day: Date): EventDraft {
   if (stamp.allDay || !stamp.startTime || !stamp.endTime) {
     const allDayDraft: EventDraft = {
       title: stamp.label,
