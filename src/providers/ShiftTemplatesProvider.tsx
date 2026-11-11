@@ -15,7 +15,7 @@ interface Ctx {
   templates: ShiftTemplateDTO[];
   isLoading: boolean;
   create: (
-    input: Omit<ShiftTemplateDTO, "id" | "sortOrder"> & { sortOrder?: number },
+    input: Omit<ShiftTemplateDTO, "id" | "sortOrder" | "shortLabel"> & { sortOrder?: number; shortLabel?: string | null },
   ) => Promise<ShiftTemplateDTO>;
   update: (id: string, patch: Partial<Omit<ShiftTemplateDTO, "id">>) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -33,6 +33,7 @@ function toInput(t: Partial<ShiftTemplateDTO>) {
     category: t.category!,
     base_type: t.baseType ?? null,
     sort_order: t.sortOrder ?? 0,
+    ...(t.shortLabel !== undefined ? { short_label: t.shortLabel } : {}),
   };
 }
 

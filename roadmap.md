@@ -20,3 +20,4 @@
 - [x] Native Manage Subscription: present Apple's StoreKit 2 management sheet through a dedicated Capacitor iOS bridge; never open account.apple.com.
 - [x] Remove horizontal overflow and improve bottom-edge scrolling across mobile paywalls and signed-in views.
 - [x] Replace all Kookaflow logo, favicon, Apple touch, and PWA artwork with the Build 8 icon; round only in-app displays through styling.
+- [x] Month view chips: width-fitted short labels, 10-char override with live preview

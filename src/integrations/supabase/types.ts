@@ -471,6 +471,7 @@ export type Database = {
           life_category: string
           name: string
           paid_break_minutes: number
+          short_label: string | null
           show_as: string | null
           sort_order: number
           split_end_2: string | null
@@ -496,6 +497,7 @@ export type Database = {
           life_category?: string
           name: string
           paid_break_minutes?: number
+          short_label?: string | null
           show_as?: string | null
           sort_order?: number
           split_end_2?: string | null
@@ -521,6 +523,7 @@ export type Database = {
           life_category?: string
           name?: string
           paid_break_minutes?: number
+          short_label?: string | null
           show_as?: string | null
           sort_order?: number
           split_end_2?: string | null

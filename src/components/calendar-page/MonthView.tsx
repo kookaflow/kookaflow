@@ -7,7 +7,9 @@ import { type MockEvent } from "./constants";
 import { itemsForDay, periodTotals } from "@/lib/calendarAgenda";
 import { cn } from "@/lib/utils";
 import { DayPanel } from "./DayPanel";
-import { EventDot, PeriodFooter, ShiftBadge, isShift, type Earnings } from "./agendaShared";
+import { EventDot, PeriodFooter, isShift, itemColour, itemName, timeLabel, type Earnings } from "./agendaShared";
+import { ShiftChip } from "./ShiftChip";
+import { useShiftTemplates } from "@/providers/ShiftTemplatesProvider";
 
 interface Props {
   cursor: Date;
@@ -22,7 +24,7 @@ interface Props {
   onClosePanel: () => void;
 }
 
-const MAX_BADGES = 3;
+const MAX_CHIPS = 2;
 const MAX_DOTS = 3;
 
 export function MonthView({ cursor, selected, events, openDay, earnings, onSelect, onEventClick, onAddShift, onAddEvent, onClosePanel }: Props) {
@@ -32,11 +34,15 @@ export function MonthView({ cursor, selected, events, openDay, earnings, onSelec
   const weeks: Date[][] = [];
   for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
   const headers = Array.from({ length: 7 }, (_, i) => format(addDays(start, i), "EEE"));
+  const { templates } = useShiftTemplates();
+  const templateNames = templates.map((t) => t.name);
+  const overrideFor = (name: string) =>
+    templates.find((t) => t.name.trim().toLowerCase() === name.trim().toLowerCase())?.shortLabel ?? null;
   const totals = periodTotals(events, startOfMonth(cursor), endOfMonth(cursor), earnings.rate);
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col animate-in fade-in duration-200">
-      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden p-1 sm:p-2">
+      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden p-0.5 sm:p-2">
         <div className="grid shrink-0 grid-cols-7 gap-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {headers.map((d) => <div key={d} className="px-1 py-0.5">{d}</div>)}
         </div>
@@ -44,7 +50,7 @@ export function MonthView({ cursor, selected, events, openDay, earnings, onSelec
           const panelDay = openDay && week.find((d) => isSameDay(d, openDay));
           return (
             <Fragment key={week[0].toISOString()}>
-              <div className="grid min-h-[64px] flex-1 grid-cols-7 gap-0.5">
+              <div className="grid min-h-[64px] flex-1 grid-cols-7 gap-px sm:gap-0.5">
                 {week.map((day) => {
                   const items = itemsForDay(events, day);
                   const shifts = items.filter(isShift);
@@ -57,7 +63,7 @@ export function MonthView({ cursor, selected, events, openDay, earnings, onSelec
                       onClick={() => onSelect(day)}
                       aria-label={`${format(day, "EEEE d MMMM")}, ${shifts.length} shifts, ${others.length} events`}
                       className={cn(
-                        "flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden rounded-md border border-border/60 bg-card/40 p-1 text-left transition-colors hover:border-primary/60 hover:bg-card/80",
+                        "flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden rounded-md border border-border/60 bg-card/40 p-px text-left transition-colors hover:border-primary/60 hover:bg-card/80",
                         !isSameMonth(day, cursor) && "opacity-40",
                         isSel && "border-primary ring-2 ring-primary/30 bg-card",
                       )}
@@ -65,9 +71,14 @@ export function MonthView({ cursor, selected, events, openDay, earnings, onSelec
                       <span className={cn("flex size-5 items-center justify-center rounded-full text-[11px] font-semibold", isToday(day) && "bg-primary text-primary-foreground")}>
                         {format(day, "d")}
                       </span>
-                      <span className="flex min-w-0 flex-wrap gap-0.5">
-                        {shifts.slice(0, MAX_BADGES).map((s) => <ShiftBadge key={s.id} event={s} size="sm" />)}
-                        {shifts.length > MAX_BADGES && <span className="text-[9px] font-medium text-muted-foreground">+{shifts.length - MAX_BADGES}</span>}
+                      <span className="flex w-full min-w-0 flex-col gap-0.5">
+                        {shifts.slice(0, MAX_CHIPS).map((s) => {
+                          const name = s.title || itemName(s);
+                          return (
+                            <ShiftChip key={s.id} name={name} siblingNames={templateNames} override={overrideFor(name)} time={timeLabel(s)} colour={itemColour(s)} />
+                          );
+                        })}
+                        {shifts.length > MAX_CHIPS && <span className="text-[10px] font-medium leading-none text-muted-foreground">+{shifts.length - MAX_CHIPS}</span>}
                       </span>
                       {others.length > 0 && (
                         <span className="mt-auto flex items-center gap-0.5">

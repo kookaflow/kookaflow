@@ -1,0 +1,1 @@
+ALTER TABLE public.shift_templates ADD COLUMN short_label text CHECK (short_label IS NULL OR char_length(short_label) BETWEEN 1 AND 10);

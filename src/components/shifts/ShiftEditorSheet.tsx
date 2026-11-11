@@ -7,6 +7,8 @@ import { IconPicker } from "@/components/events/IconPicker";
 import { useShiftTemplates } from "@/providers/ShiftTemplatesProvider";
 import type { ShiftTemplateDTO } from "@/lib/shift-templates.functions";
 import { cn } from "@/lib/utils";
+import { ShiftChip } from "@/components/calendar-page/ShiftChip";
+import { fitLabel, labelCandidates } from "@/lib/calendarAgenda";
 import { toast } from "sonner";
 
 const COLOURS = [
@@ -28,7 +30,9 @@ interface Props {
 }
 
 export function ShiftEditorSheet({ open, onOpenChange, template }: Props) {
-  const { create, update } = useShiftTemplates();
+  const { create, update, templates } = useShiftTemplates();
+  const [shortLabel, setShortLabel] = useState("");
+  const [labelTouched, setLabelTouched] = useState(false);
   const [name, setName] = useState("");
   const [colour, setColour] = useState(COLOURS[0]);
   const [start, setStart] = useState("09:00");
@@ -46,6 +50,8 @@ export function ShiftEditorSheet({ open, onOpenChange, template }: Props) {
       setEnd(template.defaultEnd?.slice(0, 5) ?? "17:00");
       setCategory(template.category);
       setIconName(template.iconName ?? undefined);
+      setShortLabel(template.shortLabel ?? "");
+      setLabelTouched(!!template.shortLabel);
     } else {
       setName("");
       setColour(COLOURS[0]);
@@ -53,6 +59,8 @@ export function ShiftEditorSheet({ open, onOpenChange, template }: Props) {
       setEnd("17:00");
       setCategory("working");
       setIconName(undefined);
+      setShortLabel("");
+      setLabelTouched(false);
     }
   }, [open, template]);
 
@@ -63,6 +71,12 @@ export function ShiftEditorSheet({ open, onOpenChange, template }: Props) {
     if (m <= 0) m += 24 * 60;
     return `${Math.floor(m / 60)}h ${m % 60}m`;
   })();
+
+  const siblingNames = templates.filter((t) => t.id !== template?.id).map((t) => t.name).concat(name);
+  // 10-char approximation of the generated label, used to pre-fill the field.
+  const generated = name.trim() ? fitLabel(labelCandidates(name.trim(), siblingNames), (t) => t.length <= 10) : "";
+  const shownLabel = labelTouched ? shortLabel : generated;
+  const override = labelTouched && shortLabel.trim() && shortLabel.trim() !== generated ? shortLabel.trim() : null;
 
   const isOvernight = !!start && !!end && end <= start;
   const sameTimeError = !!start && !!end && start === end;
@@ -86,6 +100,7 @@ export function ShiftEditorSheet({ open, onOpenChange, template }: Props) {
         defaultEnd: end || null,
         category,
         baseType: null,
+        shortLabel: override,
       };
       if (template) {
         await update(template.id, payload);
@@ -116,6 +131,23 @@ export function ShiftEditorSheet({ open, onOpenChange, template }: Props) {
               maxLength={60}
               placeholder="e.g. Long Day"
             />
+          </div>
+          <div>
+            <Label htmlFor="shift-short">Short label <span className="font-normal text-muted-foreground">(optional)</span></Label>
+            <div className="mt-1 flex items-start gap-3">
+              <Input
+                id="shift-short"
+                value={shownLabel}
+                onChange={(e) => { setLabelTouched(true); setShortLabel(e.target.value.slice(0, 10)); }}
+                maxLength={10}
+                placeholder={generated || "e.g. Night"}
+                className="flex-1"
+              />
+              <div className="w-[50px] shrink-0" aria-label="Calendar preview">
+                <ShiftChip name={name.trim() || "Shift"} siblingNames={siblingNames} override={override} time={start || "09:00"} colour={colour} />
+              </div>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">How it looks in the month view. Leave as is to keep it automatic.</p>
           </div>
           <div>
             <Label>Colour</Label>

@@ -192,3 +192,37 @@ export function formatHours(h: number): string {
   if (whole === 0) return `${mins}m`;
   return `${whole}h ${mins}m`;
 }
+
+// ---------- Month-view chip labels ----------
+
+const splitWords = (s: string) => s.trim().split(/\s+/).filter(Boolean);
+
+/**
+ * Whole-word label versions, longest first. When another template shares the
+ * same first word, that word is shortened to 4 letters so the distinguishing
+ * words survive ("Baptistcare Night" → "Bapt Night").
+ */
+export function labelCandidates(name: string, siblingNames: string[] = []): string[] {
+  const words = splitWords(name);
+  if (!words.length) return [name];
+  const first = words[0].toLowerCase();
+  const shared =
+    words.length > 1 &&
+    words[0].length > 4 &&
+    siblingNames.some((n) => n.trim().toLowerCase() !== name.trim().toLowerCase() && splitWords(n)[0]?.toLowerCase() === first);
+  if (shared) words[0] = words[0].slice(0, 4);
+  const out: string[] = [];
+  for (let k = words.length; k >= 1; k--) out.push(words.slice(0, k).join(" "));
+  return out;
+}
+
+/** Longest candidate that fits; only cuts mid-word (with "…") when the first word alone doesn't fit. */
+export function fitLabel(candidates: string[], fits: (text: string) => boolean): string {
+  for (const c of candidates) if (fits(c)) return c;
+  const word = candidates[candidates.length - 1] ?? "";
+  for (let n = word.length - 1; n >= 1; n--) {
+    const t = `${word.slice(0, n)}…`;
+    if (fits(t)) return t;
+  }
+  return word.slice(0, 1);
+}

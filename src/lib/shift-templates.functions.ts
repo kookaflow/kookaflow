@@ -13,6 +13,7 @@ const TemplateInputSchema = z.object({
   category: CategorySchema,
   base_type: z.string().max(40).nullable().optional(),
   sort_order: z.number().int().optional(),
+  short_label: z.string().trim().min(1).max(10).nullable().optional(),
 });
 
 export type ShiftTemplateDTO = {
@@ -25,10 +26,11 @@ export type ShiftTemplateDTO = {
   category: "working" | "leave" | "non_working";
   baseType: string | null;
   sortOrder: number;
+  shortLabel: string | null;
 };
 
 const COLS =
-  "id,name,colour,icon_name,default_start,default_end,category,base_type,sort_order";
+  "id,name,colour,icon_name,default_start,default_end,category,base_type,sort_order,short_label";
 
 type Row = {
   id: string;
@@ -40,6 +42,7 @@ type Row = {
   category: ShiftTemplateDTO["category"];
   base_type: string | null;
   sort_order: number;
+  short_label: string | null;
 };
 
 function rowToDTO(r: Row): ShiftTemplateDTO {
@@ -53,6 +56,7 @@ function rowToDTO(r: Row): ShiftTemplateDTO {
     category: r.category,
     baseType: r.base_type,
     sortOrder: r.sort_order,
+    shortLabel: r.short_label ?? null,
   };
 }
 

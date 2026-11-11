@@ -68,3 +68,26 @@ describe("calendar agenda rules", () => {
     expect(shiftInitials("Early")).toBe("EA");
   });
 });
+
+import { labelCandidates, fitLabel } from "./calendarAgenda";
+describe("chip labels", () => {
+  const fits8 = (t: string) => t.length <= 8;
+  it("uses the full name when it fits", () => {
+    expect(fitLabel(labelCandidates("Pilates"), fits8)).toBe("Pilates");
+  });
+  it("keeps whole words before cutting", () => {
+    expect(fitLabel(labelCandidates("Lakes Grammar Event"), fits8)).toBe("Lakes");
+    expect(fitLabel(labelCandidates("Anglican ND"), fits8)).toBe("Anglican");
+  });
+  it("shortens a shared first word to 4 letters", () => {
+    const names = ["Baptistcare Night", "Baptistcare AM"];
+    expect(fitLabel(labelCandidates(names[0], names), (t) => t.length <= 10)).toBe("Bapt Night");
+    expect(fitLabel(labelCandidates(names[1], names), fits8)).toBe("Bapt AM");
+  });
+  it("cuts mid-word only when the first word doesn't fit", () => {
+    expect(fitLabel(labelCandidates("Gymnastics"), fits8)).toBe("Gymnast…");
+  });
+  it("does not shorten when no sibling shares the first word", () => {
+    expect(labelCandidates("Gym", ["Gymnastics"])).toEqual(["Gym"]);
+  });
+});
