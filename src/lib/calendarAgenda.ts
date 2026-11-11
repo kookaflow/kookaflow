@@ -226,3 +226,10 @@ export function fitLabel(candidates: string[], fits: (text: string) => boolean):
   }
   return word.slice(0, 1);
 }
+
+/** Month cell layout: shifts first, then other items (each by start), capped at `max` with an overflow count. */
+export function monthCellItems<T extends AgendaItem>(items: T[], day: Date, max: number): { visible: T[]; more: number } {
+  const all = itemsForDay(items, day);
+  const ordered = [...all.filter(isShift), ...all.filter((e) => !isShift(e))];
+  return { visible: ordered.slice(0, max), more: Math.max(0, ordered.length - max) };
+}

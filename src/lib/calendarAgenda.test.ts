@@ -91,3 +91,17 @@ describe("chip labels", () => {
     expect(labelCandidates("Gym", ["Gymnastics"])).toEqual(["Gym"]);
   });
 });
+
+import { monthCellItems } from "./calendarAgenda";
+describe("month cell items", () => {
+  const ev = (id: string, s: string): AgendaItem => ({ id, title: id, category: "personal", start: d(s), end: d(s), source: "shiftsync" });
+  it("shifts first by start, then events, capped with +N more", () => {
+    const items = [ev("e1", "2026-11-12T08:00"), shift("s2", "2026-11-12T14:00", "2026-11-12T18:00"), shift("s1", "2026-11-12T06:00", "2026-11-12T10:00"), ev("e2", "2026-11-12T09:00")];
+    const r = monthCellItems(items, d("2026-11-12T12:00"), 3);
+    expect(r.visible.map((x) => x.id)).toEqual(["s1", "s2", "e1"]);
+    expect(r.more).toBe(1);
+  });
+  it("no overflow when within the limit", () => {
+    expect(monthCellItems([ev("e1", "2026-11-12T08:00")], d("2026-11-12T12:00"), 4).more).toBe(0);
+  });
+});

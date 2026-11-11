@@ -1,14 +1,15 @@
-import { Fragment } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval,
   isSameMonth, isSameDay, isToday, format, addDays,
 } from "date-fns";
 import { type MockEvent } from "./constants";
-import { itemsForDay, periodTotals } from "@/lib/calendarAgenda";
+import { isTimed, itemsForDay, monthCellItems, periodTotals } from "@/lib/calendarAgenda";
 import { cn } from "@/lib/utils";
 import { DayPanel } from "./DayPanel";
-import { EventDot, PeriodFooter, isShift, itemColour, itemName, timeLabel, type Earnings } from "./agendaShared";
+import { PeriodFooter, isShift, itemColour, itemName, timeLabel, type Earnings } from "./agendaShared";
 import { ShiftChip } from "./ShiftChip";
+import { EventChip } from "./EventChip";
 import { useShiftTemplates } from "@/providers/ShiftTemplatesProvider";
 
 interface Props {
@@ -24,8 +25,17 @@ interface Props {
   onClosePanel: () => void;
 }
 
-const MAX_CHIPS = 2;
-const MAX_DOTS = 3;
+function useMaxItems() {
+  const [max, setMax] = useState(3);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    const set = () => setMax(mq.matches ? 4 : 3);
+    set();
+    mq.addEventListener("change", set);
+    return () => mq.removeEventListener("change", set);
+  }, []);
+  return max;
+}
 
 export function MonthView({ cursor, selected, events, openDay, earnings, onSelect, onEventClick, onAddShift, onAddEvent, onClosePanel }: Props) {
   const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 1 });
@@ -34,6 +44,7 @@ export function MonthView({ cursor, selected, events, openDay, earnings, onSelec
   const weeks: Date[][] = [];
   for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
   const headers = Array.from({ length: 7 }, (_, i) => format(addDays(start, i), "EEE"));
+  const maxItems = useMaxItems();
   const { templates } = useShiftTemplates();
   const templateNames = templates.map((t) => t.name);
   const overrideFor = (name: string) =>
@@ -55,6 +66,7 @@ export function MonthView({ cursor, selected, events, openDay, earnings, onSelec
                   const items = itemsForDay(events, day);
                   const shifts = items.filter(isShift);
                   const others = items.filter((e) => !isShift(e));
+                  const cell = monthCellItems(events, day, maxItems);
                   const isSel = isSameDay(day, selected) && !!openDay;
                   return (
                     <button
@@ -72,20 +84,16 @@ export function MonthView({ cursor, selected, events, openDay, earnings, onSelec
                         {format(day, "d")}
                       </span>
                       <span className="flex w-full min-w-0 flex-col gap-0.5">
-                        {shifts.slice(0, MAX_CHIPS).map((s) => {
+                        {cell.visible.map((s) => {
                           const name = s.title || itemName(s);
-                          return (
+                          return isShift(s) ? (
                             <ShiftChip key={s.id} name={name} siblingNames={templateNames} override={overrideFor(name)} time={timeLabel(s)} colour={itemColour(s)} />
+                          ) : (
+                            <EventChip key={s.id} title={name} time={isTimed(s) ? timeLabel(s) : null} colour={itemColour(s)} />
                           );
                         })}
-                        {shifts.length > MAX_CHIPS && <span className="text-[10px] font-medium leading-none text-muted-foreground">+{shifts.length - MAX_CHIPS}</span>}
+                        {cell.more > 0 && <span className="px-0.5 text-[10px] font-medium leading-none text-muted-foreground">+{cell.more} more</span>}
                       </span>
-                      {others.length > 0 && (
-                        <span className="mt-auto flex items-center gap-0.5">
-                          {others.slice(0, MAX_DOTS).map((e) => <EventDot key={e.id} event={e} className="size-1.5" />)}
-                          {others.length > MAX_DOTS && <span className="text-[8px] text-muted-foreground">+{others.length - MAX_DOTS}</span>}
-                        </span>
-                      )}
                     </button>
                   );
                 })}
