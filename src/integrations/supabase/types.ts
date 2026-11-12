@@ -391,6 +391,33 @@ export type Database = {
         }
         Relationships: []
       }
+      push_devices: {
+        Row: {
+          created_at: string
+          last_seen_at: string
+          opted_in: boolean
+          platform: string | null
+          subscription_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          last_seen_at?: string
+          opted_in?: boolean
+          platform?: string | null
+          subscription_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          last_seen_at?: string
+          opted_in?: boolean
+          platform?: string | null
+          subscription_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       reminder_sends: {
         Row: {
           id: string
@@ -654,7 +681,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      set_push_enabled: { Args: { _enabled: boolean }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

@@ -22,3 +22,4 @@
 - [x] Replace all Kookaflow logo, favicon, Apple touch, and PWA artwork with the Build 8 icon; round only in-app displays through styling.
 - [x] Month view chips: width-fitted short labels, 10-char override with live preview
 - [x] Month view: events as light text chips (shifts first, 3/4 per day + "+N more"); screenshots 390px/desktop; delete sample events after
+- [x] Push: only the account switch changes push setting; opt-out default, existing accounts on; device state separate

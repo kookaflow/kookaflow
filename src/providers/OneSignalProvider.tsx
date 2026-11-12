@@ -13,6 +13,7 @@ import {
   logoutPush,
   onPushClick,
   onPushSubscriptionChange,
+  isNativePush,
 } from "@/lib/pushClient";
 import { PushPermissionPrompt } from "@/components/notifications/PushPermissionPrompt";
 
@@ -94,7 +95,9 @@ export function OneSignalProvider({ children }: { children: React.ReactNode }) {
         const { id, optedIn } = await getPushSubscription();
         if (id === lastPlayerId.current) return;
         lastPlayerId.current = id;
-        await persistFn({ data: { playerId: id, enabled: optedIn && !!id } });
+        if (!id) return;
+        // Device state only — never the account setting.
+        await persistFn({ data: { playerId: id, optedIn, platform: isNativePush() ? "native" : "web" } });
         console.log("[push] subscription saved", id ? "present" : "none");
       } catch (e) {
         console.error("[push] failed to persist subscription", e);

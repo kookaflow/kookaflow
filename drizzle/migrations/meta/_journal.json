@@ -29,6 +29,13 @@
       "when": 1794405877747,
       "tag": "0003_shift_template_short_label",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794503507163,
+      "tag": "0004_push_account_setting_guard",
+      "breakpoints": true
     }
   ]
 }

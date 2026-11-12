@@ -13,7 +13,7 @@ import {
   type PushPermission,
 } from "@/lib/pushClient";
 import { useServerFn } from "@tanstack/react-start";
-import { getPushStatus, updatePushPrefs } from "@/lib/push.functions";
+import { getPushStatus, setPushEnabled, updatePushPrefs } from "@/lib/push.functions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUpgradePrompt } from "@/components/subscription/useUpgradePrompt";
 
@@ -149,7 +149,7 @@ Take a breath—you've got this.`;
   return (
     <div className="flex flex-col gap-6">
       {upgradeModal}
-      <NotificationStatusCard />
+      <AccountPushCard />
 
       {/* Daily Reminder */}
       <Card>
@@ -299,7 +299,50 @@ function usePermissionState() {
   return perm;
 }
 
-function NotificationStatusCard() {
+function AccountPushCard() {
+  const qc = useQueryClient();
+  const fetchStatus = useServerFn(getPushStatus);
+  const save = useServerFn(setPushEnabled);
+  const { data: status } = useQuery({
+    queryKey: ["push-status"],
+    queryFn: () => fetchStatus(),
+  });
+  const mut = useMutation({
+    mutationFn: (v: boolean) => save({ data: { enabled: v } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["push-status"] }),
+  });
+  const on = status?.push_notifications_enabled ?? true;
+  return (
+    <Card>
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Bell className="size-4" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Push notifications</CardTitle>
+              <CardDescription>For your account, on every device you allow</CardDescription>
+            </div>
+          </div>
+          <Switch
+            checked={on}
+            disabled={!status || mut.isPending}
+            onCheckedChange={(v) => mut.mutate(v)}
+            aria-label="Push notifications for this account"
+          />
+        </div>
+      </CardHeader>
+      {on ? (
+        <CardContent className="pt-0">
+          <DeviceStatusLine />
+        </CardContent>
+      ) : null}
+    </Card>
+  );
+}
+
+function DeviceStatusLine() {
   const perm = usePermissionState();
   const native = isNativePush();
   const enable = async () => {
@@ -310,40 +353,23 @@ function NotificationStatusCard() {
     return (
       <div className="flex items-center gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3">
         <span className="inline-block size-2 rounded-full bg-emerald-500" />
-        <span className="text-sm text-foreground">
-          🔔 Push notifications are active on this device
-        </span>
-      </div>
-    );
-  }
-  if (perm === "denied") {
-    return (
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <span className="inline-block size-2 rounded-full bg-amber-500" />
-          <span className="text-sm text-foreground">
-            {native
-              ? "Notifications blocked — turn them on in your phone's Settings"
-              : "Notifications blocked — enable in your browser settings"}
-          </span>
-        </div>
-        {native ? (
-          <Button size="sm" variant="outline" onClick={enable}>
-            Open Settings
-          </Button>
-        ) : null}
+        <span className="text-sm text-foreground">Notifications are on for this device</span>
       </div>
     );
   }
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
       <div className="flex items-center gap-3">
-        <span className="inline-block size-2 rounded-full bg-muted-foreground/50" />
-        <span className="text-sm text-foreground">🔕 Push notifications are off</span>
+        <span className="inline-block size-2 shrink-0 rounded-full bg-amber-500" />
+        <span className="text-sm text-foreground">
+          Notifications are off on this device. Allow them in your phone or browser settings.
+        </span>
       </div>
-      <Button size="sm" onClick={enable} disabled={perm === "unsupported"}>
-        Enable notifications
-      </Button>
+      {perm === "unsupported" ? null : (
+        <Button size="sm" variant="outline" onClick={enable}>
+          {native && perm === "denied" ? "Open Settings" : "Allow on this device"}
+        </Button>
+      )}
     </div>
   );
 }
