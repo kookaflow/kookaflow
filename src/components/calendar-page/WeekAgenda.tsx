@@ -36,13 +36,13 @@ export function WeekAgenda({ days, events, openDay, earnings, onDayTap, onEventC
                   aria-expanded={open}
                   className={cn(
                     "flex w-full min-w-0 gap-3 rounded-lg border border-transparent px-2 py-2 text-left transition-colors hover:bg-muted/60",
-                    today && "border-primary/40 bg-primary/10",
+                    today && "border-2 border-today bg-today-soft",
                     open && "border-primary",
                   )}
                 >
                   <div className="w-10 shrink-0 text-center">
-                    <div className={cn("text-[10px] font-semibold uppercase", today ? "text-primary" : "text-muted-foreground")}>{format(day, "EEE")}</div>
-                    <div className={cn("text-lg font-bold leading-tight", today && "text-primary")}>{format(day, "d")}</div>
+                    <div className={cn("text-[10px] font-semibold uppercase", today ? "text-today" : "text-muted-foreground")}>{format(day, "EEE")}</div>
+                    <div className={cn("mx-auto flex size-8 items-center justify-center rounded-full text-lg font-bold leading-tight", today && "bg-today text-today-foreground")}>{format(day, "d")}</div>
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
                     {carried && (

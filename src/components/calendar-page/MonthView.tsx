@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from "react";
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval,
-  isSameMonth, isSameDay, isToday, format, addDays,
+  isSameMonth, isSameDay, isToday, isBefore, startOfToday, format, addDays,
 } from "date-fns";
 import { type MockEvent } from "./constants";
 import { isTimed, itemsForDay, monthCellItems, periodTotals } from "@/lib/calendarAgenda";
@@ -77,10 +77,12 @@ export function MonthView({ cursor, selected, events, openDay, earnings, onSelec
                       className={cn(
                         "flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden rounded-md border border-border/60 bg-card/40 p-px text-left transition-colors hover:border-primary/60 hover:bg-card/80",
                         !isSameMonth(day, cursor) && "opacity-40",
+                        isSameMonth(day, cursor) && isBefore(day, startOfToday()) && "opacity-60",
+                        isToday(day) && "border-2 border-today bg-today-soft hover:border-today",
                         isSel && "border-primary ring-2 ring-primary/30 bg-card",
                       )}
                     >
-                      <span className={cn("flex size-5 items-center justify-center rounded-full text-[11px] font-semibold", isToday(day) && "bg-primary text-primary-foreground")}>
+                      <span className={cn("flex size-5 items-center justify-center rounded-full text-[11px] font-semibold", isToday(day) && "bg-today text-today-foreground")}>
                         {format(day, "d")}
                       </span>
                       <span className="flex w-full min-w-0 flex-col gap-0.5">

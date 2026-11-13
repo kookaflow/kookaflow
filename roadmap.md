@@ -23,3 +23,4 @@
 - [x] Month view chips: width-fitted short labels, 10-char override with live preview
 - [x] Month view: events as light text chips (shifts first, 3/4 per day + "+N more"); screenshots 390px/desktop; delete sample events after
 - [x] Push: only the account switch changes push setting; opt-out default, existing accounts on; device state separate
+- [x] Today highlight in month/week/day views (nudge purple)

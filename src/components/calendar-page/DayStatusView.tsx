@@ -1,4 +1,4 @@
-import { addDays, format, startOfDay } from "date-fns";
+import { addDays, format, isToday, startOfDay } from "date-fns";
 import { BedDouble, Briefcase, Moon, Plus, Sunrise } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { carriedOverShift, dayStatus, itemsForDay, nextShift, suggestedRest, workedSegments } from "@/lib/calendarAgenda";
@@ -43,7 +43,11 @@ export function DayStatusView({ day, events, earnings, onEventClick, onAddShift,
           <span className="flex size-8 items-center justify-center rounded-full bg-primary/15 text-primary"><S.Icon className="size-4" /></span>
           <div className="min-w-0">
             <p className="text-base font-semibold">{S.label}</p>
-            <p className="text-xs text-muted-foreground">{format(day, "EEEE d MMMM")}</p>
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              {isToday(day) && <span className="flex size-5 items-center justify-center rounded-full bg-today text-[11px] font-semibold text-today-foreground">{format(day, "d")}</span>}
+              {isToday(day) && <span className="font-semibold text-today">Today ·</span>}
+              {format(day, "EEEE d MMMM")}
+            </p>
           </div>
         </div>
 

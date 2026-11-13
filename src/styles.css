@@ -34,6 +34,9 @@
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
+  --color-today: var(--today);
+  --color-today-foreground: var(--today-foreground);
+  --color-today-soft: var(--today-soft);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -294,4 +297,14 @@ html.native-ios textarea {
 @keyframes kookaflow-toast-progress {
   from { width: 100%; }
   to { width: 0%; }
+}
+
+/* "Today" highlight: same purple as the rest nudge (#8B5CF6). */
+:root {
+  --today: #8B5CF6;
+  --today-foreground: #FFFFFF;
+  --today-soft: color-mix(in oklab, #8B5CF6 12%, transparent);
+}
+.dark {
+  --today-soft: color-mix(in oklab, #8B5CF6 22%, transparent);
 }
