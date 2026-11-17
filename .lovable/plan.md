@@ -1,19 +1,19 @@
-# Make "today" stand out in the calendar
+# Android RevenueCat key + paywall ready for retiring Basic
 
-## What you'll see
-- **Month view:** today's cell gets a soft purple tint and a 2px purple border, same rounded corners as other days. The date number sits in a filled purple circle with white text.
-- **Past days this month** fade to about 60% (number and chips). Days from the previous/next month keep their current look. Today and future days stay full strength.
-- **Week view:** today's row uses the same tint, 2px border and filled purple date circle.
-- **Day view:** when the day shown is today, the date header shows the purple circle with the day number plus "Today".
-- Light and dark mode both checked for readable contrast (white on purple at least 4.5:1).
-- Screenshots at 390px of month, week and day views, in light and dark mode.
-
-## Note on colour
-The app's current "primary" colour is near-black slate, not purple, which is why today currently shows black. I'll add a dedicated brand-purple "today" colour so nothing else in the app changes colour.
+## What changes
+1. **Android key** — set `REVENUECAT_ANDROID_API_KEY` to `goog_nxQAeFIlOikLZXuFgjnlCnlyZaK` (a public SDK key, safe in code). iOS key untouched.
+2. **Paywall shows whatever the offering returns** — 2, 3 or 4 plans, laid out in the existing grid with no gaps.
+   - Order: Pro Monthly, Pro Yearly, Lifetime, then Basic last while it is still in the offering.
+   - A plan is skipped (never an empty card) if it has no price from the store or no product.
+   - Unknown package identifiers are skipped, so a stray test package can't appear.
+   - If nothing usable comes back, the existing "Plans unavailable" message with Restore shows instead of an empty grid.
+3. **Basic subscribers keep access** — no change to entitlement checks: the `basic` entitlement still unlocks Basic features and Restore still recognises it. Only the Basic *card* disappears once you remove `basic_monthly` from the offering.
 
 ## Technical details
-- `src/styles.css`: new tokens `--today` (purple, e.g. oklch(0.55 0.2 295) light / oklch(0.68 0.18 295) dark), `--today-foreground` (white), `--today-soft` (tint); exposed as `--color-today*` in `@theme`.
-- `MonthView.tsx`: today cell `border-2 border-today bg-today-soft`; date circle `bg-today text-today-foreground`; past in-month days (`isBefore(day, startOfToday())` and `isSameMonth`) get `opacity-60`. Selected state ring kept on top.
-- `WeekAgenda.tsx`: replace `border-primary/40 bg-primary/10` with the today tokens; date number in a filled circle.
-- `DayStatusView.tsx`: header shows today circle + "Today" label when `isToday(day)`.
-- Verify with Playwright (signed in) at 390px light and dark; no sample data created.
+- `src/lib/revenuecat.ts`: set key; in `getRevenueCatPlans()` change order to `["pro_monthly","pro_yearly","lifetime","basic_monthly"]`, filter to known identifiers with non-empty `priceString` and product id. Extract the filter/sort into a pure `selectNativePlans(packages)` helper.
+- `src/components/subscription/PaywallModal.tsx`: no structural change needed beyond relying on the filtered list (copy lookup already falls back safely).
+- New test `src/lib/revenuecat.test.ts`: 4 packages → correct order; offering without basic → 3 Pro plans; missing pro_yearly → 2 plans, no blank; package with empty price dropped; empty offering → [].
+
+## Live on Publish vs new builds
+- Everything here runs inside the phone apps, so it needs new iOS and Android builds (`npm run build:mobile`, `npx cap sync`). Publishing the website changes nothing (web uses Stripe pricing).
+- Removing `basic_monthly` in the RevenueCat dashboard takes effect immediately for any build; older builds also cope (they only show what's returned), but only new builds get the new order and blank-card protection.
