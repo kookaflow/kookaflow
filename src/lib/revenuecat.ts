@@ -17,7 +17,7 @@ const REVENUECAT_IOS_API_KEY = "appl_OjTSyFGFbiuQIDXhHRjHdajszLN";
  * Android (Google Play) public SDK key — safe to ship in the client bundle.
  * Paste from RevenueCat → Project → API keys → Google Play app (starts "goog_").
  */
-const REVENUECAT_ANDROID_API_KEY = "";
+const REVENUECAT_ANDROID_API_KEY = "goog_nxQAeFIlOikLZXuFgjnlCnlyZaK";
 
 /** "android" | "ios" | "web" — Capacitor's platform, safe on web/SSR. */
 export function nativePlatform(): string {
@@ -270,6 +270,40 @@ function periodLabelFor(pkg: { packageType?: string }): string {
  * Returns [] on web or on any failure — the paywall then shows its
  * "purchases unavailable" state (never a Stripe fallback on native).
  */
+/** Display order of native packages; anything else in the offering is ignored. */
+export const NATIVE_PACKAGE_ORDER = ["pro_monthly", "pro_yearly", "lifetime", "basic_monthly"];
+
+type RevenueCatPackageLike = {
+  identifier?: string;
+  packageType?: string;
+  product?: { identifier?: string; priceString?: string; title?: string } | null;
+};
+
+/**
+ * Keep only known packages with a real product and store price, in display
+ * order. Works for any subset (e.g. after basic_monthly is retired).
+ */
+export function selectNativePlans(packages: RevenueCatPackageLike[] | null | undefined): RevenueCatPlan[] {
+  return (packages ?? [])
+    .filter(
+      (pkg) =>
+        !!pkg &&
+        typeof pkg.identifier === "string" &&
+        NATIVE_PACKAGE_ORDER.includes(pkg.identifier) &&
+        !!pkg.product?.identifier &&
+        !!pkg.product?.priceString,
+    )
+    .map((pkg) => ({
+      identifier: pkg.identifier as string,
+      productId: pkg.product!.identifier as string,
+      priceString: pkg.product!.priceString as string,
+      title: pkg.product?.title || (pkg.identifier as string),
+      periodLabel: periodLabelFor(pkg as { packageType?: string }),
+      raw: pkg,
+    }))
+    .sort((a, b) => NATIVE_PACKAGE_ORDER.indexOf(a.identifier) - NATIVE_PACKAGE_ORDER.indexOf(b.identifier));
+}
+
 export async function getRevenueCatPlans(): Promise<RevenueCatPlan[]> {
   if (!enabled()) return [];
   try {
@@ -277,21 +311,7 @@ export async function getRevenueCatPlans(): Promise<RevenueCatPlan[]> {
     const { Purchases } = await loadSdk();
     const offerings = await Purchases.getOfferings();
     const packages = offerings?.current?.availablePackages ?? [];
-    const plans: RevenueCatPlan[] = packages.map((pkg) => ({
-      identifier: pkg.identifier,
-      productId: pkg.product?.identifier ?? "",
-      priceString: pkg.product?.priceString ?? "",
-      title: pkg.product?.title ?? pkg.identifier,
-      periodLabel: periodLabelFor(pkg as { packageType?: string }),
-      raw: pkg,
-    }));
-
-    const order = ["pro_yearly", "lifetime", "pro_monthly", "basic_monthly"];
-    return plans.sort((a, b) => {
-      const ai = order.indexOf(a.identifier);
-      const bi = order.indexOf(b.identifier);
-      return (ai === -1 ? order.length : ai) - (bi === -1 ? order.length : bi);
-    });
+    return selectNativePlans(packages as RevenueCatPackageLike[]);
   } catch (err) {
     console.warn("[revenuecat] getOfferings failed", err);
     return [];
